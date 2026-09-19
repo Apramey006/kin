@@ -1,101 +1,68 @@
-import Image from "next/image";
+import Link from "next/link";
+import { getServiceClient, FAMILY_ID, supabaseConfigured } from "@/lib/supabase";
+import { Users, Heart, Monitor } from "lucide-react";
 
-export default function Home() {
+async function wearerName(): Promise<string> {
+  if (!supabaseConfigured()) return "your loved one";
+  try {
+    const { data } = await getServiceClient()
+      .from("wearer")
+      .select("name")
+      .eq("family_id", FAMILY_ID)
+      .single();
+    return data?.name ?? "your loved one";
+  } catch {
+    return "your loved one";
+  }
+}
+
+export default async function Home() {
+  const name = await wearerName();
+  const cards = [
+    {
+      href: "/family",
+      title: "I'm family",
+      desc: "Add photos, record stories, answer Kin's questions.",
+      icon: Users,
+    },
+    {
+      href: "/wearer",
+      title: `Kin for ${name}`,
+      desc: "One button. Point, tap, listen.",
+      icon: Heart,
+    },
+    {
+      href: "/stage",
+      title: "Stage",
+      desc: "Watch the Keepers, the Gate, and the family graph live.",
+      icon: Monitor,
+    },
+  ];
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <main className="min-h-screen flex flex-col items-center justify-center px-6 py-12 bg-paper text-ink">
+      <p className="text-sm tracking-[0.3em] uppercase text-primary mb-3">Kin</p>
+      <h1 className="text-4xl md:text-5xl font-semibold text-center mb-2">
+        The family remembers together.
+      </h1>
+      <p className="text-lg text-ink/60 mb-12 text-center max-w-xl">
+        A shared memory for {name}. Every cue comes from something a relative
+        actually said.
+      </p>
+      <div className="grid gap-5 w-full max-w-3xl">
+        {cards.map((c) => (
+          <Link
+            key={c.href}
+            href={c.href}
+            className="flex items-center gap-5 rounded-2xl border border-ink/10 bg-white px-8 py-7 shadow-sm hover:shadow-md hover:border-primary/40 transition"
           >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+            <c.icon className="h-9 w-9 text-primary shrink-0" />
+            <div>
+              <div className="text-2xl font-semibold">{c.title}</div>
+              <div className="text-ink/60">{c.desc}</div>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </main>
   );
 }

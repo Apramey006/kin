@@ -3,25 +3,64 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --paper: #fbf8f3;
+  --ink: #1f1b16;
+  --primary: #2f5d50;
+  --stage: #0e1116;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  height: 100%;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter,
+    sans-serif;
+  background: var(--paper);
+  color: var(--ink);
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+/* Wearer surface: gentle 1.5s pulse while thinking, nothing faster. */
+@keyframes kin-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
   }
+  50% {
+    opacity: 1;
+    transform: scale(1.015);
+  }
+}
+.kin-pulse {
+  animation: kin-pulse 1.5s ease-in-out infinite;
+}
+
+/* Stage graph: new nodes scale in over 600ms. */
+@keyframes node-pop {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.node-pop {
+  animation: node-pop 600ms ease-out both;
+}
+
+@keyframes gap-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(224, 164, 88, 0.55);
+  }
+  50% {
+    box-shadow: 0 0 0 14px rgba(224, 164, 88, 0);
+  }
+}
+.gap-pulse {
+  animation: gap-pulse 1.6s ease-in-out infinite;
 }
