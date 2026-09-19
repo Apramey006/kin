@@ -142,7 +142,7 @@ function basePlan(extra: Record<string, PlanEntry[]> = {}) {
     relatives: [{ data: relatives }],
     memories: [{ data: [] }],
     provenance: [{ data: [] }, { data: [] }],
-    graph_nodes: [{ data: [noraNode] }, { data: [noraNode] }],
+    graph_nodes: [{ data: [noraNode] }],
     graph_edges: [{ data: [] }],
     wearer: [{ data: [{ name: "Rosa" }] }],
     ...extra,

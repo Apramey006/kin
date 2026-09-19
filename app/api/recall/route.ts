@@ -5,6 +5,7 @@ import { captionImage, embedText, chatJSON } from "@/lib/providers/openai";
 import { synthesizeSpeech } from "@/lib/providers/elevenlabs";
 import { runKeepers } from "@/lib/keepers";
 import { evaluateGate, type GateInfo } from "@/lib/gate";
+import { SILENCE_REASONS } from "@/lib/config";
 import { synthesizeCue, pickContextPath } from "@/lib/synthesize";
 import { describeFaces } from "@/lib/faces-server";
 import { zeroVector } from "@/lib/util";
@@ -47,6 +48,10 @@ export async function POST(req: Request) {
   let eventId: string | null = null;
   try {
     const sb = getServiceClient();
+    // Promise.resolve forces the lazy query builder to start now.
+    const relativesP = Promise.resolve(
+      sb.from("relatives").select("*").eq("family_id", FAMILY_ID)
+    );
 
     let snapshot: Buffer | null = null;
     let snapshotPath: string | null = null;
@@ -104,19 +109,8 @@ export async function POST(req: Request) {
     if (evErr) throw evErr;
     eventId = event.id;
 
-    // 2. Upload snapshot + kick off vision/embed. Face matching inside the
-    //    keepers starts on descriptors without waiting for the caption.
-    if (snapshot && !snapshotPath) {
-      snapshotPath = `${FAMILY_ID}/recall-${eventId}.jpg`;
-      await sb.storage
-        .from("media")
-        .upload(snapshotPath, snapshot, { contentType: "image/jpeg" });
-    }
-    await sb
-      .from("recall_events")
-      .update({ snapshot_path: snapshotPath, face_descriptors: descriptors })
-      .eq("id", eventId);
-
+    // 2. Vision/embed starts on the snapshot right away; the storage upload
+    //    and the event row update run concurrently with it.
     const captionP = (snapshot ? captionImage(snapshot) : Promise.resolve(null)).catch(
       () => null
     );
@@ -126,11 +120,21 @@ export async function POST(req: Request) {
       )
       .catch(() => zeroVector(1536));
 
+    const eventUpdateP = (async () => {
+      if (snapshot && !snapshotPath) {
+        snapshotPath = `${FAMILY_ID}/recall-${eventId}.jpg`;
+        await sb.storage
+          .from("media")
+          .upload(snapshotPath, snapshot, { contentType: "image/jpeg" });
+      }
+      await sb
+        .from("recall_events")
+        .update({ snapshot_path: snapshotPath, face_descriptors: descriptors })
+        .eq("id", eventId);
+    })();
+
     // 3. All keepers concurrently.
-    const { data: relatives } = await sb
-      .from("relatives")
-      .select("*")
-      .eq("family_id", FAMILY_ID);
+    const [{ data: relatives }] = await Promise.all([relativesP, eventUpdateP]);
     const keepers: Keeper[] = (relatives ?? []).map((r) => ({
       relativeId: r.id,
       name: r.name,
@@ -190,12 +194,7 @@ export async function POST(req: Request) {
       });
     }
 
-    // 5. SPEAK: synthesize a grounded cue, then TTS.
-    const { data: subject } = await sb
-      .from("graph_nodes")
-      .select("*")
-      .eq("id", gate.subjectNodeId)
-      .single();
+    // 5. SPEAK: one batch fetch, then synthesize a grounded cue, then TTS.
     const [{ data: allNodes }, { data: allEdges }, { data: wearer }] =
       await Promise.all([
         sb.from("graph_nodes").select("*").eq("family_id", FAMILY_ID),
@@ -205,10 +204,24 @@ export async function POST(req: Request) {
     const nodes = (allNodes ?? []) as GraphNodeRow[];
     const edges = (allEdges ?? []) as GraphEdgeRow[];
     const wearerName = wearer?.name ?? "you";
+    const subject = nodes.find((n) => n.id === gate.subjectNodeId) ?? null;
+    if (!subject) {
+      await sb
+        .from("recall_events")
+        .update({
+          status: "silent",
+          silence_reason: SILENCE_REASONS.noProvenance,
+          latency_ms: latency(),
+        })
+        .eq("id", eventId);
+      return NextResponse.json({
+        decision: "silent",
+        reason: SILENCE_REASONS.noProvenance,
+        eventId,
+      });
+    }
 
-    const path = subject
-      ? pickContextPath(subject.id, nodes, edges)
-      : null;
+    const path = pickContextPath(subject.id, nodes, edges);
     let contextSummaries: string[] = [];
     if (path) {
       const { data: provRows } = await sb
@@ -226,7 +239,7 @@ export async function POST(req: Request) {
     }
 
     const cue = await synthesizeCue({
-      subject: subject as GraphNodeRow,
+      subject,
       nodes,
       edges,
       contextSummaries,
@@ -234,18 +247,21 @@ export async function POST(req: Request) {
       rewrite: rewriteCue,
     });
 
-    let audio: string | null = null;
-    try {
-      const mp3 = await synthesizeSpeech(cue.text);
-      audio = mp3.toString("base64");
-    } catch {
-      audio = null; // client falls back to speechSynthesis
-    }
-
-    await sb
-      .from("recall_events")
-      .update({ status: "speak", cue_text: cue.text, latency_ms: latency() })
-      .eq("id", eventId);
+    const ttsP = (async (): Promise<string | null> => {
+      try {
+        const mp3 = await synthesizeSpeech(cue.text);
+        return mp3.toString("base64");
+      } catch {
+        return null; // client falls back to speechSynthesis
+      }
+    })();
+    const [audio] = await Promise.all([
+      ttsP,
+      sb
+        .from("recall_events")
+        .update({ status: "speak", cue_text: cue.text, latency_ms: latency() })
+        .eq("id", eventId),
+    ]);
 
     return NextResponse.json({
       decision: "speak",
