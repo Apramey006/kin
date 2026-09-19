@@ -7,7 +7,11 @@ import { runKeepers } from "@/lib/keepers";
 import { evaluateGate, type GateInfo } from "@/lib/gate";
 import { SILENCE_REASONS } from "@/lib/config";
 import { synthesizeCue, pickContextPath } from "@/lib/synthesize";
-import { describeFaces } from "@/lib/faces-server";
+import {
+  resolveDescriptors,
+  BROWSER_FACE_MODEL,
+  type DescriptorResult,
+} from "@/lib/faces-server";
 import { zeroVector } from "@/lib/util";
 import { z } from "zod";
 import type {
@@ -55,7 +59,13 @@ export async function POST(req: Request) {
 
     let snapshot: Buffer | null = null;
     let snapshotPath: string | null = null;
-    let descriptors: number[][] = [];
+    // Descriptor resolution may call the face service, so it is deferred until
+    // after the running event is inserted.
+    let resolveP: () => Promise<DescriptorResult> = async () => ({
+      descriptors: [],
+      model: BROWSER_FACE_MODEL,
+      source: "none",
+    });
 
     const contentType = req.headers.get("content-type") ?? "";
     if (contentType.includes("application/json")) {
@@ -69,11 +79,30 @@ export async function POST(req: Request) {
         .single();
       if (!prev) return NextResponse.json({ error: "event not found" }, { status: 404 });
       snapshotPath = prev.snapshot_path;
-      descriptors = (prev.face_descriptors ?? []) as number[][];
+      // Legacy rows store a bare descriptor array; newer rows store
+      // { model, source, descriptors }.
+      const stored: DescriptorResult = Array.isArray(prev.face_descriptors)
+        ? {
+            descriptors: prev.face_descriptors as number[][],
+            model: BROWSER_FACE_MODEL,
+            source: "browser",
+          }
+        : {
+            descriptors: prev.face_descriptors?.descriptors ?? [],
+            model: prev.face_descriptors?.model ?? BROWSER_FACE_MODEL,
+            source: prev.face_descriptors?.source ?? "browser",
+          };
       if (snapshotPath) {
         const { data: blob } = await sb.storage.from("media").download(snapshotPath);
         if (blob) snapshot = Buffer.from(await blob.arrayBuffer());
       }
+      // Re-run detection when a snapshot exists so a replay after the face
+      // service comes online uses server descriptors.
+      const snap = snapshot;
+      resolveP = () =>
+        snap
+          ? resolveDescriptors(snap, "image/jpeg", stored.descriptors)
+          : Promise.resolve(stored);
     } else {
       const form = await req.formData();
       const file = form.get("snapshot") as File | null;
@@ -86,18 +115,10 @@ export async function POST(req: Request) {
           { status: 400 }
         );
       }
-      descriptors = parsed;
       if (file) snapshot = Buffer.from(await file.arrayBuffer());
-      if (snapshot && descriptors.length === 0) {
-        try {
-          const serverDescriptors = await describeFaces(snapshot);
-          if (serverDescriptors.every(isDescriptor)) {
-            descriptors = serverDescriptors;
-          }
-        } catch {
-          // no server adapter yet; proceed with no descriptors
-        }
-      }
+      const snap = snapshot;
+      const mime = file?.type || "image/jpeg";
+      resolveP = () => resolveDescriptors(snap, mime, parsed);
     }
 
     // 1. Insert the running event immediately so Stage animates.
@@ -108,6 +129,9 @@ export async function POST(req: Request) {
       .single();
     if (evErr) throw evErr;
     eventId = event.id;
+
+    const descriptorResult = await resolveP();
+    const descriptors = descriptorResult.descriptors;
 
     // 2. Vision/embed starts on the snapshot right away; the storage upload
     //    and the event row update run concurrently with it.
@@ -129,7 +153,14 @@ export async function POST(req: Request) {
       }
       await sb
         .from("recall_events")
-        .update({ snapshot_path: snapshotPath, face_descriptors: descriptors })
+        .update({
+          snapshot_path: snapshotPath,
+          face_descriptors: {
+            model: descriptorResult.model,
+            source: descriptorResult.source,
+            descriptors,
+          },
+        })
         .eq("id", eventId);
     })();
 
@@ -191,6 +222,8 @@ export async function POST(req: Request) {
         decision: "silent",
         reason: gate.reason,
         eventId,
+        descriptorSource: descriptorResult.source,
+        faceModel: descriptorResult.model,
       });
     }
 
@@ -218,6 +251,8 @@ export async function POST(req: Request) {
         decision: "silent",
         reason: SILENCE_REASONS.noProvenance,
         eventId,
+        descriptorSource: descriptorResult.source,
+        faceModel: descriptorResult.model,
       });
     }
 
@@ -269,6 +304,8 @@ export async function POST(req: Request) {
       audio,
       eventId,
       latencyMs: latency(),
+      descriptorSource: descriptorResult.source,
+      faceModel: descriptorResult.model,
     });
   } catch (e) {
     if (eventId) {

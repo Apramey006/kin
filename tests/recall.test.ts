@@ -5,6 +5,11 @@ const mocks = vi.hoisted(() => ({
   sb: null as unknown,
   keeperResults: [] as KeeperResult[],
   keepersError: null as Error | null,
+  descriptorResult: null as {
+    descriptors: number[][];
+    model: string;
+    source: "server" | "browser" | "none";
+  } | null,
 }));
 
 vi.mock("@/lib/supabase", () => ({
@@ -27,6 +32,20 @@ vi.mock("@/lib/providers/openai", () => ({
 
 vi.mock("@/lib/providers/elevenlabs", () => ({
   synthesizeSpeech: async () => Buffer.from("mp3"),
+}));
+
+vi.mock("@/lib/faces-server", () => ({
+  BROWSER_FACE_MODEL: "browser-face-api-1.7.15",
+  resolveDescriptors: async (
+    _snapshot: Buffer | null,
+    _mime: string,
+    client: number[][]
+  ) =>
+    mocks.descriptorResult ?? {
+      descriptors: client,
+      model: "browser-face-api-1.7.15",
+      source: "browser",
+    },
 }));
 
 import { POST } from "../app/api/recall/route";
@@ -154,6 +173,7 @@ let sb: FakeSb;
 beforeEach(() => {
   mocks.keeperResults = [];
   mocks.keepersError = null;
+  mocks.descriptorResult = null;
 });
 
 describe("POST /api/recall", () => {
@@ -228,6 +248,56 @@ describe("POST /api/recall", () => {
     const res = await POST(recallRequest([new Array(127).fill(0.1)]));
     expect(res.status).toBe(400);
     expect(sb.inserts).toHaveLength(0);
+  });
+
+  it("source none with abstaining keepers reports descriptorSource and ends silent", async () => {
+    sb = makeSb(basePlan());
+    mocks.sb = sb;
+    mocks.descriptorResult = {
+      descriptors: [],
+      model: "face-api-1.7.15:test",
+      source: "none",
+    };
+    mocks.keeperResults = [keeper("a", null), keeper("b", null)];
+    const res = await POST(recallRequest());
+    const json = await res.json();
+    expect(res.status).toBe(200);
+    expect(json.decision).toBe("silent");
+    expect(json.descriptorSource).toBe("none");
+    expect(json.faceModel).toBe("face-api-1.7.15:test");
+    expect(sb.updates.at(-1)!.payload.status).toBe("silent");
+  });
+
+  it("replay accepts legacy array-shaped face_descriptors", async () => {
+    sb = makeSb(
+      basePlan({
+        recall_events: [
+          {
+            data: [
+              {
+                id: "evt-legacy",
+                snapshot_path: null,
+                face_descriptors: [new Array(128).fill(0.2)],
+              },
+            ],
+          },
+          { data: [{ id: "evt-legacy" }] },
+          ...new Array(7).fill({ data: [] }),
+        ],
+      })
+    );
+    mocks.sb = sb;
+    mocks.keeperResults = [keeper("a", null), keeper("b", null)];
+    const res = await POST(
+      new Request("http://localhost/api/recall", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ replayEventId: "evt-legacy" }),
+      })
+    );
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.decision).toBe("silent");
   });
 
   it("replay with an event from another family returns 404", async () => {
