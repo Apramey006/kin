@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getAnonClient, FAMILY_ID } from "@/lib/supabase";
 import { KeeperBar } from "@/components/KeeperBar";
 import { GateMeter } from "@/components/GateMeter";
@@ -14,6 +14,18 @@ import type {
   Relative,
 } from "@/lib/types";
 
+async function requireOk(response: Response): Promise<Response> {
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new Error(
+      typeof body?.error === "string" && body.error.trim()
+        ? body.error
+        : `Request failed (${response.status}). Please try again.`
+    );
+  }
+  return response;
+}
+
 export default function StagePage() {
   const [relatives, setRelatives] = useState<Relative[]>([]);
   const [event, setEvent] = useState<RecallEventRow | null>(null);
@@ -24,6 +36,9 @@ export default function StagePage() {
   const [wearerNodeId, setWearerNodeId] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [offline, setOffline] = useState(false);
+  const actionPending = useRef(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionStatus, setActionStatus] = useState<string | null>(null);
 
   const loadGraph = useCallback(async () => {
     const sb = getAnonClient();
@@ -93,22 +108,34 @@ export default function StagePage() {
   }, [loadGraph, loadLatestEvent, loadGaps]);
 
   const call = async (label: string, fn: () => Promise<Response>) => {
+    if (actionPending.current) return;
+    actionPending.current = true;
     setBusy(label);
+    setActionError(null);
+    setActionStatus(null);
     try {
-      await fn();
+      await requireOk(await fn());
+      setActionStatus("Action completed.");
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Action failed. Please try again.");
     } finally {
+      actionPending.current = false;
       setBusy(null);
     }
   };
 
   const seed = () => call("seed", () => fetch("/api/admin/seed", { method: "POST" }));
-  const reset = () => call("reset", () => fetch("/api/admin/reset", { method: "POST" }));
+  const reset = () => {
+    if (actionPending.current) return;
+    if (!window.confirm("Reset this family's demo data? This deletes its memories and cannot be undone.")) return;
+    return call("reset", () => fetch("/api/admin/reset", { method: "POST" }));
+  };
   const runWeaver = () => call("weaver", () => fetch("/api/weaver/run", { method: "POST" }));
   const replay = () =>
     call("replay", async () => {
-      const r = await fetch("/api/recall");
+      const r = await requireOk(await fetch("/api/recall"));
       const { lastEventId } = await r.json();
-      if (!lastEventId) return new Response();
+      if (!lastEventId) throw new Error("No recall to replay yet. Try a recall from the wearer screen first.");
       return fetch("/api/recall", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -170,7 +197,8 @@ export default function StagePage() {
               </h2>
               <button
                 onClick={runWeaver}
-                className="rounded-lg bg-amber-500/20 border border-amber-500/50 text-amber-300 px-4 py-2 text-lg hover:bg-amber-500/30"
+                disabled={busy !== null}
+                className="rounded-lg bg-amber-500/20 border border-amber-500/50 text-amber-300 px-4 py-2 text-lg hover:bg-amber-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {busy === "weaver" ? "Weaving…" : "Run Weaver"}
               </button>
@@ -189,14 +217,21 @@ export default function StagePage() {
         </div>
       )}
 
+      {actionError && (
+        <p role="alert" className="px-6 py-2 text-sm text-amber-300">{actionError}</p>
+      )}
+      {actionStatus && (
+        <p role="status" className="px-6 py-2 text-sm text-white/70">{actionStatus}</p>
+      )}
+
       <footer className="flex items-center gap-3 px-6 py-3 border-t border-white/10 text-sm">
-        <button onClick={seed} className="rounded-lg bg-white/10 px-4 py-2 hover:bg-white/20">
+        <button onClick={seed} disabled={busy !== null} className="rounded-lg bg-white/10 px-4 py-2 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed">
           {busy === "seed" ? "Seeding…" : "Seed"}
         </button>
-        <button onClick={reset} className="rounded-lg bg-white/10 px-4 py-2 hover:bg-white/20">
+        <button onClick={reset} disabled={busy !== null} className="rounded-lg bg-white/10 px-4 py-2 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed">
           {busy === "reset" ? "Resetting…" : "Reset"}
         </button>
-        <button onClick={replay} className="rounded-lg bg-white/10 px-4 py-2 hover:bg-white/20">
+        <button onClick={replay} disabled={busy !== null} className="rounded-lg bg-white/10 px-4 py-2 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed">
           {busy === "replay" ? "Replaying…" : "Replay last recall"}
         </button>
         <div className="ml-auto text-white/35 font-mono text-xs">
