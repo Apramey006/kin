@@ -1,5 +1,3 @@
-import { withTimeout } from "../util";
-
 const LISTEN_URL =
   "https://api.deepgram.com/v1/listen?model=nova-2&smart_format=true";
 
@@ -10,23 +8,22 @@ export async function transcribeAudio(
 ): Promise<string> {
   const apiKey = process.env.DEEPGRAM_API_KEY;
   if (!apiKey) throw new Error("DEEPGRAM_API_KEY not configured");
-  const res = await withTimeout(
-    fetch(LISTEN_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Token ${apiKey}`,
-        "Content-Type": mimeType || "application/octet-stream",
-      },
-      body: new Uint8Array(audio),
-    }),
-    15000,
-    "deepgram"
-  );
+  if (!audio.length) throw new Error("Empty audio");
+  const res = await fetch(LISTEN_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Token ${apiKey}`,
+      "Content-Type": mimeType || "application/octet-stream",
+    },
+    body: new Uint8Array(audio),
+    signal: AbortSignal.timeout(15000),
+  });
   if (!res.ok) {
-    throw new Error(`Deepgram error ${res.status}: ${await res.text()}`);
+    throw new Error(`Deepgram error ${res.status}`);
   }
   const json = await res.json();
-  const transcript: string =
+  const transcript: unknown =
     json?.results?.channels?.[0]?.alternatives?.[0]?.transcript ?? "";
+  if (typeof transcript !== "string") throw new Error("Invalid Deepgram response");
   return transcript.trim();
 }
