@@ -134,8 +134,8 @@ export default function StagePage() {
           Supabase is not configured. Fill .env.local and restart.
         </div>
       ) : (
-        <div className="flex-1 grid grid-cols-3 gap-4 p-4 min-h-0">
-          <section className="rounded-2xl bg-white/5 p-5 overflow-y-auto">
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 p-4 min-h-0 overflow-y-auto lg:overflow-visible">
+          <section className="rounded-2xl bg-white/5 p-5 overflow-y-auto min-h-[320px]">
             <h2 className="text-xl uppercase tracking-widest text-white/50 mb-5">
               Keepers
             </h2>
@@ -153,7 +153,7 @@ export default function StagePage() {
             )}
           </section>
 
-          <section className="rounded-2xl bg-white/5 p-5 overflow-y-auto">
+          <section className="rounded-2xl bg-white/5 p-5 overflow-y-auto min-h-[320px]">
             <GateMeter
               gate={event?.gate ?? null}
               running={event?.status === "running"}
@@ -163,7 +163,7 @@ export default function StagePage() {
             />
           </section>
 
-          <section className="rounded-2xl bg-white/5 overflow-hidden flex flex-col">
+          <section className="rounded-2xl bg-white/5 overflow-hidden flex flex-col min-h-[320px]">
             <div className="flex items-center justify-between px-5 pt-4 pb-2">
               <h2 className="text-xl uppercase tracking-widest text-white/50">
                 Family graph

@@ -82,7 +82,7 @@ export default function WearerPage() {
 
     const frame = captureFrame();
     if (!frame) {
-      setCameraError("Camera is not ready yet.");
+      setCameraError("One moment, the camera is warming up.");
       return;
     }
     setPhase("thinking");
@@ -138,6 +138,7 @@ export default function WearerPage() {
           autoPlay
           playsInline
           muted
+          onPlaying={() => setCameraError(null)}
           className="absolute inset-0 h-full w-full object-cover"
         />
         {cameraError && (

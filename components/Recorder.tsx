@@ -15,10 +15,12 @@ export function Recorder({
   onRecorded,
   maxSeconds = 60,
   label = "Record",
+  disabled = false,
 }: {
   onRecorded: (blob: Blob, mimeType: string) => void;
   maxSeconds?: number;
   label?: string;
+  disabled?: boolean;
 }) {
   const [recording, setRecording] = useState(false);
   const [remaining, setRemaining] = useState(maxSeconds);
@@ -75,7 +77,7 @@ export function Recorder({
           <Square className="h-5 w-5" /> Stop ({remaining}s)
         </Button>
       ) : (
-        <Button onClick={start} size="lg">
+        <Button onClick={start} size="lg" disabled={disabled}>
           <Mic className="h-5 w-5" /> {label}
         </Button>
       )}

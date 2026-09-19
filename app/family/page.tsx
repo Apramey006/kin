@@ -50,7 +50,10 @@ export default function FamilyPage() {
         .from("relatives")
         .select("*")
         .eq("family_id", FAMILY_ID);
-      setRelatives((rels ?? []) as Relative[]);
+      const sorted = ((rels ?? []) as Relative[]).sort((a, b) =>
+        a.name.localeCompare(b.name)
+      );
+      setRelatives(sorted);
       try {
         const saved = window.localStorage.getItem("kin_relative_id");
         const found = (rels ?? []).find((r: Relative) => r.id === saved);
@@ -205,7 +208,10 @@ export default function FamilyPage() {
             <CardTitle>Record a story</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Recorder onRecorded={submitStory} label={busy ? "Saving…" : "Record a memory"} />
+            <Recorder onRecorded={submitStory} label="Record a memory" disabled={busy} />
+            {busy && (
+              <p className="text-ink/60">Kin is listening to your story...</p>
+            )}
             {storyResult && (
               <div className="rounded-xl bg-ink/5 p-4">
                 <p className="mb-2">{storyResult.transcript}</p>

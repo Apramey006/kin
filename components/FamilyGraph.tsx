@@ -1,15 +1,33 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import ReactFlow, {
   Background,
+  ReactFlowProvider,
+  useReactFlow,
   type Edge,
   type Node,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import type { GraphEdgeRow, GraphNodeRow, ProvenanceRow, Relative } from "@/lib/types";
 
-export function FamilyGraph({
+const GOLDEN_ANGLE = 2.399963;
+
+const RINGS: Record<string, { radius: number; offset: number }> = {
+  person: { radius: 160, offset: 0 },
+  tradition: { radius: 300, offset: 0.8 },
+  event: { radius: 300, offset: 0.8 },
+  object: { radius: 430, offset: 1.6 },
+  place: { radius: 430, offset: 1.6 },
+};
+
+interface Placed {
+  x: number;
+  y: number;
+  ring: string;
+}
+
+function FamilyGraphInner({
   nodes,
   edges,
   provenance,
@@ -24,7 +42,8 @@ export function FamilyGraph({
   gapNodeId?: string | null;
   wearerNodeId?: string | null;
 }) {
-  const seen = useRef(new Set<string>());
+  const positions = useRef(new Map<string, Placed>());
+  const { fitView } = useReactFlow();
 
   const colorOf = useMemo(() => {
     const map = new Map<string, string>();
@@ -39,19 +58,30 @@ export function FamilyGraph({
   }, [provenance, relatives]);
 
   const rfNodes: Node[] = useMemo(() => {
-    const centerX = 0;
-    const centerY = 0;
-    return nodes.map((n, i) => {
+    return nodes.map((n) => {
       const isWearer = n.id === wearerNodeId;
-      const angle = (i / Math.max(nodes.length, 1)) * Math.PI * 2;
-      const radius = 90 + Math.floor(i / 6) * 110;
-      const isNew = !seen.current.has(n.id);
-      seen.current.add(n.id);
+      const isNew = !positions.current.has(n.id);
+      if (isNew) {
+        if (isWearer) {
+          positions.current.set(n.id, { x: 0, y: 0, ring: "wearer" });
+        } else {
+          const ring = n.type in RINGS ? n.type : "object";
+          const { radius, offset } = RINGS[ring];
+          const count = [...positions.current.values()].filter(
+            (p) => p.ring === ring
+          ).length;
+          const angle = count * GOLDEN_ANGLE + offset;
+          positions.current.set(n.id, {
+            x: radius * Math.cos(angle),
+            y: radius * Math.sin(angle),
+            ring,
+          });
+        }
+      }
+      const { x, y } = positions.current.get(n.id)!;
       return {
         id: n.id,
-        position: isWearer
-          ? { x: centerX, y: centerY }
-          : { x: centerX + radius * Math.cos(angle), y: centerY + radius * Math.sin(angle) },
+        position: { x, y },
         data: {
           label: `${n.label}${n.relation_to_wearer && n.relation_to_wearer !== "self" ? ` · ${n.relation_to_wearer}` : ""}`,
         },
@@ -81,6 +111,7 @@ export function FamilyGraph({
         id: e.id,
         source: e.from_node,
         target: e.to_node,
+        type: "smoothstep",
         label: e.rel.replace(/_/g, " "),
         animated: e.id === gapNodeId,
         style: { stroke: colorOf.edge.get(e.id) ?? "#556", strokeWidth: 2 },
@@ -89,6 +120,10 @@ export function FamilyGraph({
       })),
     [edges, colorOf, gapNodeId]
   );
+
+  useEffect(() => {
+    fitView({ duration: 600, padding: 0.2 });
+  }, [nodes.length, edges.length, fitView]);
 
   return (
     <ReactFlow
@@ -105,5 +140,20 @@ export function FamilyGraph({
     >
       <Background color="#1a2030" gap={24} />
     </ReactFlow>
+  );
+}
+
+export function FamilyGraph(props: {
+  nodes: GraphNodeRow[];
+  edges: GraphEdgeRow[];
+  provenance: ProvenanceRow[];
+  relatives: Relative[];
+  gapNodeId?: string | null;
+  wearerNodeId?: string | null;
+}) {
+  return (
+    <ReactFlowProvider>
+      <FamilyGraphInner {...props} />
+    </ReactFlowProvider>
   );
 }

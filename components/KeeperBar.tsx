@@ -44,6 +44,19 @@ export function KeeperBar({
           <span>{result.memoryIds.length} memories</span>
         </div>
       )}
+      {result && result.memoryIds.length > 0 && (
+        <div className="mt-1 flex flex-wrap gap-1">
+          {result.memoryIds.slice(0, 4).map((id) => (
+            <span
+              key={id}
+              className="rounded bg-white/10 px-1.5 py-0.5 text-xs font-mono"
+              style={{ borderLeft: `2px solid ${color}` }}
+            >
+              {id.slice(0, 6)}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

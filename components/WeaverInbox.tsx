@@ -14,6 +14,7 @@ export function WeaverInbox({
 }) {
   const [questions, setQuestions] = useState<WeaverQuestionRow[]>([]);
   const [answered, setAnswered] = useState<Record<string, string>>({});
+  const [submittingId, setSubmittingId] = useState<string | null>(null);
 
   useEffect(() => {
     const sb = getAnonClient();
@@ -55,15 +56,20 @@ export function WeaverInbox({
     relatives.find((r) => r.id === id)?.name ?? "Someone";
 
   const answer = async (q: WeaverQuestionRow, blob: Blob, mime: string) => {
-    const fd = new FormData();
-    fd.append("file", new File([blob], "answer." + (mime.includes("mp4") ? "m4a" : "webm"), { type: mime }));
-    fd.append("contributor_id", me.id);
-    fd.append("question_id", q.id);
-    const res = await fetch("/api/weaver/answer", { method: "POST", body: fd });
-    const json = await res.json();
-    if (res.ok) {
-      setAnswered((a) => ({ ...a, [q.id]: json.summary }));
-      setQuestions((qs) => qs.filter((x) => x.id !== q.id));
+    setSubmittingId(q.id);
+    try {
+      const fd = new FormData();
+      fd.append("file", new File([blob], "answer." + (mime.includes("mp4") ? "m4a" : "webm"), { type: mime }));
+      fd.append("contributor_id", me.id);
+      fd.append("question_id", q.id);
+      const res = await fetch("/api/weaver/answer", { method: "POST", body: fd });
+      const json = await res.json();
+      if (res.ok) {
+        setAnswered((a) => ({ ...a, [q.id]: json.summary }));
+        setQuestions((qs) => qs.filter((x) => x.id !== q.id));
+      }
+    } finally {
+      setSubmittingId(null);
     }
   };
 
@@ -86,7 +92,16 @@ export function WeaverInbox({
           {answered[q.id] ? (
             <p className="text-primary">Thank you. Kin added: {answered[q.id]}</p>
           ) : (
-            <Recorder label="Record answer" onRecorded={(b, m) => answer(q, b, m)} />
+            <>
+              <Recorder
+                label="Record answer"
+                disabled={submittingId === q.id}
+                onRecorded={(b, m) => answer(q, b, m)}
+              />
+              {submittingId === q.id && (
+                <p className="text-ink/60 mt-2">Adding your answer...</p>
+              )}
+            </>
           )}
         </div>
       ))}
