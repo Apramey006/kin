@@ -13,6 +13,11 @@ export const simScore = (similarity: number): number =>
     1
   );
 
+const STRONG_FACE_V = 0.9;
+const FAST_PATH_MEMORY_WAIT_MS = 700;
+
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
 export interface FaceMatch {
   person_node_id: string;
   contributor_id: string;
@@ -164,35 +169,46 @@ export async function retrieveKeeper(
     );
   })();
 
-  const [faceMatches, memories] = await Promise.all([facePromise, memoryPromise]);
+  const faceMatches = await facePromise;
 
   const ownFaceMatches = faceMatches.filter(
     (m) => m.contributor_id === keeper.relativeId
   );
   const bestFace = ownFaceMatches.sort((a, b) => a.distance - b.distance)[0];
+  const v = bestFace ? faceScore(bestFace.distance) : 0;
 
-  // This keeper's memories linked to the best face person.
-  let personLinkedMemories: ScoredMemory[] = [];
-  if (bestFace) {
+  // This keeper's memories linked to the best face person. Independent of the
+  // embedding, so it runs concurrently with the memory step.
+  const personLinkedPromise = (async (): Promise<ScoredMemory[]> => {
+    if (!bestFace) return [];
     const { data: prov } = await sb
       .from("provenance")
       .select("memory_id")
       .eq("contributor_id", keeper.relativeId)
       .eq("node_id", bestFace.person_node_id);
     const ids = (prov ?? []).map((p) => p.memory_id);
-    if (ids.length) {
-      const { data: mems } = await sb
-        .from("memories")
-        .select("id, summary")
-        .in("id", ids)
-        .eq("contributor_id", keeper.relativeId);
-      personLinkedMemories = (mems ?? []).map((m) => ({
-        id: m.id,
-        summary: m.summary,
-        similarity: 0,
-      }));
-    }
-  }
+    if (!ids.length) return [];
+    const { data: mems } = await sb
+      .from("memories")
+      .select("id, summary")
+      .in("id", ids)
+      .eq("contributor_id", keeper.relativeId);
+    return (mems ?? []).map((m) => ({
+      id: m.id,
+      summary: m.summary,
+      similarity: 0,
+    }));
+  })();
+
+  // A strong face match must not wait on the vision-caption embedding.
+  const memories =
+    v >= STRONG_FACE_V
+      ? await Promise.race([
+          memoryPromise,
+          sleep(FAST_PATH_MEMORY_WAIT_MS).then(() => [] as ScoredMemory[]),
+        ])
+      : await memoryPromise;
+  const personLinkedMemories = await personLinkedPromise;
 
   // Provenance links + node metadata for all cited/candidate memories and nodes.
   const memoryIds = new Set<string>(memories.map((m) => m.id));

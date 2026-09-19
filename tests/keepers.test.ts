@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { buildKeeperResult, faceScore, simScore } from "../lib/keepers";
+import { buildKeeperResult, faceScore, simScore, retrieveKeeper } from "../lib/keepers";
 import type { Keeper } from "../lib/types";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 const maya: Keeper = { relativeId: "maya", name: "Maya", color: "#E0A458" };
 
@@ -82,6 +83,81 @@ describe("keepers", () => {
       memoryNodeLinks: { m1: ["book"] },
     });
     expect(result.claim?.subjectNodeId).toBe("book");
+    expect(result.r).toBe(1);
+  });
+});
+
+describe("retrieveKeeper", () => {
+  const fakeSb = (
+    rpcData: Record<string, unknown[]>,
+    fromData: (table: string, cols: string) => unknown[]
+  ): SupabaseClient => {
+    const from = (table: string) => {
+      let cols = "";
+      const c: Record<string, unknown> = {};
+      for (const m of ["eq", "in", "limit", "order"]) c[m] = () => c;
+      c.select = (s: string) => {
+        cols = s;
+        return c;
+      };
+      c.single = () => Promise.resolve({ data: fromData(table, cols)[0] ?? null, error: null });
+      c.then = (res: (v: unknown) => unknown, rej?: (e: unknown) => unknown) =>
+        Promise.resolve({ data: fromData(table, cols), error: null }).then(res, rej);
+      return c;
+    };
+    return {
+      rpc: (name: string) =>
+        Promise.resolve({ data: rpcData[name] ?? [], error: null }),
+      from,
+    } as unknown as SupabaseClient;
+  };
+
+  const fromData = (table: string, cols: string): unknown[] => {
+    if (table === "provenance" && cols === "memory_id")
+      return [{ memory_id: "mem1" }];
+    if (table === "provenance") return [{ memory_id: "mem1", node_id: "nora" }];
+    if (table === "memories") return [{ id: "mem1", summary: "s" }];
+    if (table === "graph_nodes")
+      return [{ id: "nora", label: "Nora", type: "person" }];
+    return [];
+  };
+
+  it("strong face match does not wait on the embedding (fast path)", async () => {
+    const sb = fakeSb(
+      {
+        match_faces: [
+          { person_node_id: "nora", contributor_id: "maya", memory_id: "mem1", distance: 0.2 },
+        ],
+      },
+      fromData
+    );
+    const never = new Promise<number[]>(() => {});
+    const t0 = Date.now();
+    const result = await retrieveKeeper(sb, "fam", maya, {
+      faceDescriptors: [new Array(128).fill(0)],
+      embeddingPromise: never,
+    });
+    const elapsed = Date.now() - t0;
+    expect(result.claim?.subjectNodeId).toBe("nora");
+    expect(result.r).toBe(0);
+    expect(elapsed).toBeLessThan(1500);
+  });
+
+  it("weak face match awaits the memory step and uses similarity", async () => {
+    const sb = fakeSb(
+      {
+        match_faces: [
+          { person_node_id: "nora", contributor_id: "maya", memory_id: "mem1", distance: 0.55 },
+        ],
+        match_memories: [{ id: "m9", summary: "x", similarity: 0.7 }],
+      },
+      fromData
+    );
+    const result = await retrieveKeeper(sb, "fam", maya, {
+      faceDescriptors: [new Array(128).fill(0)],
+      embeddingPromise: Promise.resolve(new Array(1536).fill(0)),
+    });
+    expect(result.v).toBeCloseTo(faceScore(0.55));
     expect(result.r).toBe(1);
   });
 });

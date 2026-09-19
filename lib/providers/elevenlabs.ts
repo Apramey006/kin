@@ -1,6 +1,8 @@
 import { withTimeout } from "../util";
 import { CONFIG } from "../config";
 
+export const TTS_TIMEOUT_MS = CONFIG.timeouts.ttsMs;
+
 /** Text to speech via ElevenLabs. Returns an MP3 buffer. */
 export async function synthesizeSpeech(text: string): Promise<Buffer> {
   const apiKey = process.env.ELEVENLABS_API_KEY;
@@ -24,7 +26,7 @@ export async function synthesizeSpeech(text: string): Promise<Buffer> {
         }),
       }
     ),
-    CONFIG.timeouts.ttsMs,
+    TTS_TIMEOUT_MS,
     "elevenlabs"
   );
   if (!res.ok) {

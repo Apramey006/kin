@@ -6,6 +6,7 @@ import { synthesizeSpeech } from "@/lib/providers/elevenlabs";
 import { runKeepers } from "@/lib/keepers";
 import { evaluateGate, type GateInfo } from "@/lib/gate";
 import { synthesizeCue, pickContextPath } from "@/lib/synthesize";
+import { describeFaces } from "@/lib/faces-server";
 import { zeroVector } from "@/lib/util";
 import { z } from "zod";
 import type {
@@ -36,8 +37,14 @@ async function rewriteCue(summaries: string[], wearerName: string): Promise<stri
   return res.sentence;
 }
 
+const isDescriptor = (d: unknown): d is number[] =>
+  Array.isArray(d) &&
+  d.length === 128 &&
+  d.every((n) => typeof n === "number" && Number.isFinite(n));
+
 export async function POST(req: Request) {
   const t0 = Date.now();
+  let eventId: string | null = null;
   try {
     const sb = getServiceClient();
 
@@ -53,6 +60,7 @@ export async function POST(req: Request) {
         .from("recall_events")
         .select("*")
         .eq("id", replayEventId)
+        .eq("family_id", FAMILY_ID)
         .single();
       if (!prev) return NextResponse.json({ error: "event not found" }, { status: 404 });
       snapshotPath = prev.snapshot_path;
@@ -64,8 +72,27 @@ export async function POST(req: Request) {
     } else {
       const form = await req.formData();
       const file = form.get("snapshot") as File | null;
-      descriptors = JSON.parse((form.get("faceDescriptors") as string) ?? "[]");
+      const parsed: unknown = JSON.parse(
+        (form.get("faceDescriptors") as string) ?? "[]"
+      );
+      if (!Array.isArray(parsed) || !parsed.every(isDescriptor)) {
+        return NextResponse.json(
+          { error: "faceDescriptors must be arrays of 128 numbers" },
+          { status: 400 }
+        );
+      }
+      descriptors = parsed;
       if (file) snapshot = Buffer.from(await file.arrayBuffer());
+      if (snapshot && descriptors.length === 0) {
+        try {
+          const serverDescriptors = await describeFaces(snapshot);
+          if (serverDescriptors.every(isDescriptor)) {
+            descriptors = serverDescriptors;
+          }
+        } catch {
+          // no server adapter yet; proceed with no descriptors
+        }
+      }
     }
 
     // 1. Insert the running event immediately so Stage animates.
@@ -75,7 +102,7 @@ export async function POST(req: Request) {
       .select()
       .single();
     if (evErr) throw evErr;
-    const eventId = event.id;
+    eventId = event.id;
 
     // 2. Upload snapshot + kick off vision/embed. Face matching inside the
     //    keepers starts on descriptors without waiting for the caption.
@@ -228,6 +255,21 @@ export async function POST(req: Request) {
       latencyMs: latency(),
     });
   } catch (e) {
+    if (eventId) {
+      const short = e instanceof Error ? e.message.slice(0, 120) : "unknown";
+      try {
+        await getServiceClient()
+          .from("recall_events")
+          .update({
+            status: "silent",
+            silence_reason: `error: ${short}`,
+            latency_ms: Date.now() - t0,
+          })
+          .eq("id", eventId);
+      } catch {
+        // best-effort terminal state
+      }
+    }
     return jsonError(e, "recall failed");
   }
 }

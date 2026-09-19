@@ -14,6 +14,9 @@ export interface GateInfo {
   memoryOwners: Record<string, string>;
 }
 
+// Threshold 0.80 comes from the build spec's weighted formula and worked
+// example (C = 0.899); the older narrative doc's 0.85 used a different,
+// unweighted formula. C is a heuristic score, not a calibrated probability.
 export function evaluateGate(
   results: KeeperResult[],
   info: GateInfo

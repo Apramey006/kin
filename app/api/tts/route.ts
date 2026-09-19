@@ -7,7 +7,12 @@ export const runtime = "nodejs";
 export async function POST(req: Request) {
   try {
     const { text } = (await req.json()) as { text: string };
-    if (!text) return NextResponse.json({ error: "text required" }, { status: 400 });
+    if (!text || text.length > 300) {
+      return NextResponse.json(
+        { error: "text required (max 300 chars)" },
+        { status: 400 }
+      );
+    }
     const mp3 = await synthesizeSpeech(text);
     return new Response(new Uint8Array(mp3), {
       headers: { "Content-Type": "audio/mpeg" },
