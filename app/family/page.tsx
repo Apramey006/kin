@@ -28,6 +28,17 @@ export default function FamilyPage() {
   const [error, setError] = useState<string | null>(null);
   const [notConfigured, setNotConfigured] = useState(false);
 
+  const loadPersonNodes = useCallback(async () => {
+    const sb = getAnonClient();
+    if (!sb) return;
+    const { data } = await sb
+      .from("graph_nodes")
+      .select("*")
+      .eq("family_id", FAMILY_ID)
+      .eq("type", "person");
+    setPersonNodes((data ?? []) as GraphNodeRow[]);
+  }, []);
+
   useEffect(() => {
     const sb = getAnonClient();
     if (!sb) {
@@ -35,12 +46,11 @@ export default function FamilyPage() {
       return;
     }
     (async () => {
-      const [{ data: rels }, { data: nodes }] = await Promise.all([
-        sb.from("relatives").select("*").eq("family_id", FAMILY_ID),
-        sb.from("graph_nodes").select("*").eq("family_id", FAMILY_ID).eq("type", "person"),
-      ]);
+      const { data: rels } = await sb
+        .from("relatives")
+        .select("*")
+        .eq("family_id", FAMILY_ID);
       setRelatives((rels ?? []) as Relative[]);
-      setPersonNodes((nodes ?? []) as GraphNodeRow[]);
       try {
         const saved = window.localStorage.getItem("kin_relative_id");
         const found = (rels ?? []).find((r: Relative) => r.id === saved);
@@ -49,7 +59,19 @@ export default function FamilyPage() {
         // localStorage unavailable; picker stays up
       }
     })();
-  }, []);
+    loadPersonNodes();
+    const channel = sb
+      .channel("family-graph-nodes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "graph_nodes", filter: `family_id=eq.${FAMILY_ID}` },
+        () => loadPersonNodes()
+      )
+      .subscribe();
+    return () => {
+      sb.removeChannel(channel);
+    };
+  }, [loadPersonNodes]);
 
   const loadMyMemories = useCallback(async (id: string) => {
     const sb = getAnonClient();
@@ -93,6 +115,7 @@ export default function FamilyPage() {
       if (!res.ok) throw new Error(json.error ?? "story failed");
       setStoryResult({ transcript: json.transcript, entities: json.entities });
       loadMyMemories(me.id);
+      loadPersonNodes();
     } catch (e) {
       setError(e instanceof Error ? e.message : "story failed");
     } finally {
@@ -169,7 +192,10 @@ export default function FamilyPage() {
             <PhotoUploader
               contributorId={me.id}
               personNodes={personNodes}
-              onDone={() => loadMyMemories(me.id)}
+              onDone={() => {
+                loadMyMemories(me.id);
+                loadPersonNodes();
+              }}
             />
           </CardContent>
         </Card>

@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { jsonError } from "@/lib/api";
+import { CONFIG } from "@/lib/config";
 import { getServiceClient, FAMILY_ID } from "@/lib/supabase";
 import { captionImage, embedText } from "@/lib/providers/openai";
 import { extractMemory, applyExtraction } from "@/lib/extract";
@@ -25,6 +27,9 @@ export async function POST(req: Request) {
     );
     if (!file || !contributorId) {
       return NextResponse.json({ error: "file and contributor_id required" }, { status: 400 });
+    }
+    if (file.size > CONFIG.maxUploadBytes) {
+      return NextResponse.json({ error: "file too large" }, { status: 413 });
     }
 
     const { data: contributor } = await sb
@@ -109,6 +114,7 @@ export async function POST(req: Request) {
 
     // Extraction adds object/place nodes and edges from the summary.
     let chips: { label: string; type: string; relation_to_wearer: string | null }[] = [];
+    let appliedNodeIds: string[] = [];
     try {
       const extraction = await extractMemory({
         text: summary + (userCaption ? ` ${userCaption}` : ""),
@@ -125,14 +131,16 @@ export async function POST(req: Request) {
         wearerName: wearer?.name ?? "the wearer",
       });
       chips = applied.chips;
+      appliedNodeIds = applied.nodeIds;
     } catch {
       // extraction failure is non-fatal for photo ingestion
     }
 
-    // Labeled people always get provenance on this memory.
-    if (persons.length) {
+    // Labeled people get provenance on this memory, unless extraction already wrote it.
+    const unprovenanced = persons.filter((p) => !appliedNodeIds.includes(p.node_id));
+    if (unprovenanced.length) {
       await sb.from("provenance").insert(
-        persons.map((p) => ({
+        unprovenanced.map((p) => ({
           memory_id: memory.id,
           contributor_id: contributorId,
           node_id: p.node_id,
@@ -149,9 +157,6 @@ export async function POST(req: Request) {
       persons,
     });
   } catch (e) {
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : "photo ingestion failed" },
-      { status: 500 }
-    );
+    return jsonError(e, "photo ingestion failed");
   }
 }

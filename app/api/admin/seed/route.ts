@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { jsonError } from "@/lib/api";
 import { getServiceClient, FAMILY_ID } from "@/lib/supabase";
 import { seedDemo } from "@/lib/seed";
 
@@ -11,9 +12,6 @@ export async function POST() {
     const result = await seedDemo(sb, FAMILY_ID);
     return NextResponse.json({ ok: true, ...result });
   } catch (e) {
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : "seed failed" },
-      { status: 500 }
-    );
+    return jsonError(e, "seed failed");
   }
 }

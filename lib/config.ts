@@ -45,6 +45,8 @@ export const CONFIG = {
   },
 
   wearerCueDisplayMs: 8000,
+
+  maxUploadBytes: 15 * 1024 * 1024,
 } as const;
 
 export const SILENCE_REASONS = {

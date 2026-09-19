@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { jsonError } from "@/lib/api";
 import { getServiceClient, FAMILY_ID } from "@/lib/supabase";
 import { runWeaver } from "@/lib/weaver";
 
@@ -14,9 +15,6 @@ export async function POST() {
     }
     return NextResponse.json({ question, gap });
   } catch (e) {
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : "weaver failed" },
-      { status: 500 }
-    );
+    return jsonError(e, "weaver failed");
   }
 }

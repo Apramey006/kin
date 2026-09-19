@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { jsonError } from "@/lib/api";
 import { synthesizeSpeech } from "@/lib/providers/elevenlabs";
 
 export const runtime = "nodejs";
@@ -12,9 +13,6 @@ export async function POST(req: Request) {
       headers: { "Content-Type": "audio/mpeg" },
     });
   } catch (e) {
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : "tts failed" },
-      { status: 500 }
-    );
+    return jsonError(e, "tts failed");
   }
 }

@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { jsonError } from "@/lib/api";
+import { CONFIG } from "@/lib/config";
 import { getServiceClient, FAMILY_ID } from "@/lib/supabase";
 import { transcribeAudio } from "@/lib/providers/deepgram";
 import { embedText } from "@/lib/providers/openai";
@@ -20,6 +22,9 @@ export async function POST(req: Request) {
         { error: "file, contributor_id and question_id required" },
         { status: 400 }
       );
+    }
+    if (file.size > CONFIG.maxUploadBytes) {
+      return NextResponse.json({ error: "file too large" }, { status: 413 });
     }
 
     const { data: question } = await sb
@@ -107,9 +112,6 @@ export async function POST(req: Request) {
       entities: applied.chips,
     });
   } catch (e) {
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : "answer failed" },
-      { status: 500 }
-    );
+    return jsonError(e, "answer failed");
   }
 }

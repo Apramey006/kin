@@ -8,10 +8,6 @@ export async function resetFamily(sb: SupabaseClient, familyId: string) {
   await sb.from("weaver_questions").delete().eq("family_id", familyId);
   await sb.from("recall_events").delete().eq("family_id", familyId);
   await sb.from("face_embeddings").delete().eq("family_id", familyId);
-  await sb.from("provenance").delete().eq(
-    "memory_id",
-    "00000000-0000-0000-0000-000000000000"
-  ); // noop; provenance cascades from memories/nodes/edges
   await sb.from("memories").delete().eq("family_id", familyId);
   await sb.from("graph_nodes").delete().eq("family_id", familyId);
   await sb.from("relatives").delete().eq("family_id", familyId);

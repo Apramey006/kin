@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { jsonError } from "@/lib/api";
 import { getServiceClient, FAMILY_ID } from "@/lib/supabase";
 
 export const runtime = "nodejs";
@@ -35,9 +36,6 @@ export async function POST(req: Request) {
     if (error) throw error;
     return NextResponse.json({ ok: true });
   } catch (e) {
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : "enroll failed" },
-      { status: 500 }
-    );
+    return jsonError(e, "enroll failed");
   }
 }

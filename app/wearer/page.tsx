@@ -14,6 +14,7 @@ type Phase = "idle" | "thinking" | "cue";
 export default function WearerPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const cueTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
   const [cueText, setCueText] = useState<string | null>(null);
   const [wearerName, setWearerName] = useState<string>("");
@@ -35,6 +36,9 @@ export default function WearerPage() {
         if (videoRef.current) videoRef.current.srcObject = stream;
       })
       .catch(() => setCameraError("Camera is not available on this device."));
+    return () => {
+      if (cueTimerRef.current) clearTimeout(cueTimerRef.current);
+    };
   }, []);
 
   const captureFrame = (): { blob: Promise<Blob>; canvas: HTMLCanvasElement } | null => {
@@ -67,8 +71,13 @@ export default function WearerPage() {
 
   const onTap = async () => {
     if (phase !== "idle") return;
+    if (cueTimerRef.current) {
+      clearTimeout(cueTimerRef.current);
+      cueTimerRef.current = null;
+    }
     // 1. Unlock audio inside the tap handler, before any await.
     const audio = audioRef.current;
+    if (audio) audio.onerror = null;
     audio?.play().catch(() => {});
 
     const frame = captureFrame();
@@ -91,12 +100,19 @@ export default function WearerPage() {
         setCueText(json.cueText);
         setPhase("cue");
         if (json.audio && audio) {
+          let fellBack = false;
+          const fallbackOnce = () => {
+            if (fellBack) return;
+            fellBack = true;
+            speakFallback(json.cueText);
+          };
+          audio.onerror = fallbackOnce;
           audio.src = `data:audio/mp3;base64,${json.audio}`;
-          audio.play().catch(() => speakFallback(json.cueText));
+          audio.play().catch(fallbackOnce);
         } else {
           speakFallback(json.cueText);
         }
-        setTimeout(() => {
+        cueTimerRef.current = setTimeout(() => {
           setPhase("idle");
           setCueText(null);
         }, CONFIG.wearerCueDisplayMs);

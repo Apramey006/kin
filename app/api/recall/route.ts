@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { jsonError } from "@/lib/api";
 import { getServiceClient, FAMILY_ID } from "@/lib/supabase";
 import { captionImage, embedText, chatJSON } from "@/lib/providers/openai";
 import { synthesizeSpeech } from "@/lib/providers/elevenlabs";
@@ -227,10 +228,7 @@ export async function POST(req: Request) {
       latencyMs: latency(),
     });
   } catch (e) {
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : "recall failed" },
-      { status: 500 }
-    );
+    return jsonError(e, "recall failed");
   }
 }
 
@@ -247,9 +245,6 @@ export async function GET() {
     const event = (data?.[0] ?? null) as Pick<RecallEventRow, "id"> | null;
     return NextResponse.json({ lastEventId: event?.id ?? null });
   } catch (e) {
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : "failed" },
-      { status: 500 }
-    );
+    return jsonError(e, "failed");
   }
 }

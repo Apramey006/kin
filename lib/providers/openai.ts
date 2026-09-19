@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { z } from "zod";
 import type { ZodType } from "zod";
 import { withTimeout } from "../util";
 import { CONFIG } from "../config";
@@ -100,21 +101,21 @@ export interface SceneCaption {
   setting: string;
 }
 
+const captionZodSchema = z.object({
+  caption: z.string(),
+  objects: z.array(z.string()),
+  setting: z.string(),
+});
+
 /** Describe a photo. Never identifies people. */
 export async function captionImage(
   image: Buffer,
   mimeType = "image/jpeg"
 ): Promise<SceneCaption> {
-  const { z } = await import("zod");
-  const zodSchema = z.object({
-    caption: z.string(),
-    objects: z.array(z.string()),
-    setting: z.string(),
-  });
   return chatJSON<SceneCaption>({
     name: "scene_caption",
     jsonSchema: captionSchema,
-    zodSchema,
+    zodSchema: captionZodSchema,
     system:
       "You describe photos for a family memory app. Describe only what is visible: clothing, objects, setting, actions. Never identify or name people. Never guess who someone is.",
     user: "Describe this photo in one caption sentence, list visible objects, and name the setting.",
