@@ -191,7 +191,7 @@ export default function StagePage() {
 
       <footer className="flex items-center gap-3 px-6 py-3 border-t border-white/10 text-sm">
         <button onClick={seed} className="rounded-lg bg-white/10 px-4 py-2 hover:bg-white/20">
-          {busy === "seed" ? "Seeding…" : "Seed demo"}
+          {busy === "seed" ? "Seeding…" : "Seed"}
         </button>
         <button onClick={reset} className="rounded-lg bg-white/10 px-4 py-2 hover:bg-white/20">
           {busy === "reset" ? "Resetting…" : "Reset"}

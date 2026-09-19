@@ -13,14 +13,24 @@ graph and asks the relative most likely to know.
 Kin is a family memory and reminiscence-support prototype. It is not a medical
 device and makes no clinical claims.
 
+## How it works
+
+- Each relative has a **Keeper**, an agent grounded only in that person's
+  contributed photos, voice notes, and stories.
+- A deterministic **Gatekeeper** scores Keeper evidence with the formula
+  `C = 0.35V + 0.25R + 0.20A + 0.15S - 0.25X`. It returns SPEAK only when
+  `C >= 0.80` with agreement and provenance; otherwise it returns SILENT.
+- The **Family Weaver** detects gaps in the family graph (a missing origin, an
+  orphan object, an unrelated person) and asks the relative most likely to know.
+
 ## Architecture
 
 ```mermaid
 flowchart LR
     subgraph Family["Family members"]
-        M[Maya] -->|photo + face label| P1[/api/memories/photo/]
-        D[David] -->|voice story| P2[/api/memories/story/]
-        E[Elena] -->|weaver answer| P3[/api/weaver/answer/]
+        A[Relative A] -->|photo + face label| P1[/api/memories/photo/]
+        B[Relative B] -->|voice story| P2[/api/memories/story/]
+        C2[Relative C] -->|weaver answer| P3[/api/weaver/answer/]
     end
 
     P1 --> V[OpenAI vision caption] --> G[(family graph + memories)]
@@ -29,17 +39,17 @@ flowchart LR
     G --- PG[(pgvector embeddings + provenance)]
 
     W[Wearer: Who is this?] --> R[/api/recall/]
-    R --> F[face-api descriptors] --> K1[Keeper Maya]
-    R --> K2[Keeper David]
-    R --> K3[Keeper Elena]
+    R --> F[face-api descriptors] --> K1[Keeper A]
+    R --> K2[Keeper B]
+    R --> K3[Keeper C]
     K1 & K2 & K3 -->|v, r, claim, memoryIds| GT[Gatekeeper: C = .35V + .25R + .20A + .15S - .25X]
     GT -->|C >= 0.80| SY[grounded cue builder] --> EL[ElevenLabs TTS] --> W
     GT -->|else| S[SILENT]
 
     WV[Family Weaver] -->|gap detection| G
-    WV -->|question| E
+    WV -->|question| C2
 
-    G -.realtime.-> ST[/Stage dashboard/]
+    G -.realtime.-> ST[Live dashboard /stage]
     R -.realtime.-> ST
 ```
 
@@ -48,6 +58,14 @@ flowchart LR
 Next.js 14 (App Router, TypeScript), Tailwind, Supabase (Postgres + pgvector +
 Storage + Realtime), face-api in the browser, OpenAI (vision, extraction,
 embeddings, cue synthesis), Deepgram (STT), ElevenLabs (TTS), Vitest, Playwright.
+
+## Surfaces
+
+- `/family`: relatives contribute photos and stories, and answer Weaver
+  questions.
+- `/wearer`: one-button recall for the wearer ("Who is this?").
+- `/stage`: live dashboard showing keeper scores, gate signals, and the family
+  graph in real time.
 
 ## Setup
 
@@ -67,7 +85,8 @@ embeddings, cue synthesis), Deepgram (STT), ElevenLabs (TTS), Vitest, Playwright
    npm run dev
    ```
 
-4. **Seed**: `npm run seed`, or press "Seed demo" on `/stage`.
+4. **Seed**: `npm run seed` loads a small sample family so the app is usable
+   immediately, or press "Seed" on `/stage`.
 
 5. **Verify providers**: `curl localhost:3000/api/health`.
 
@@ -79,8 +98,8 @@ Camera and microphone require a secure context. For local phone testing:
 ngrok http 3000
 ```
 
-and open the ngrok URL on the phone. For the demo, deploy to Vercel
-(`vercel deploy`) and set the same env vars in the project.
+and open the ngrok URL on the phone. To deploy, use Vercel (`vercel deploy`)
+and set the same env vars in the project.
 
 ## Tests
 
@@ -88,27 +107,6 @@ and open the ngrok URL on the phone. For the demo, deploy to Vercel
 npm test           # vitest: gate, keepers, synthesize, weaver
 npm run test:e2e   # playwright smoke test (loads /, /family, /wearer, /stage)
 ```
-
-## Demo script (about 4 minutes)
-
-1. **Three people remember.** Seed the demo. As Maya, upload 2 photos of a
-   teammate playing "Nora" and label the face "Nora". As David, upload 1 photo
-   of Nora and label it. Watch nodes animate onto the Stage graph, colored by
-   contributor.
-2. **Kin remembers without guessing.** On a phone open `/wearer`, point at the
-   Nora teammate (or a printed photo), tap "Who is this?". On Stage: Maya and
-   David's bars go high, Elena shows "no reliable memory", C is about 0.9,
-   SPEAK. The cue plays through earbuds or speaker.
-3. **Silence is a feature.** Point at a teammate who was never enrolled:
-   SILENT, reason shown on Stage. Point at a water bottle: SILENT. Nothing is
-   ever spoken on a guess.
-4. **Kin notices what the family forgot.** Press "Run Weaver" on Stage. The
-   lemon cake node pulses; David's inbox on `/family` shows the question.
-   David records: "It was actually their mother's recipe. She brought it from
-   Italy." The graph grows live: a great-grandmother fact and an origin edge.
-5. **Closed loop.** Press "Replay last recall" on Stage (or tap again). The new
-   cue includes the recipe's origin. Kin knows something it did not know two
-   minutes ago, and every word came from a family member.
 
 ## Responsible design
 

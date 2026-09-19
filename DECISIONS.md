@@ -3,22 +3,23 @@
 Ambiguities resolved while building Kin. Each picks the simplest option that
 satisfies the spec's acceptance criteria.
 
-- **Weaver routing exclusion.** The spec's scoring formula alone would route the
-  lemon-cake question to Maya (her story touches both the gap and its
-  neighbors), but the demo script requires David. Interpretation implemented:
-  relatives whose memories already provide provenance for the gap node itself
-  are excluded from routing — the Weaver asks someone whose contributions sit
-  *next to* the gap but who has not described it. Ties then go to the relative
-  who uploaded a related photo, which selects David over Elena deterministically.
+- **Weaver routing exclusion.** The scoring formula alone tends to route a
+  question to the relative who already described the gap. Relatives whose
+  memories already provide provenance for the gap node are excluded from
+  routing, so the Weaver asks someone whose contributions sit next to the gap
+  but who has not described it. Ties go to the relative who uploaded a related
+  photo. This makes routing on the seeded sample graph deterministic and
+  unit-tested.
 
-- **David's seed memory has `kind='photo'`** (text stand-in, no media file), so
-  the routing tie-break "uploaded a related photo" works on a fresh seed.
+- **One seeded sample memory has `kind='photo'`** (text stand-in, no media
+  file), so the routing tie-break "uploaded a related photo" works with the
+  sample data.
 
 - **`recall_events.face_descriptors` (jsonb) column added** beyond the printed
   schema to support "Replay last recall" as specified in Section 9.5/10.7.
 
 - **RLS enabled with permissive `select using (true)` policies** on all tables.
-  The demo has no auth; anon clients only read (Realtime + initial fetch). All
+  The prototype has no auth; anon clients only read (Realtime + initial fetch). All
   writes go through the service role on the server, which bypasses RLS.
 
 - **Storage bucket `media` is created inside the migration** (`insert into
@@ -45,7 +46,7 @@ satisfies the spec's acceptance criteria.
   wearer can ever see.
 
 - **Cue fallback template** is `You two {node label}.` per spec; labels that
-  read as verb phrases (e.g. "bake lemon cake on Sundays") make it natural.
+  read as verb phrases (e.g. "bake a favorite cake on Sundays") make it natural.
 
 - **`match_memories`/`match_faces` take vector params as JSON strings** from the
   JS client (`JSON.stringify(descriptor)`), which pgvector accepts for
