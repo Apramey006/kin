@@ -178,7 +178,7 @@ pub fn build_keeper_result(keeper: &Keeper, input: &KeeperInput) -> KeeperResult
     // memories linked to the claimed subject. Always this keeper's own, and
     // insertion-ordered to match the JS Set.
     let mut cited: Vec<String> = Vec::new();
-    let mut push = |cited: &mut Vec<String>, id: &str| {
+    let push = |cited: &mut Vec<String>, id: &str| {
         if !cited.iter().any(|c| c == id) {
             cited.push(id.to_string());
         }
