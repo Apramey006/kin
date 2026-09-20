@@ -20,6 +20,12 @@ export default async function Home() {
   const name = await wearerName();
   const cards = [
     {
+      href: "/prepare",
+      title: "Before you see them",
+      desc: "A quiet moment with familiar people and your family’s memories.",
+      icon: Heart,
+    },
+    {
       href: "/family",
       title: "I'm family",
       desc: "Add photos, record stories, answer Kin's questions.",
@@ -28,7 +34,7 @@ export default async function Home() {
     {
       href: "/wearer",
       title: `Kin for ${name}`,
-      desc: "One button. Point, tap, listen.",
+      desc: "A little help in the moment, when you want it.",
       icon: Heart,
     },
     {

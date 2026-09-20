@@ -11,6 +11,8 @@ import { PhotoUploader } from "@/components/PhotoUploader";
 import { WeaverInbox } from "@/components/WeaverInbox";
 import { SelfReviewQueue } from "@/components/SelfReviewQueue";
 import { SelfCaptureToggle } from "@/components/SelfCaptureToggle";
+import Link from "next/link";
+import { FamilyGap } from "@/components/FamilyGap";
 import { CONFIG } from "@/lib/config";
 import type { SceneData } from "@/lib/memory-scene";
 import type { GraphEdgeRow, GraphNodeRow, MemoryRow, ProvenanceRow, Relative, WeaverQuestionRow } from "@/lib/types";
@@ -213,8 +215,10 @@ function FamilyContent() {
         </div>
       </header>
       <div className="mx-auto max-w-2xl space-y-5 px-4 py-6">
+        <Link href="/prepare" className="block rounded-2xl border border-primary/20 bg-primary-soft p-5"><span className="text-sm font-semibold text-primary">Before you see them</span><h2 className="mt-1 text-xl font-semibold">A little context before a visit</h2><p className="mt-2 text-ink/65">Explore someone’s familiar stories, in your family’s own words. →</p></Link>
         <SelfReviewQueue />
         <SelfCaptureToggle />
+        <FamilyGap revision={myMemories.length} />
         <WeaverInbox me={me} relatives={relatives} onAnswered={() => { loadMyMemories(me.id); loadPersonNodes(); loadScene(); }} />
         {sceneData && <MemorySceneEntry data={sceneData} refresh={refresh} />}
 

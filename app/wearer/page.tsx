@@ -4,6 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { getAnonClient } from "@/lib/supabase";
 import { AuthBoundary, useKinAuth, authenticatedFetch, responseJSON, SignOutButton } from "@/lib/client-auth";
 import { CONFIG } from "@/lib/config";
+import Link from "next/link";
+import { MemoryContextCard } from "@/components/MemoryContextCard";
+import type { MemoryContext } from "@/lib/briefing";
 
 // Tiny silent MP3 used to unlock audio playback inside the tap handler (iOS).
 const SILENT_MP3 =
@@ -22,6 +25,8 @@ function WearerContent() {
   const cueTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
   const [cueText, setCueText] = useState<string | null>(null);
+  const [context, setContext] = useState<MemoryContext | null>(null);
+  const [quietMessage, setQuietMessage] = useState<string | null>(null);
   const [wearerName, setWearerName] = useState<string>("");
   const [cameraError, setCameraError] = useState<string | null>(null);
 
@@ -87,6 +92,7 @@ function WearerContent() {
     const signal = controller.current.signal;
     stopAudio();
     setCueText(null);
+    setContext(null); setQuietMessage(null);
     if (cueTimerRef.current) {
       clearTimeout(cueTimerRef.current);
       cueTimerRef.current = null;
@@ -115,6 +121,7 @@ function WearerContent() {
 
       if (json.decision === "speak") {
         setCueText(json.cueText);
+        setContext(json.context ?? null);
         setPhase("cue");
         if (json.audio && audio) {
           let fellBack = false;
@@ -129,7 +136,8 @@ function WearerContent() {
         } else {
           speakFallback(json.cueText);
         }
-        cueTimerRef.current = setTimeout(() => {
+        // Expanded evidence remains available until the user dismisses it.
+        if (!json.context) cueTimerRef.current = setTimeout(() => {
           if (captureId !== requestId.current) return;
           stopAudio();
           setPhase("idle");
@@ -138,18 +146,21 @@ function WearerContent() {
       } else {
         stopAudio();
         setCueText(null);
+        setContext(null);
+        setQuietMessage("There isn’t enough clear evidence for a memory right now.");
         setPhase("idle");
       }
     } catch (failure) {
       if (captureId !== requestId.current) return;
       stopAudio(); setCueText(null);
+      setContext(null);
       setCameraError(failure instanceof Error ? failure.message : "Could not complete recall. Please try again.");
       setPhase("idle");
     }
   };
 
   return (
-    <main className="fixed inset-0 flex flex-col bg-stage text-white text-[22px]">
+    <main className="fixed inset-0 flex flex-col overflow-y-auto bg-stage text-white text-[22px]">
       <header className="flex items-center justify-between px-6 pb-3 pt-[max(1rem,env(safe-area-inset-top))]">
         <span className="text-lg font-semibold tracking-[0.18em] text-white/70">
           KIN
@@ -159,8 +170,9 @@ function WearerContent() {
         )}
         <SignOutButton />
       </header>
+      <nav aria-label="Companion navigation" className="flex flex-wrap gap-5 px-6 pb-3 text-base text-white/80"><Link className="py-2 underline underline-offset-4" href="/prepare">Before you see them</Link><Link className="py-2 underline underline-offset-4" href="/today">Today</Link><Link className="py-2 underline underline-offset-4" href="/graph">Memory Atlas</Link></nav>
 
-      <div className="relative mx-4 flex-1 overflow-hidden rounded-3xl bg-black/40 ring-1 ring-white/10">
+      <div className={`relative mx-4 min-h-40 flex-1 overflow-hidden rounded-3xl bg-black/40 ring-1 ring-white/10 ${context ? "hidden" : ""}`}>
         <video
           ref={videoRef}
           autoPlay
@@ -190,21 +202,20 @@ function WearerContent() {
           </div>
         )}
 
-        <div aria-live="polite" className="sr-only">
-          {phase === "cue" && cueText ? cueText : ""}
-        </div>
-
-        {phase === "cue" && cueText && (
+        {phase === "cue" && cueText && !context && (
           <div className="animate-fade-up absolute inset-x-4 bottom-4 rounded-3xl bg-paper/95 px-7 py-6 text-center text-[28px] font-medium leading-snug text-ink shadow-cue backdrop-blur-sm">
             {cueText}
           </div>
         )}
       </div>
+      <div aria-live="polite" className="sr-only">{phase === "cue" && cueText ? `${context ? `${context.person.name}. ${context.person.relationship ?? ""}. ` : ""}${cueText}` : ""}</div>
+      {phase === "cue" && context && <div className="mx-auto w-full max-w-2xl px-4"><MemoryContextCard context={context} /><button className="mt-3 min-h-11 w-full rounded-xl border border-white/30 p-3 text-base" onClick={()=>{ requestId.current++; stopAudio(); setCueText(null); setContext(null); setPhase("idle"); }}>Done for now</button></div>}
+      {quietMessage && <p role="status" className="px-6 pt-4 text-center text-base text-white/75">{quietMessage}</p>}
 
       <div className="px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4">
         <button
           onClick={onTap}
-          className={`w-full min-h-[220px] rounded-[2rem] bg-primary text-[32px] font-semibold text-white shadow-[0_18px_40px_-18px_rgba(47,93,80,0.9)] ring-1 ring-white/10 transition-transform duration-150 active:scale-[0.985] disabled:active:scale-100 ${
+          className={`w-full min-h-[100px] rounded-[2rem] bg-primary text-[32px] font-semibold text-white shadow-[0_18px_40px_-18px_rgba(47,93,80,0.9)] ring-1 ring-white/10 transition-transform duration-150 active:scale-[0.985] disabled:active:scale-100 ${
             phase === "thinking" ? "kin-pulse" : ""
           } ${phase === "cue" ? "opacity-60" : ""}`}
         >

@@ -230,6 +230,13 @@ function Inspector({ data, selection, onSelect }: { data: MemoryGraphData; selec
 
 function AtlasView({ data, demo, onDemoChange, status, refresh }: { data: MemoryGraphData; demo: boolean; onDemoChange: (value: boolean) => void; status: string; refresh: () => void }) {
   const [selection, setSelection] = useState<Selection>(null);
+  const openedSource = useRef(false);
+  useEffect(() => {
+    if (demo || status !== "ready" || openedSource.current) return;
+    openedSource.current = true;
+    const memoryId = new URLSearchParams(window.location.search).get("memory");
+    if (memoryId && data.memories.some(m => m.id === memoryId)) setSelection({ type: "memory", id: memoryId });
+  }, [data.memories, demo, status]);
   const [search, setSearch] = useState("");
   const [entityType, setEntityType] = useState<NodeType | null>(null);
   const [trails, setTrails] = useState(false);
@@ -298,7 +305,7 @@ function AtlasView({ data, demo, onDemoChange, status, refresh }: { data: Memory
           </section>
           <Inspector data={{ ...data, ...visible }} selection={selection} onSelect={select} />
         </div>
-        <footer className={styles.footer}><Link href="/family"><ArrowLeft size={13} /> Back to your family</Link><span><span />{demo ? "SAMPLE STORY" : status === "ready" ? "UPDATES AS YOUR FAMILY REMEMBERS" : "YOUR STORIES STAY YOURS"}</span><span>Every thread begins with someone who remembers.</span></footer>
+        <footer className={styles.footer}><Link href="/family"><ArrowLeft size={13} /> Back to your family</Link><Link href="/prepare">Before you see them</Link><span><span />{demo ? "SAMPLE STORY" : status === "ready" ? "UPDATES AS YOUR FAMILY REMEMBERS" : "YOUR STORIES STAY YOURS"}</span></footer>
       </main>
     </div>
   );

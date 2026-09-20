@@ -242,8 +242,9 @@ export function PhotoUploader({
               onChange={(e) => setConsent(e.target.checked)}
             />
             I have permission to add this person&apos;s photo to our family
-            memory.
+            memory and use any selected faces for recognition.
           </label>
+          <p className="text-sm leading-relaxed text-ink/65">This records your permission confirmation. Leave a face unselected to share the photo without enrolling that person for recognition.</p>
           <Button onClick={submit} disabled={!consent || busy || detecting || detectionFailed} size="lg">
             {busy ? "Sharing…" : "Share this memory"}
           </Button>

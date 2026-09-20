@@ -12,6 +12,8 @@ export interface KeeperInput {
   memories: (MemoryRow & { similarity: number })[];
 }
 
+export const hasExplicitDispute = (text: string) => /\b(?:never|incorrect|mistaken|did not|didn't|was not|wasn't|not true|not actually)\b/i.test(text);
+
 /** A fact is eligible only when its exact text is a span in the human source.
  * Neither the vision caption nor an extraction summary can establish a fact. */
 export function humanFacts(memory: MemoryRow, subjectId: string): VerifiedFact[] {
@@ -36,8 +38,7 @@ export function buildKeeperResult(keeper: Keeper, input: KeeperInput): KeeperRes
     Number.isFinite(m.similarity) && humanFacts(m, subjectId).length)
     .sort((a, b) => b.similarity - a.similarity).slice(0, CONFIG.retrieval.maxSubjectMemories);
   if (!own.length) return base;
-  const disputed = own.some(m => humanFacts(m, subjectId).some(f =>
-    /\b(?:never|incorrect|mistaken|did not|didn't|was not|wasn't|not true|not actually)\b/i.test(f.text)));
+  const disputed = own.some(m => humanFacts(m, subjectId).some(f => hasExplicitDispute(f.text)));
   return {
     ...base, claim: { subjectNodeId: subjectId, label: input.subjectLabel },
     memoryIds: own.map(m => m.id), v: input.face.v, r: simScore(own[0].similarity),
@@ -63,11 +64,6 @@ export async function retrieveKeeper(sb: SupabaseClient, familyId: string, keepe
   ]);
   if (matched.error || subject.error || !subject.data) throw new Error("Keeper retrieval failed");
   const similarities = new Map<string, number>((matched.data ?? []).map((m: { id: string; similarity: number }) => [m.id, m.similarity]));
-  console.log("KEEPER RETRIEVAL", {
-    keeper: keeper.name,
-    subject: subject.data?.label,
-    matches: matched.data,
-  });
   if (!similarities.size) return buildKeeperResult(keeper, { face: ctx.face, subjectLabel: subject.data.label, memories: [] });
   const memories = await sb.from("memories").select("*").eq("family_id", familyId)
     .eq("contributor_id", keeper.relativeId).in("id", [...similarities.keys()]);
