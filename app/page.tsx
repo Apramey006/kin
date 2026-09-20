@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getServiceClient, FAMILY_ID, supabaseConfigured } from "@/lib/supabase";
-import { Users, Heart, Monitor, ArrowRight } from "lucide-react";
+import { Users, Heart, Monitor, ArrowRight, LogIn } from "lucide-react";
 
 async function wearerName(): Promise<string> {
   if (!supabaseConfigured()) return "your loved one";
@@ -36,6 +36,12 @@ export default async function Home() {
       title: "Stage",
       desc: "Watch the Keepers, the Gate, and the family graph live.",
       icon: Monitor,
+    },
+    {
+      href: "/signin",
+      title: "Sign in",
+      desc: "Access your family account.",
+      icon: LogIn,
     },
   ];
   return (

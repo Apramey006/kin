@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { getAnonClient, FAMILY_ID } from "@/lib/supabase";
+import Link from "next/link";
+import { getAnonClient } from "@/lib/supabase";
 import {
   Card,
   CardContent,
@@ -26,6 +27,7 @@ export default function FamilyPage() {
   const [relatives, setRelatives] = useState<Relative[]>([]);
   const [personNodes, setPersonNodes] = useState<GraphNodeRow[]>([]);
   const [me, setMe] = useState<Relative | null>(null);
+  const [loading, setLoading] = useState(true);
   const [myMemories, setMyMemories] = useState<MemoryRow[]>([]);
   const [storyResult, setStoryResult] = useState<{
     transcript: string;
@@ -33,7 +35,6 @@ export default function FamilyPage() {
   } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notConfigured, setNotConfigured] = useState(false);
 
   const loadPersonNodes = useCallback(async () => {
     const sb = getAnonClient();
@@ -41,40 +42,44 @@ export default function FamilyPage() {
     const { data } = await sb
       .from("graph_nodes")
       .select("*")
-      .eq("family_id", FAMILY_ID)
       .eq("type", "person");
     setPersonNodes((data ?? []) as GraphNodeRow[]);
   }, []);
 
   useEffect(() => {
-    const sb = getAnonClient();
-    if (!sb) {
-      setNotConfigured(true);
-      return;
-    }
     (async () => {
-      const { data: rels } = await sb
-        .from("relatives")
-        .select("*")
-        .eq("family_id", FAMILY_ID);
-      const sorted = ((rels ?? []) as Relative[]).sort((a, b) =>
+      const res = await fetch("/api/family", { cache: "no-store" });
+      if (res.status === 401) {
+        window.location.replace("/signin?next=/family");
+        return;
+      }
+      if (res.status === 409) {
+        window.location.replace("/onboarding");
+        return;
+      }
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error ?? "Could not load your family.");
+      const sorted = ((j.relatives ?? []) as Relative[]).sort((a, b) =>
         a.name.localeCompare(b.name)
       );
       setRelatives(sorted);
-      try {
-        const saved = window.localStorage.getItem("kin_relative_id");
-        const found = (rels ?? []).find((r: Relative) => r.id === saved);
-        if (found) setMe(found);
-      } catch {
-        // localStorage unavailable; picker stays up
-      }
-    })();
-    loadPersonNodes();
+      setPersonNodes((j.personNodes ?? []) as GraphNodeRow[]);
+      setMe(j.me ?? null);
+      setLoading(false);
+    })().catch((e) => {
+      setError(e instanceof Error ? e.message : "Could not load your family.");
+      setLoading(false);
+    });
+  }, []);
+
+  useEffect(() => {
+    const sb = getAnonClient();
+    if (!sb) return;
     const channel = sb
       .channel("family-graph-nodes")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "graph_nodes", filter: `family_id=eq.${FAMILY_ID}` },
+        { event: "*", schema: "public", table: "graph_nodes" },
         () => loadPersonNodes()
       )
       .subscribe();
@@ -89,7 +94,6 @@ export default function FamilyPage() {
     const { data } = await sb
       .from("memories")
       .select("id, kind, summary, caption, transcript, created_at")
-      .eq("family_id", FAMILY_ID)
       .eq("contributor_id", id)
       .order("created_at", { ascending: false });
     setMyMemories((data ?? []) as MemoryRow[]);
@@ -98,15 +102,6 @@ export default function FamilyPage() {
   useEffect(() => {
     if (me) loadMyMemories(me.id);
   }, [me, loadMyMemories]);
-
-  const pickMe = (r: Relative) => {
-    setMe(r);
-    try {
-      window.localStorage.setItem("kin_relative_id", r.id);
-    } catch {
-      // ignore
-    }
-  };
 
   const submitStory = async (blob: Blob, mime: string) => {
     if (!me) return;
@@ -133,69 +128,27 @@ export default function FamilyPage() {
     }
   };
 
-  if (notConfigured) {
+  if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-paper p-6">
-        <Card className="max-w-md">
-          <CardHeader>
-            <CardTitle>Kin needs its keys</CardTitle>
-            <CardDescription>One step before the family can start.</CardDescription>
-          </CardHeader>
-          <CardContent className="text-ink/70">
-            Supabase is not configured. Copy{" "}
-            <code className="rounded bg-ink/[0.06] px-1.5 py-0.5 font-mono text-sm">
-              .env.example
-            </code>{" "}
-            to{" "}
-            <code className="rounded bg-ink/[0.06] px-1.5 py-0.5 font-mono text-sm">
-              .env.local
-            </code>{" "}
-            and fill in the keys, then run the seed.
-          </CardContent>
-        </Card>
+        <p className="text-ink/60" role="status">
+          Loading your family…
+        </p>
       </main>
     );
   }
 
   if (!me) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-paper p-6">
-        <div className="w-full max-w-md">
-          <p className="mb-2 text-center text-xs font-semibold uppercase tracking-[0.28em] text-primary">
-            Kin
-          </p>
-          <h1 className="mb-8 text-center text-3xl font-semibold tracking-[-0.02em]">
-            Who are you?
-          </h1>
-          <div className="grid gap-3">
-            {relatives.map((r) => (
-              <button
-                key={r.id}
-                onClick={() => pickMe(r)}
-                className="group flex items-center gap-4 rounded-2xl border border-ink/[0.08] bg-paper-card px-5 py-4 text-left shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lift"
-              >
-                <span
-                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-lg font-semibold text-white"
-                  style={{ background: r.color }}
-                  aria-hidden
-                >
-                  {r.name.trim().charAt(0).toUpperCase()}
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-xl font-medium">{r.name}</span>
-                  <span className="block text-base text-ink/55">
-                    {r.relation_to_wearer}
-                  </span>
-                </span>
-              </button>
-            ))}
-            {!relatives.length && (
-              <p className="rounded-2xl border border-dashed border-ink/15 px-5 py-6 text-center text-ink/55">
-                No relatives yet. Run the seed (Stage → Seed) first.
-              </p>
-            )}
-          </div>
-        </div>
+      <main className="flex min-h-screen items-center justify-center bg-paper p-6">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle>Finish setting up your family</CardTitle>
+          </CardHeader>
+          <CardContent className="text-ink/70">
+            {error ?? "Your account is not linked to a family member yet."}
+          </CardContent>
+        </Card>
       </main>
     );
   }
@@ -217,9 +170,21 @@ export default function FamilyPage() {
             </h1>
             <p className="truncate text-sm text-ink/50">{me.relation_to_wearer}</p>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => setMe(null)}>
-            Not {me.name}?
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/settings">Settings</Link>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={async () => {
+                await getAnonClient()?.auth.signOut();
+                window.location.assign("/signin");
+              }}
+            >
+              Sign out
+            </Button>
+          </div>
         </div>
       </header>
 

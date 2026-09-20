@@ -8,6 +8,11 @@ vi.mock("@/lib/supabase", () => ({ getServiceClient: mocks.getServiceClient }));
 vi.mock("@/lib/providers/deepgram", () => ({ transcribeAudio: mocks.transcribeAudio }));
 vi.mock("@/lib/providers/openai", () => ({ embedText: mocks.embedText, captionImage: mocks.captionImage }));
 vi.mock("@/lib/extract", () => ({ extractMemory: mocks.extractMemory }));
+vi.mock("@/lib/auth/server", () => ({
+  getAuthClient: vi.fn(async () => ({
+    auth: { getUser: async () => ({ data: { user: null }, error: { message: "no session" } }) },
+  })),
+}));
 
 import { POST as photo } from "../app/api/memories/photo/route";
 import { POST as story } from "../app/api/memories/story/route";
