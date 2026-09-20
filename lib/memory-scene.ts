@@ -1,6 +1,25 @@
-import type { FamilyData } from "./family-data";
+import type {
+  GraphEdgeRow,
+  GraphNodeRow,
+  MemoryRow,
+  ProvenanceRow,
+  Relative,
+  WeaverQuestionRow,
+} from "./types";
 
-type Memory = FamilyData["memories"][number];
+export type SceneMemory = MemoryRow & { mediaUrl: string | null };
+export interface SceneData {
+  relatives: Relative[];
+  memories: SceneMemory[];
+  nodes: GraphNodeRow[];
+  edges: GraphEdgeRow[];
+  provenance: ProvenanceRow[];
+  questions: WeaverQuestionRow[];
+  relativeId: string | null;
+  role?: string;
+}
+
+type Memory = SceneMemory;
 export interface Perspective {
   memory: Memory;
   name: string;
@@ -9,7 +28,7 @@ export interface Perspective {
 }
 
 /** Build a scene from source links, never from similarity or invented narration. */
-export function memoryScene(data: FamilyData, anchorId?: string) {
+export function memoryScene(data: SceneData, anchorId?: string) {
   const edges = new Map(data.edges.map((edge) => [edge.id, edge]));
   const links = new Map<string, Set<string>>();
   for (const source of data.provenance) {

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { DEMO_CONTRIBUTOR_IDS } from "../lib/demo";
 import { memoryScene } from "../lib/memory-scene";
 import { addSceneAnswer, sceneFixture } from "./fixtures/memory-scene";
 
@@ -8,7 +9,7 @@ describe("the unfolding story", () => {
     data.memories.unshift({
       ...data.memories[2],
       id: "new-photo",
-      contributor_id: "elena",
+      contributor_id: DEMO_CONTRIBUTOR_IDS.elena,
     });
     data.provenance.push({
       ...data.provenance[0],

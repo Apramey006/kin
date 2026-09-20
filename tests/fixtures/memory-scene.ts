@@ -1,24 +1,25 @@
-import type { FamilyData } from "../../lib/family-data";
+import { DEMO_CONTRIBUTOR_IDS, DEMO_FAMILY_ID } from "../../lib/demo";
+import type { SceneData } from "../../lib/memory-scene";
 
-export function sceneFixture(): FamilyData {
-  const familyId = "scene-fixture";
+export function sceneFixture(): SceneData {
+  const familyId = DEMO_FAMILY_ID;
   const relatives = [
     {
-      id: "maya",
+      id: DEMO_CONTRIBUTOR_IDS.maya,
       name: "Maya",
       relation_to_wearer: "granddaughter",
       color: "#dac2a4",
       family_id: familyId,
     },
     {
-      id: "elena",
+      id: DEMO_CONTRIBUTOR_IDS.elena,
       name: "Elena",
       relation_to_wearer: "daughter",
       color: "#c8d0b9",
       family_id: familyId,
     },
     {
-      id: "david",
+      id: DEMO_CONTRIBUTOR_IDS.david,
       name: "David",
       relation_to_wearer: "son",
       color: "#c6ae79",
@@ -30,8 +31,8 @@ export function sceneFixture(): FamilyData {
     encodeURIComponent(
       '<svg xmlns="http://www.w3.org/2000/svg" width="760" height="560"><rect width="760" height="560" fill="#d4c4a4"/><rect x="160" y="85" width="420" height="380" rx="12" fill="#f1e7cf"/><path d="M370 90V465" stroke="#b4a584"/><text x="190" y="180" font-size="26" fill="#736446">Lemon cake</text><path d="M195 215H335M195 250H335M195 285H320M410 190H535M410 225H530" stroke="#b6a789" stroke-width="7"/><circle cx="480" cy="350" r="52" fill="#dbc44e"/></svg>',
     );
-  const memories: FamilyData["memories"] = relatives.map((r, i) => ({
-    id: `memory-${r.id}`,
+  const memories: SceneData["memories"] = relatives.map((r, i) => ({
+    id: `memory-${r.name.toLowerCase()}`,
     family_id: familyId,
     contributor_id: r.id,
     kind: i === 2 ? "photo" : "story",
@@ -52,12 +53,8 @@ export function sceneFixture(): FamilyData {
     created_at: `2026-09-${10 + i}T12:00:00Z`,
   }));
   return {
-    familyId,
-    relativeId: "maya",
+    relativeId: DEMO_CONTRIBUTOR_IDS.maya,
     role: "contributor",
-    isOwner: true,
-    email: "maya@example.invalid",
-    wearer: { family_id: familyId, name: "Rosa" },
     relatives,
     memories,
     nodes: [
@@ -78,13 +75,11 @@ export function sceneFixture(): FamilyData {
       edge_id: null,
       contributor_id: m.contributor_id,
     })),
-    events: [],
-    faces: [],
     questions: [
       {
         id: "question",
         family_id: familyId,
-        target_relative_id: "david",
+        target_relative_id: DEMO_CONTRIBUTOR_IDS.david,
         gap_node_id: "cake",
         gap_type: "missing_origin",
         question_text: "David, do you remember where their recipe came from?",
@@ -97,13 +92,14 @@ export function sceneFixture(): FamilyData {
   };
 }
 
-export function addSceneAnswer(data: FamilyData, connected = true) {
+export function addSceneAnswer(data: SceneData, connected = true) {
+  const familyId = data.relatives[0]?.family_id ?? DEMO_FAMILY_ID;
   data.questions[0].status = "answered";
   data.questions[0].answer_memory_id = "answer";
   data.memories.unshift({
     id: "answer",
-    family_id: data.familyId,
-    contributor_id: "david",
+    family_id: familyId,
+    contributor_id: DEMO_CONTRIBUTOR_IDS.david,
     kind: "answer",
     media_path: null,
     mediaUrl: null,
@@ -118,7 +114,7 @@ export function addSceneAnswer(data: FamilyData, connected = true) {
   if (connected) {
     data.nodes.push({
       id: "brighton",
-      family_id: data.familyId,
+      family_id: familyId,
       type: "place",
       label: "Nana’s kitchen in Brighton",
       aliases: [],
@@ -126,7 +122,7 @@ export function addSceneAnswer(data: FamilyData, connected = true) {
     });
     data.edges.push({
       id: "origin",
-      family_id: data.familyId,
+      family_id: familyId,
       from_node: "cake",
       to_node: "brighton",
       rel: "origin",
@@ -136,7 +132,7 @@ export function addSceneAnswer(data: FamilyData, connected = true) {
       memory_id: "answer",
       node_id: null,
       edge_id: "origin",
-      contributor_id: "david",
+      contributor_id: DEMO_CONTRIBUTOR_IDS.david,
     });
   }
 }

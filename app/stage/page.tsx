@@ -6,11 +6,14 @@ import { getAnonClient } from "@/lib/supabase";
 import { AuthBoundary, useKinAuth, authenticatedFetch, SignOutButton } from "@/lib/client-auth";
 import { KeeperBar } from "@/components/KeeperBar";
 import { GateMeter } from "@/components/GateMeter";
+import { MemorySceneEntry } from "@/components/MemoryScene";
 import { FamilyGraph } from "@/components/FamilyGraph";
 import { CONFIG } from "@/lib/config";
+import type { SceneData, SceneMemory } from "@/lib/memory-scene";
 import type {
   GraphEdgeRow,
   GraphNodeRow,
+  MemoryRow,
   ProvenanceRow,
   RecallEventRow,
   Relative,
@@ -32,7 +35,7 @@ async function requireOk(response: Response): Promise<Response> {
 export default function StagePage() { return <AuthBoundary contributorOnly><StageContent /></AuthBoundary>; }
 
 function StageContent() {
-  const { familyId, admin } = useKinAuth();
+  const { familyId, contributorId, admin, role } = useKinAuth();
   const [question, setQuestion] = useState<WeaverQuestionRow | null>(null);
   const [relatives, setRelatives] = useState<Relative[]>([]);
   const [event, setEvent] = useState<RecallEventRow | null>(null);
@@ -40,6 +43,8 @@ function StageContent() {
   const [edges, setEdges] = useState<GraphEdgeRow[]>([]);
   const [provenance, setProvenance] = useState<ProvenanceRow[]>([]);
   const [gapNodeId, setGapNodeId] = useState<string | null>(null);
+  const [sceneMemories, setSceneMemories] = useState<SceneMemory[]>([]);
+  const [sceneQuestions, setSceneQuestions] = useState<WeaverQuestionRow[]>([]);
   const [wearerNodeId, setWearerNodeId] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [offline, setOffline] = useState(false);
@@ -92,6 +97,27 @@ function StageContent() {
     setGapNodeId(latest?.status === "open" ? latest.gap_node_id : null);
   }, [familyId]);
 
+  const loadSceneSources = useCallback(async () => {
+    const sb = getAnonClient();
+    if (!sb) return;
+    const [mems, qs] = await Promise.all([
+      sb.from("memories").select("*").eq("family_id", familyId),
+      sb.from("weaver_questions").select("*").eq("family_id", familyId),
+    ]);
+    if (mems.error || qs.error) return;
+    const memories = (mems.data ?? []) as MemoryRow[];
+    const paths = memories.map((m) => m.media_path).filter((p): p is string => !!p);
+    const urls = new Map<string, string>();
+    if (paths.length) {
+      const { data: signed } = await sb.storage.from(CONFIG.storageBucket).createSignedUrls(paths, 3600);
+      signed?.forEach((entry, i) => {
+        if (entry?.signedUrl) urls.set(paths[i], entry.signedUrl);
+      });
+    }
+    setSceneMemories(memories.map((m) => ({ ...m, mediaUrl: m.media_path ? (urls.get(m.media_path) ?? null) : null })));
+    setSceneQuestions((qs.data ?? []) as WeaverQuestionRow[]);
+  }, [familyId]);
+
   const loadRelatives = useCallback(async () => {
     const sb = getAnonClient(); if (!sb) return;
     const { data, error } = await sb.from("relatives").select("*").eq("family_id", familyId);
@@ -109,6 +135,7 @@ function StageContent() {
     loadGraph();
     loadLatestEvent();
     loadGaps();
+    loadSceneSources();
 
     const channel = sb
       .channel("stage")
@@ -117,12 +144,26 @@ function StageContent() {
       .on("postgres_changes", { event: "*", schema: "public", table: "graph_edges", filter: `family_id=eq.${familyId}` }, loadGraph)
       .on("postgres_changes", { event: "*", schema: "public", table: "weaver_questions", filter: `family_id=eq.${familyId}` }, loadGaps)
       .subscribe();
-    const refresh = setInterval(() => { loadGraph(); loadGaps(); loadLatestEvent(); }, 3000);
+    const refresh = setInterval(() => { loadGraph(); loadGaps(); loadLatestEvent(); loadSceneSources(); }, 3000);
     return () => {
       clearInterval(refresh);
       sb.removeChannel(channel);
     };
-  }, [loadGraph, loadLatestEvent, loadGaps, loadRelatives, familyId]);
+  }, [loadGraph, loadLatestEvent, loadGaps, loadRelatives, loadSceneSources, familyId]);
+
+  const sceneData: SceneData = {
+    relatives,
+    memories: sceneMemories,
+    nodes,
+    edges,
+    provenance,
+    questions: sceneQuestions,
+    relativeId: contributorId,
+    role,
+  };
+  const refreshScene = useCallback(async () => {
+    await Promise.all([loadGraph(), loadGaps(), loadRelatives(), loadSceneSources()]);
+  }, [loadGraph, loadGaps, loadRelatives, loadSceneSources]);
 
   const call = async (label: string, fn: () => Promise<Response>) => {
     if (actionPending.current) return;
@@ -198,6 +239,10 @@ function StageContent() {
           Supabase is not configured. Fill .env.local and restart.
         </div>
       ) : (
+        <div className="flex min-h-0 flex-1 flex-col">
+        <div className="px-4 pt-4">
+          <MemorySceneEntry data={sceneData} refresh={refreshScene} />
+        </div>
         <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-y-auto p-4 lg:grid-cols-3 lg:overflow-visible">
           <section className="stage-panel flex min-h-[320px] flex-col overflow-hidden">
             <div className="px-5 pb-3 pt-4">
@@ -260,6 +305,7 @@ function StageContent() {
               />
             </div>
           </section>
+        </div>
         </div>
       )}
 
