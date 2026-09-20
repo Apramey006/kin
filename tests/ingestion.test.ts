@@ -5,7 +5,7 @@ const mocks = vi.hoisted(() => ({
   getServiceClient: vi.fn(), transcribeAudio: vi.fn(), embedText: vi.fn(), captionImage: vi.fn(), extractMemory: vi.fn(),
 }));
 vi.mock("@/lib/supabase", () => ({ getServiceClient: mocks.getServiceClient }));
-vi.mock("@/lib/providers/deepgram", () => ({ transcribeAudio: mocks.transcribeAudio }));
+vi.mock("@/lib/providers/deepgram", () => ({ transcribeTimedAudio: async (...args: unknown[]) => ({ transcript: await mocks.transcribeAudio(...args), segments: [{ start: 0, end: 2, text: "It was her mother." }] }) }));
 vi.mock("@/lib/providers/openai", () => ({ embedText: mocks.embedText, captionImage: mocks.captionImage }));
 vi.mock("@/lib/extract", () => ({ extractMemory: mocks.extractMemory }));
 
@@ -268,5 +268,28 @@ describe("mobile face routes", () => {
     expect(rows.face_embeddings).toHaveLength(1);
     expect((await send({ ...body, temporaryFaceId: "forged" })).status).toBe(422);
     expect((await send({ ...body, person_node_id: otherId })).status).toBe(403);
+  });
+});
+
+ describe("Living Stories atomic contributions", () => {
+  it("stores timing and topic provenance in the same atomic payload", async () => {
+    mocks.extractMemory.mockResolvedValueOnce({ summary: "A recollection", nodes: [], edges: [] });
+    expect((await story(request("story", { topic_id: personId }))).status).toBe(200);
+    const payload = rpc.mock.calls[0][1].payload;
+    expect(payload.provenance).toEqual([expect.objectContaining({ node_id: personId, edge_id: null })]);
+    expect(payload.edges).toEqual([]);
+    expect(payload.memory).toMatchObject({ source: { topic_id: personId, audio_segments: [{ start: 0, end: 2, text: "It was her mother." }] } });
+    expect(mocks.extractMemory).toHaveBeenCalledWith(expect.objectContaining({ questionContext: "What would you like to share about Nora?" }));
+  });
+  it("rejects foreign and malformed topics before providers or storage", async () => {
+    expect((await story(request("story", { topic_id: otherId }))).status).toBe(404);
+    expect((await story(request("story", { topic_id: "bad" }))).status).toBe(400);
+    expect(storageUpload).not.toHaveBeenCalled();
+    expect(mocks.transcribeAudio).not.toHaveBeenCalled();
+  });
+  it("does not reuse an idempotency key for a different topic", async () => {
+    const headers = { "idempotency-key": "same-key" };
+    expect((await story(request("story", { topic_id: personId }, wav, "audio/wav", headers))).status).toBe(200);
+    expect((await story(request("story", {}, wav, "audio/wav", headers))).status).toBe(409);
   });
 });

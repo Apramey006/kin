@@ -259,6 +259,7 @@ export default function Wearer() {
             )}
           </>
         )}
+        <Link href="/stories" className="text-link">Listen to family stories</Link>
         {data?.role === "loved_one" && <Link href="/remember" className="text-link">Record a memory for your family</Link>}
         {error && (
           <div className="stack" style={{ width: "100%", marginTop: 20 }}>

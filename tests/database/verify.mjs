@@ -38,9 +38,22 @@ try {
     create publication supabase_realtime;
   `);
   await test('all numbered migrations apply with real pgvector', async () => {
-    for (const name of ['001_init.sql', '002_atomic_ingestion.sql', '003_family_boundary_and_weaver.sql', '004_wearer_membership.sql', '005_consolidate_hackmit_demo.sql', '006_explicit_api_grants.sql', '007_self_contribution.sql', '008_family_accounts.sql', '009_loved_one_invites.sql']) {
+    for (const name of ['001_init.sql', '002_atomic_ingestion.sql', '003_family_boundary_and_weaver.sql', '004_wearer_membership.sql', '005_consolidate_hackmit_demo.sql', '006_explicit_api_grants.sql', '007_self_contribution.sql', '008_living_stories.sql', '009_family_accounts.sql', '010_loved_one_invites.sql']) {
       await db.exec(await readFile(new URL(`../../supabase/migrations/${name}`, import.meta.url), 'utf8'));
     }
+  });
+  await test('timing trigger preserves atomic row inserts and legacy recordings', async () => {
+    await db.exec('begin');
+    try {
+      const id = uuid(990001);
+      const contributor = { id: uuid(990000), family_id: 'timing-test' };
+      await db.query("insert into public.relatives(id, family_id, name, relation_to_wearer, color) values ($1, $2, 'Maya', 'granddaughter', '#355746')", [contributor.id, contributor.family_id]);
+      const segments = [{ start: 0, end: 1, text: 'Hello.' }];
+      await db.query("insert into public.memories(id, family_id, contributor_id, kind, summary, source, audio_segments, embedding) values ($1, $2, $3, 'story', 'Hello.', $4, null, $5::vector)", [id, contributor.family_id, contributor.id, JSON.stringify({ type: 'human', audio_segments: segments }), JSON.stringify(embedding)]);
+      assert.deepEqual(await scalar('select audio_segments as value from public.memories where id=$1', [id]), segments);
+      await db.query("insert into public.memories(id, family_id, contributor_id, kind, summary, source, audio_segments, embedding) values ($1, $2, $3, 'story', 'Legacy.', $4, null, $5::vector)", [uuid(990002), contributor.family_id, contributor.id, JSON.stringify({ type: 'human' }), JSON.stringify(embedding)]);
+      assert.deepEqual(await scalar('select audio_segments as value from public.memories where id=$1', [uuid(990002)]), []);
+    } finally { await db.exec('rollback'); }
   });
   await test('consolidation preserves both datasets, deduplicates graph IDs and is repeatable', async () => {
     const baseline = JSON.parse(await readFile(new URL('../../demo/shared-baseline.json', import.meta.url), 'utf8'));
@@ -317,12 +330,12 @@ try {
   await test('account migrations preserve existing records when reapplied', async()=>{
     const memories=await scalar('select count(*)::int as value from memories');
     const members=await db.query('select * from family_members order by user_id');
-    for(const name of ['008_family_accounts.sql','009_loved_one_invites.sql'])
+    for(const name of ['009_family_accounts.sql','010_loved_one_invites.sql'])
       await db.exec(await readFile(new URL(`../../supabase/migrations/${name}`,import.meta.url),'utf8'));
     assert.equal(await scalar('select count(*)::int as value from memories'),memories);
     const after=(await db.query('select * from family_members order by user_id')).rows;
     for(const member of members.rows) assert.deepEqual(after.find(m=>m.user_id===member.user_id),member);
-    await db.exec(await readFile(new URL('../../supabase/migrations/009_loved_one_invites.sql',import.meta.url),'utf8'));
+    await db.exec(await readFile(new URL('../../supabase/migrations/010_loved_one_invites.sql',import.meta.url),'utf8'));
     assert.deepEqual((await db.query('select * from family_members order by user_id')).rows,after);
   });
   console.log(`${count} database integration checks passed (local PostgreSQL WASM + real pgvector; not hosted Supabase).`);

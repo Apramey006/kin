@@ -1,7 +1,8 @@
+import type { AudioSegment } from "@/lib/living-stories";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getServiceClient } from "@/lib/supabase";
-import { transcribeAudio } from "@/lib/providers/deepgram";
+import { transcribeTimedAudio } from "@/lib/providers/deepgram";
 import { captionImage, embedText } from "@/lib/providers/openai";
 import { extractMemory, type Extraction } from "@/lib/extract";
 import type { GraphEdgeRow, GraphNodeRow, MemoryKind } from "@/lib/types";
@@ -28,12 +29,13 @@ export async function ingestMemory(req: Request, kind: MemoryKind) {
     assertOwnership(identity, form.get("contributor_id"), form.get("family_id"));
     const media = await upload(form, kind === "photo" ? "image" : "audio");
     const questionId = kind === "answer" ? idSchema.parse(form.get("question_id")) : null;
+    const topicId = kind === "story" && form.has("topic_id") ? idSchema.parse(form.get("topic_id")) : null;
     const caption = z.string().trim().max(4000).parse(form.get("caption") ?? "");
     const labels = kind === "photo" ? labelsSchema.parse(JSON.parse(z.string().parse(form.get("labels") ?? "[]"))) : [];
     const consent = form.get("consent") === "true";
     if (labels.length && !consent) throw new IngestionError(400, "Explicit consent is required to label people");
     const key = z.string().min(1).max(200).optional().parse(req.headers.get("idempotency-key") ?? undefined);
-    const requestHash = digest(JSON.stringify({ kind, media: digest(media.bytes), mime: media.mime, caption, labels, consent, questionId }));
+    const requestHash = digest(JSON.stringify({ kind, media: digest(media.bytes), mime: media.mime, caption, labels, consent, questionId, ...(topicId ? { topicId } : {}) }));
     const memoryId = stableId(identity.familyId, kind === "answer" ? "answer" : identity.contributorId, kind, questionId ?? key ?? requestHash);
     const prior = await existingReceipt(sb, identity, memoryId, requestHash);
     if (prior) return NextResponse.json(prior);
@@ -54,6 +56,12 @@ export async function ingestMemory(req: Request, kind: MemoryKind) {
       questionContext = question.question_text;
       answerQuestion = question;
     }
+    if (topicId) {
+      const topic = await sb.from("graph_nodes").select("*").eq("id", topicId).eq("family_id", identity.familyId).maybeSingle();
+      if (topic.error) throw topic.error;
+      if (!topic.data) throw new IngestionError(404, "Story topic not found");
+      questionContext = `What would you like to share about ${topic.data.label}?`;
+    }
     const [wearerResult, nodesResult, edgesResult] = await Promise.all([
       sb.from("wearer").select("name").eq("family_id", identity.familyId).maybeSingle(),
       sb.from("graph_nodes").select("*").eq("family_id", identity.familyId),
@@ -69,6 +77,7 @@ export async function ingestMemory(req: Request, kind: MemoryKind) {
       }
     }
 
+    let segments: AudioSegment[] = [];
     let transcript: string | null = null;
     let visionCaption: string | null = null;
     const labelNodes = labels.map((label, index) => {
@@ -80,7 +89,7 @@ export async function ingestMemory(req: Request, kind: MemoryKind) {
     if (kind === "photo") {
       visionCaption = (await captionImage(media.bytes, media.mime)).caption;
     } else {
-      transcript = await transcribeAudio(media.bytes, media.mime);
+      ({ transcript, segments } = await transcribeTimedAudio(media.bytes, media.mime));
       if (!transcript.trim()) throw new IngestionError(422, "No speech detected");
     }
     const source = kind === "photo"
@@ -95,6 +104,10 @@ export async function ingestMemory(req: Request, kind: MemoryKind) {
     const answerSubjects = kind === "answer" ? anchorOriginAnswer(extraction, transcript!, answerQuestion,
       nodes, (edgesResult.data ?? []) as GraphEdgeRow[]) : [];
     const graph = prepareGraph(identity, memoryId, extraction, nodes, (edgesResult.data ?? []) as GraphEdgeRow[]);
+    // Explicit topic membership is provenance, never an invented relationship.
+    if (topicId && !graph.provenance.some(p => p.node_id === topicId)) {
+      graph.provenance.push({ id: stableId(memoryId, "node", topicId), memory_id: memoryId, contributor_id: identity.contributorId, node_id: topicId, edge_id: null });
+    }
     const humanText = kind === "photo" ? caption : transcript!;
     const verifiedFacts = literalFacts(humanText, [...nodes, ...graph.nodes].filter((n) =>
       [...graph.refs.values()].includes(n.id)), memoryId, identity.contributorId);
@@ -103,6 +116,7 @@ export async function ingestMemory(req: Request, kind: MemoryKind) {
         text: transcript!, sourceSpan: { start: 0, end: transcript!.length }, memoryId, contributorId: identity.contributorId });
     }
     const humanSource = { type: "human", user_id: identity.userId, caption, labels, consent,
+      audio_segments: segments, topic_id: topicId,
       question_context: questionContext ?? null, gap_node_id: answerQuestion.gap_node_id ?? null };
     const embeddingResult = z.array(z.number().finite()).length(1536).safeParse(await embedText(extraction.summary));
     if (!embeddingResult.success) throw new IngestionError(502, "Invalid embedding");

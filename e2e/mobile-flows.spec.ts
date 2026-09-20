@@ -29,7 +29,7 @@ test("photo preserves original bytes, requires explicit labels, and retries fail
     expect(route.request().headers().authorization).toMatch(/^Bearer /);
     detectedBytes = route.request().postDataBuffer();
     expect(detectedBytes?.includes(png)).toBe(true);
-    return route.fulfill(json({ faces: [{ temporaryFaceId: "sealed-test-selection", box: { x: 0, y: 0, width: 1, height: 1 } }] }));
+    return route.fulfill(json({ faces: [{ temporaryFaceId: "skip-this-selection", box: { x: 0, y: 0, width: .5, height: 1 } }, { temporaryFaceId: "sealed-test-selection", box: { x: 0, y: 0, width: 1, height: 1 } }] }));
   });
   await page.route("**/api/memories/photo", (route) => {
     expect(route.request().headers().authorization).toMatch(/^Bearer /);
@@ -49,8 +49,9 @@ test("photo preserves original bytes, requires explicit labels, and retries fail
   await page.getByRole("button",{name:"Add a memory",exact:true}).click();
   await page.getByRole("button",{name:/A photo/}).click();
   await page.getByLabel("Choose a photo").setInputFiles({ name: "test.png", mimeType: "image/png", buffer: png });
-  await expect(page.getByRole("combobox",{name:"Who is this?"})).toHaveValue("");
-  await page.getByRole("combobox",{name:"Who is this?"}).selectOption(nora.id);
+  await expect(page.getByRole("combobox",{name:"Who is this?"}).first()).toHaveValue("");
+  await page.getByRole("combobox",{name:"Who is this?"}).first().selectOption("skip");
+  await page.getByRole("combobox",{name:"Who is this?"}).nth(1).selectOption(nora.id);
   await page.getByRole("checkbox").check();
   await page.getByRole("button", { name: "Save photo" }).click();
   await expect(page.locator('p[role="alert"]')).toContainText("recognition setup did not finish");

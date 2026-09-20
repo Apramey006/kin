@@ -84,7 +84,7 @@ export async function POST(request: Request) {
         ["PGRST204", "42703"].includes(result.error.code)
       )
         throw new AccessError(
-          "Loved-one invitations need database update 009. Ask your family organizer to finish setup.",
+          "Loved-one invitations need database update 010. Ask your family organizer to finish setup.",
           503,
         );
       throw result.error;

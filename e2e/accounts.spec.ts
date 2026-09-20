@@ -141,7 +141,7 @@ test("a loved-one invitation joins without a relationship and opens recognition 
   const migration = await admin.from("family_members").select("role").limit(1);
   test.skip(
     !!migration.error,
-    "Apply migration 009 to run the loved-one account test.",
+    "Apply migration 010 to run the loved-one account test.",
   );
   const ownerCredentials = {
     email: `kin-loved-owner-${crypto.randomUUID()}@example.invalid`,
@@ -173,6 +173,8 @@ test("a loved-one invitation joins without a relationship and opens recognition 
       .fill(ownerCredentials.password);
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
     await expect(page).toHaveURL(/\/onboarding$/);
+    // Finish the initial membership read before creating this fixture via API.
+    await expect(page.getByRole("heading", { name: "Welcome to Kin.", exact: true })).toBeVisible();
     const created = await page.request.post("/api/onboarding", {
       data: {
         mode: "create",
@@ -183,9 +185,6 @@ test("a loved-one invitation joins without a relationship and opens recognition 
     });
     expect(created.status()).toBe(200);
     familyId = (await created.json()).familyId;
-    // Refreshing the account session also redirects the onboarding screen.
-    await expect(page).toHaveURL(/\/family$/);
-    await page.getByRole("heading", { name: "Memories", exact: true }).waitFor();
     await page.goto("/settings");
     await page
       .getByRole("button", { name: "Invite Rosa", exact: true })

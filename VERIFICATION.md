@@ -1,7 +1,7 @@
 # Integration verification
 
 This record covers the full `feature/pull-apart-stories` interface integrated
-with main at `bf0c5d9`. Main already contained cherry-picked story-scene commits,
+with main, including the concurrent Living Stories merge at `35861ca`. Main already contained cherry-picked story-scene commits,
 but its surrounding interface was still the older version.
 
 ## Merge boundary
@@ -9,11 +9,11 @@ but its surrounding interface was still the older version.
 The integration preserves main's inference service, sealed face enrollment,
 atomic ingestion, 0.85/two-Keeper gate, latest retrieval scoring, human fact
 extraction, Memory Atlas, personal recordings/review, canonical demo provisioning,
-and Rust sources. Account/session adapters connect the redesigned screens to
+Living Stories with timed audio, and Rust sources. Account/session adapters connect the redesigned screens to
 those contracts. The feature branch's older recognition/provider implementation
 is not substituted for main's newer backend.
 
-Migrations 008 and 009 add accounts and invitations after main's 001–007. They
+Migrations 009 and 010 add accounts and invitations after main's 001–008. They
 backfill existing memberships without resetting memories, bridge new loved-one
 accounts to personal recording, and prevent direct biometric reads. Apply them
 to a main-schema database before deploying this interface. No shared database
@@ -21,11 +21,12 @@ migration, seeding, account deletion, or purge was performed during this merge.
 
 ## Automated checks
 
-- 192 unit/mocked-route tests pass, including cookie/bearer authorization,
+- 210 unit/mocked-route tests pass, including cookie/bearer authorization,
   cancellation of stale audio fallback, and source deletion/receipt invalidation.
-- 24 disposable database checks pass using PostgreSQL WASM and real pgvector:
+- 25 disposable database checks pass using PostgreSQL WASM and real pgvector:
   atomicity, retry behavior, family isolation, self-review, new-family creation,
   loved-one invitation use, descriptor restrictions, and migration reapplication.
+- 61 Chromium browser scenarios pass across the redesigned app and Living Stories.
 - Typecheck, lint and production build pass. Next's lint command emits its
   deprecation notice; bundling emits existing dependency/cache warnings.
 - Rust's three conformance integration tests pass. No Rust source was modified;

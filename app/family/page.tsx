@@ -114,6 +114,7 @@ export default function FamilyPage() {
             <div>
               <h1>Memories</h1>
               <p className="muted">{data.wearer.name}’s family library</p>
+              <Link href="/stories" className="text-link">Living Stories</Link>
             </div>
             <Button onClick={() => setCompose("choose")}>
               <Plus aria-hidden="true" />

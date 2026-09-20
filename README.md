@@ -9,6 +9,8 @@ for reminiscence support, not a medical device.
 
 - **Memories** (`/family`): photos with explicit face labels, previewable voice
   recordings, Weaver questions, and review of a loved one's stories.
+- **Living Stories** (`/stories`): main’s continuous, source-attributed listening
+  experience, timed passages, topic contributions, and Quiet view.
 - **Pull-apart stories**: unfold a shared memory into relatives' perspectives;
   inspect its sources, play original recordings, and answer a missing connection.
 - **Recognize** (`/wearer`): camera access on request and one recognition action.
@@ -56,11 +58,13 @@ calibrated identity probabilities.
 ## Supabase setup and upgrades
 
 For a **new database**, apply `supabase/migrations/001_init.sql` through
-`009_loved_one_invites.sql` in numeric order. For an **existing main database**
-with 001–007 already applied, apply only:
+`010_loved_one_invites.sql` in numeric order. For an **existing main database**
+with 001–008 already applied, apply only:
 
-1. `008_family_accounts.sql`
-2. `009_loved_one_invites.sql`
+1. `009_family_accounts.sql`
+2. `010_loved_one_invites.sql`
+
+If 008 has not been applied yet, apply `008_living_stories.sql` first.
 
 These add private family accounts and invitations, backfill existing provisioned
 memberships, and connect new loved-one accounts to personal recording/review.

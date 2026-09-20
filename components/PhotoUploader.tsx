@@ -95,6 +95,8 @@ export function PhotoUploader({
     onBusy?.(true);
     setError(null);
     try {
+      const enrolled = labels.map((label, index) => ({ label, face: faces[index] }))
+        .filter(({ label }) => label.personId !== "skip");
       const fd = new FormData();
       fd.append("file", file);
       fd.append("contributor_id", contributorId);
@@ -103,8 +105,8 @@ export function PhotoUploader({
       fd.append(
         "labels",
         JSON.stringify(
-          labels.map((l, i) => ({
-            box: faces[i].box,
+          enrolled.map(({ label: l, face }) => ({
+            box: face.box,
             person_node_id: l.personId !== "new" ? l.personId : undefined,
             new_person:
               l.personId === "new"
@@ -124,7 +126,7 @@ export function PhotoUploader({
           j.error ?? "Your photo couldn’t be saved. Please try again.",
         );
       for (const person of j.persons ?? []) {
-        const face = faces[person.index];
+        const face = enrolled[person.index]?.face;
         if (!face) throw new Error("Photo saved, but its face label could not be found. Please retry.");
         try {
           await responseJSON(await authenticatedFetch("/api/faces/enroll", {
@@ -231,6 +233,7 @@ export function PhotoUploader({
                 </option>
               ))}
               <option value="new">Add someone new</option>
+              <option value="skip">Do not recognize this person</option>
             </select>
           </div>
           {labels[i]?.personId === "new" && (

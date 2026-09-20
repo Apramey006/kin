@@ -9,19 +9,25 @@ import type { Relative, WeaverQuestionRow } from "@/lib/types";
 export function WeaverInbox({
   me,
   relatives,
-  questions,
+  questions = [],
+  providedQuestions,
+  topicId,
+  onOpenChange,
   onAnswered,
 }: {
   me: Relative;
   relatives: Relative[];
-  questions: WeaverQuestionRow[];
+  questions?: WeaverQuestionRow[];
+  providedQuestions?: WeaverQuestionRow[];
+  topicId?: string;
+  onOpenChange?: (open: boolean) => void;
   onAnswered: () => void;
 }) {
   const [selected, setSelected] = useState<WeaverQuestionRow | null>(null);
   const [busy, setBusy] = useState(false);
   const [success, setSuccess] = useState(false);
-  const own = questions.filter(
-    (q) => q.target_relative_id === me.id && q.status === "open",
+  const own = (providedQuestions ?? questions).filter(
+    (q) => q.target_relative_id === me.id && q.status === "open" && (!topicId || q.gap_node_id === topicId),
   );
   const answer = async (blob: Blob, mime: string) => {
     if (!selected) return;
@@ -42,6 +48,7 @@ export function WeaverInbox({
       const j = await r.json();
       if (!r.ok) throw new Error(j.error ?? "Your answer couldn’t be saved.");
       setSelected(null);
+      onOpenChange?.(false);
       setSuccess(true);
       onAnswered();
       return true;
@@ -68,7 +75,7 @@ export function WeaverInbox({
           </div>
           <h2>Do you remember?</h2>
           <p>{q.question_text}</p>
-          <Button onClick={() => setSelected(q)}>
+          <Button onClick={() => { setSelected(q); onOpenChange?.(true); }}>
             Share what you remember
             <ArrowRight aria-hidden="true" />
           </Button>
@@ -76,7 +83,7 @@ export function WeaverInbox({
       ))}
       <Sheet
         open={!!selected}
-        onClose={() => setSelected(null)}
+        onClose={() => { setSelected(null); onOpenChange?.(false); }}
         title="Record an answer"
         busy={busy}
       >

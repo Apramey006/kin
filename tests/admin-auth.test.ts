@@ -42,6 +42,6 @@ describe("protected demo management", () => {
   });
   it("allows provisioned relatives to run Weaver for their family", async () => {
     expect((await weaver(request())).status).toBe(200);
-    expect(mocks.runWeaver).toHaveBeenCalledWith(expect.anything(), "owned-family");
+    expect(mocks.runWeaver).toHaveBeenCalledWith(expect.anything(), "owned-family", undefined);
   });
 });

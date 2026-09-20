@@ -67,5 +67,6 @@ export const config = {
     "/onboarding/:path*",
     "/graph/:path*",
     "/remember/:path*",
+    "/stories/:path*",
   ],
 };

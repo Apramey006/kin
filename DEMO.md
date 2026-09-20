@@ -2,7 +2,7 @@
 
 ## Start fresh
 
-Follow README setup, including migrations 001–009 and Supabase Auth callback
+Follow README setup, including migrations 001–010 and Supabase Auth callback
 URLs. Create an account and an empty family. Invite two relatives from Settings.
 Use separate browser profiles/devices, each signed into its own account. Do not
 run seed: the app starts without sample memories or enrolled faces.
@@ -51,7 +51,7 @@ not prove the physical camera, microphone, or audible output on your devices.
 
 - No family: finish onboarding or use the invitation link while signed in.
 - Confirmation/reset link returns to the wrong page: add the app callback URLs in Supabase Auth settings.
-- Photo cannot save: wait for detection, label every face, and check permission.
+- Photo cannot save: wait for detection, label each face you want to enroll or explicitly skip it, and check permission.
 - No recognition: enroll a clear photo and add supporting human memories from two relatives. Use a clear single face; don't lower the gate.
 - No voice: check output volume, earbuds, ElevenLabs settings, and browser speech support.
 - No new question: check the existing recipient's inbox; open questions are not duplicated.

@@ -55,7 +55,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
   const safeNext = () => {
     const next = new URLSearchParams(window.location.search).get("next");
     return next &&
-      /^\/(family|stage|wearer|remember|graph|settings|onboarding)(\?|$)/.test(next)
+      /^\/(family|stage|wearer|remember|stories|graph|settings|onboarding)(\?|$)/.test(next)
       ? next
       : "/family";
   };

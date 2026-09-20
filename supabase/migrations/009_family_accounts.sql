@@ -1,4 +1,4 @@
--- Private family accounts. Run after main migrations 001–007. New accounts create empty
+-- Private family accounts. Run after main migrations 001–008. New accounts create empty
 -- family libraries; this migration never inserts demo memories.
 begin;
 create table if not exists public.families (

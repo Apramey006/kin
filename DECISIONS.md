@@ -8,7 +8,7 @@
 - Supabase sessions use shared browser cookies. APIs verify users server-side;
   main's bearer-token clients remain supported. New family rows and existing
   admin-provisioned accounts can both use the interface.
-- New account migrations are numbered 008/009 after main's 001–007. They preserve
+- New account migrations are numbered 009/010 after main's 001–007. They preserve
   existing data, restrict private family reads, and keep biometric descriptors
   and retrieval RPCs server-only.
 - A loved-one membership is distinct from contributor membership. Main's self
