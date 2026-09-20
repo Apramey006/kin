@@ -1,0 +1,2458 @@
+{
+  "cases": [
+    {
+      "name": "seeded-graph",
+      "input": {
+        "nodes": [
+          {
+            "id": "rosa",
+            "family_id": "demo",
+            "type": "person",
+            "label": "Rosa",
+            "aliases": [],
+            "relation_to_wearer": "self"
+          },
+          {
+            "id": "nora",
+            "family_id": "demo",
+            "type": "person",
+            "label": "Nora",
+            "aliases": [],
+            "relation_to_wearer": "sister"
+          },
+          {
+            "id": "cake",
+            "family_id": "demo",
+            "type": "tradition",
+            "label": "Sunday lemon cake baking",
+            "aliases": [],
+            "relation_to_wearer": null
+          },
+          {
+            "id": "apron",
+            "family_id": "demo",
+            "type": "object",
+            "label": "yellow apron",
+            "aliases": [],
+            "relation_to_wearer": null
+          },
+          {
+            "id": "book",
+            "family_id": "demo",
+            "type": "object",
+            "label": "Nana's recipe book",
+            "aliases": [],
+            "relation_to_wearer": null
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "family_id": "demo",
+            "from_node": "rosa",
+            "rel": "participates_in",
+            "to_node": "cake"
+          },
+          {
+            "id": "e2",
+            "family_id": "demo",
+            "from_node": "nora",
+            "rel": "participates_in",
+            "to_node": "cake"
+          },
+          {
+            "id": "e3",
+            "family_id": "demo",
+            "from_node": "nora",
+            "rel": "sibling_of",
+            "to_node": "rosa"
+          },
+          {
+            "id": "e4",
+            "family_id": "demo",
+            "from_node": "nora",
+            "rel": "wears",
+            "to_node": "apron"
+          },
+          {
+            "id": "e5",
+            "family_id": "demo",
+            "from_node": "rosa",
+            "rel": "taught_by",
+            "to_node": "nora"
+          },
+          {
+            "id": "e6",
+            "family_id": "demo",
+            "from_node": "rosa",
+            "rel": "owns",
+            "to_node": "book"
+          }
+        ],
+        "provenance": [
+          {
+            "id": "p1",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "rosa",
+            "edge_id": null
+          },
+          {
+            "id": "p2",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "nora",
+            "edge_id": null
+          },
+          {
+            "id": "p3",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "cake",
+            "edge_id": null
+          },
+          {
+            "id": "p4",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "apron",
+            "edge_id": null
+          },
+          {
+            "id": "p5",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e1"
+          },
+          {
+            "id": "p6",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e2"
+          },
+          {
+            "id": "p7",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e3"
+          },
+          {
+            "id": "p8",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e4"
+          },
+          {
+            "id": "p9",
+            "memory_id": "m-elena",
+            "contributor_id": "elena",
+            "node_id": "nora",
+            "edge_id": null
+          },
+          {
+            "id": "p10",
+            "memory_id": "m-elena",
+            "contributor_id": "elena",
+            "node_id": "rosa",
+            "edge_id": null
+          },
+          {
+            "id": "p11",
+            "memory_id": "m-elena",
+            "contributor_id": "elena",
+            "node_id": null,
+            "edge_id": "e5"
+          },
+          {
+            "id": "p12",
+            "memory_id": "m-david",
+            "contributor_id": "david",
+            "node_id": "book",
+            "edge_id": null
+          },
+          {
+            "id": "p13",
+            "memory_id": "m-david",
+            "contributor_id": "david",
+            "node_id": "rosa",
+            "edge_id": null
+          },
+          {
+            "id": "p14",
+            "memory_id": "m-david",
+            "contributor_id": "david",
+            "node_id": null,
+            "edge_id": "e6"
+          }
+        ],
+        "memories": [
+          {
+            "id": "m-maya",
+            "contributor_id": "maya",
+            "kind": "story",
+            "summary": "Maya on Nora and lemon cake."
+          },
+          {
+            "id": "m-elena",
+            "contributor_id": "elena",
+            "kind": "story",
+            "summary": "Elena on Nora teaching Rosa."
+          },
+          {
+            "id": "m-david",
+            "contributor_id": "david",
+            "kind": "photo",
+            "summary": "David's photo of the recipe book."
+          }
+        ],
+        "facePersonIds": [],
+        "wearerNodeId": "rosa",
+        "relatives": [
+          {
+            "id": "maya",
+            "family_id": "demo",
+            "name": "Maya",
+            "relation_to_wearer": "granddaughter",
+            "color": "#E0A458"
+          },
+          {
+            "id": "david",
+            "family_id": "demo",
+            "name": "David",
+            "relation_to_wearer": "son",
+            "color": "#5B8DEF"
+          },
+          {
+            "id": "elena",
+            "family_id": "demo",
+            "name": "Elena",
+            "relation_to_wearer": "daughter",
+            "color": "#B07CC6"
+          }
+        ],
+        "openQuestionRelativeIds": []
+      },
+      "expected": {
+        "gaps": [
+          {
+            "type": "missing_origin",
+            "nodeId": "cake"
+          },
+          {
+            "type": "orphan_object",
+            "nodeId": "apron"
+          },
+          {
+            "type": "orphan_object",
+            "nodeId": "book"
+          }
+        ],
+        "topGap": {
+          "type": "missing_origin",
+          "nodeId": "cake"
+        },
+        "routedTo": "david"
+      }
+    },
+    {
+      "name": "origin-answered",
+      "input": {
+        "nodes": [
+          {
+            "id": "rosa",
+            "family_id": "demo",
+            "type": "person",
+            "label": "Rosa",
+            "aliases": [],
+            "relation_to_wearer": "self"
+          },
+          {
+            "id": "nora",
+            "family_id": "demo",
+            "type": "person",
+            "label": "Nora",
+            "aliases": [],
+            "relation_to_wearer": "sister"
+          },
+          {
+            "id": "cake",
+            "family_id": "demo",
+            "type": "tradition",
+            "label": "Sunday lemon cake baking",
+            "aliases": [],
+            "relation_to_wearer": null
+          },
+          {
+            "id": "apron",
+            "family_id": "demo",
+            "type": "object",
+            "label": "yellow apron",
+            "aliases": [],
+            "relation_to_wearer": null
+          },
+          {
+            "id": "book",
+            "family_id": "demo",
+            "type": "object",
+            "label": "Nana's recipe book",
+            "aliases": [],
+            "relation_to_wearer": null
+          },
+          {
+            "id": "italy",
+            "family_id": "demo",
+            "type": "place",
+            "label": "Italy",
+            "aliases": [],
+            "relation_to_wearer": null
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "family_id": "demo",
+            "from_node": "rosa",
+            "rel": "participates_in",
+            "to_node": "cake"
+          },
+          {
+            "id": "e2",
+            "family_id": "demo",
+            "from_node": "nora",
+            "rel": "participates_in",
+            "to_node": "cake"
+          },
+          {
+            "id": "e3",
+            "family_id": "demo",
+            "from_node": "nora",
+            "rel": "sibling_of",
+            "to_node": "rosa"
+          },
+          {
+            "id": "e4",
+            "family_id": "demo",
+            "from_node": "nora",
+            "rel": "wears",
+            "to_node": "apron"
+          },
+          {
+            "id": "e5",
+            "family_id": "demo",
+            "from_node": "rosa",
+            "rel": "taught_by",
+            "to_node": "nora"
+          },
+          {
+            "id": "e6",
+            "family_id": "demo",
+            "from_node": "rosa",
+            "rel": "owns",
+            "to_node": "book"
+          },
+          {
+            "id": "e7",
+            "family_id": "demo",
+            "from_node": "cake",
+            "rel": "origin",
+            "to_node": "italy"
+          }
+        ],
+        "provenance": [
+          {
+            "id": "p1",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "rosa",
+            "edge_id": null
+          },
+          {
+            "id": "p2",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "nora",
+            "edge_id": null
+          },
+          {
+            "id": "p3",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "cake",
+            "edge_id": null
+          },
+          {
+            "id": "p4",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "apron",
+            "edge_id": null
+          },
+          {
+            "id": "p5",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e1"
+          },
+          {
+            "id": "p6",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e2"
+          },
+          {
+            "id": "p7",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e3"
+          },
+          {
+            "id": "p8",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e4"
+          },
+          {
+            "id": "p9",
+            "memory_id": "m-elena",
+            "contributor_id": "elena",
+            "node_id": "nora",
+            "edge_id": null
+          },
+          {
+            "id": "p10",
+            "memory_id": "m-elena",
+            "contributor_id": "elena",
+            "node_id": "rosa",
+            "edge_id": null
+          },
+          {
+            "id": "p11",
+            "memory_id": "m-elena",
+            "contributor_id": "elena",
+            "node_id": null,
+            "edge_id": "e5"
+          },
+          {
+            "id": "p12",
+            "memory_id": "m-david",
+            "contributor_id": "david",
+            "node_id": "book",
+            "edge_id": null
+          },
+          {
+            "id": "p13",
+            "memory_id": "m-david",
+            "contributor_id": "david",
+            "node_id": "rosa",
+            "edge_id": null
+          },
+          {
+            "id": "p14",
+            "memory_id": "m-david",
+            "contributor_id": "david",
+            "node_id": null,
+            "edge_id": "e6"
+          }
+        ],
+        "memories": [
+          {
+            "id": "m-maya",
+            "contributor_id": "maya",
+            "kind": "story",
+            "summary": "Maya on Nora and lemon cake."
+          },
+          {
+            "id": "m-elena",
+            "contributor_id": "elena",
+            "kind": "story",
+            "summary": "Elena on Nora teaching Rosa."
+          },
+          {
+            "id": "m-david",
+            "contributor_id": "david",
+            "kind": "photo",
+            "summary": "David's photo of the recipe book."
+          }
+        ],
+        "facePersonIds": [],
+        "wearerNodeId": "rosa",
+        "relatives": [
+          {
+            "id": "maya",
+            "family_id": "demo",
+            "name": "Maya",
+            "relation_to_wearer": "granddaughter",
+            "color": "#E0A458"
+          },
+          {
+            "id": "david",
+            "family_id": "demo",
+            "name": "David",
+            "relation_to_wearer": "son",
+            "color": "#5B8DEF"
+          },
+          {
+            "id": "elena",
+            "family_id": "demo",
+            "name": "Elena",
+            "relation_to_wearer": "daughter",
+            "color": "#B07CC6"
+          }
+        ],
+        "openQuestionRelativeIds": []
+      },
+      "expected": {
+        "gaps": [
+          {
+            "type": "orphan_object",
+            "nodeId": "apron"
+          },
+          {
+            "type": "orphan_object",
+            "nodeId": "book"
+          }
+        ],
+        "topGap": {
+          "type": "orphan_object",
+          "nodeId": "apron"
+        },
+        "routedTo": "elena"
+      }
+    },
+    {
+      "name": "unrelated-person-with-enrolled-face",
+      "input": {
+        "nodes": [
+          {
+            "id": "rosa",
+            "family_id": "demo",
+            "type": "person",
+            "label": "Rosa",
+            "aliases": [],
+            "relation_to_wearer": "self"
+          },
+          {
+            "id": "nora",
+            "family_id": "demo",
+            "type": "person",
+            "label": "Nora",
+            "aliases": [],
+            "relation_to_wearer": "sister"
+          },
+          {
+            "id": "cake",
+            "family_id": "demo",
+            "type": "tradition",
+            "label": "Sunday lemon cake baking",
+            "aliases": [],
+            "relation_to_wearer": null
+          },
+          {
+            "id": "apron",
+            "family_id": "demo",
+            "type": "object",
+            "label": "yellow apron",
+            "aliases": [],
+            "relation_to_wearer": null
+          },
+          {
+            "id": "book",
+            "family_id": "demo",
+            "type": "object",
+            "label": "Nana's recipe book",
+            "aliases": [],
+            "relation_to_wearer": null
+          },
+          {
+            "id": "sam",
+            "family_id": "demo",
+            "type": "person",
+            "label": "Sam",
+            "aliases": [],
+            "relation_to_wearer": null
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "family_id": "demo",
+            "from_node": "rosa",
+            "rel": "participates_in",
+            "to_node": "cake"
+          },
+          {
+            "id": "e2",
+            "family_id": "demo",
+            "from_node": "nora",
+            "rel": "participates_in",
+            "to_node": "cake"
+          },
+          {
+            "id": "e3",
+            "family_id": "demo",
+            "from_node": "nora",
+            "rel": "sibling_of",
+            "to_node": "rosa"
+          },
+          {
+            "id": "e4",
+            "family_id": "demo",
+            "from_node": "nora",
+            "rel": "wears",
+            "to_node": "apron"
+          },
+          {
+            "id": "e5",
+            "family_id": "demo",
+            "from_node": "rosa",
+            "rel": "taught_by",
+            "to_node": "nora"
+          },
+          {
+            "id": "e6",
+            "family_id": "demo",
+            "from_node": "rosa",
+            "rel": "owns",
+            "to_node": "book"
+          }
+        ],
+        "provenance": [
+          {
+            "id": "p1",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "rosa",
+            "edge_id": null
+          },
+          {
+            "id": "p2",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "nora",
+            "edge_id": null
+          },
+          {
+            "id": "p3",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "cake",
+            "edge_id": null
+          },
+          {
+            "id": "p4",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "apron",
+            "edge_id": null
+          },
+          {
+            "id": "p5",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e1"
+          },
+          {
+            "id": "p6",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e2"
+          },
+          {
+            "id": "p7",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e3"
+          },
+          {
+            "id": "p8",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e4"
+          },
+          {
+            "id": "p9",
+            "memory_id": "m-elena",
+            "contributor_id": "elena",
+            "node_id": "nora",
+            "edge_id": null
+          },
+          {
+            "id": "p10",
+            "memory_id": "m-elena",
+            "contributor_id": "elena",
+            "node_id": "rosa",
+            "edge_id": null
+          },
+          {
+            "id": "p11",
+            "memory_id": "m-elena",
+            "contributor_id": "elena",
+            "node_id": null,
+            "edge_id": "e5"
+          },
+          {
+            "id": "p12",
+            "memory_id": "m-david",
+            "contributor_id": "david",
+            "node_id": "book",
+            "edge_id": null
+          },
+          {
+            "id": "p13",
+            "memory_id": "m-david",
+            "contributor_id": "david",
+            "node_id": "rosa",
+            "edge_id": null
+          },
+          {
+            "id": "p14",
+            "memory_id": "m-david",
+            "contributor_id": "david",
+            "node_id": null,
+            "edge_id": "e6"
+          }
+        ],
+        "memories": [
+          {
+            "id": "m-maya",
+            "contributor_id": "maya",
+            "kind": "story",
+            "summary": "Maya on Nora and lemon cake."
+          },
+          {
+            "id": "m-elena",
+            "contributor_id": "elena",
+            "kind": "story",
+            "summary": "Elena on Nora teaching Rosa."
+          },
+          {
+            "id": "m-david",
+            "contributor_id": "david",
+            "kind": "photo",
+            "summary": "David's photo of the recipe book."
+          }
+        ],
+        "facePersonIds": [
+          "sam"
+        ],
+        "wearerNodeId": "rosa",
+        "relatives": [
+          {
+            "id": "maya",
+            "family_id": "demo",
+            "name": "Maya",
+            "relation_to_wearer": "granddaughter",
+            "color": "#E0A458"
+          },
+          {
+            "id": "david",
+            "family_id": "demo",
+            "name": "David",
+            "relation_to_wearer": "son",
+            "color": "#5B8DEF"
+          },
+          {
+            "id": "elena",
+            "family_id": "demo",
+            "name": "Elena",
+            "relation_to_wearer": "daughter",
+            "color": "#B07CC6"
+          }
+        ],
+        "openQuestionRelativeIds": []
+      },
+      "expected": {
+        "gaps": [
+          {
+            "type": "missing_origin",
+            "nodeId": "cake"
+          },
+          {
+            "type": "orphan_object",
+            "nodeId": "apron"
+          },
+          {
+            "type": "orphan_object",
+            "nodeId": "book"
+          },
+          {
+            "type": "unrelated_person",
+            "nodeId": "sam"
+          }
+        ],
+        "topGap": {
+          "type": "missing_origin",
+          "nodeId": "cake"
+        },
+        "routedTo": "david"
+      }
+    },
+    {
+      "name": "person-with-face-but-related-to-wearer",
+      "input": {
+        "nodes": [
+          {
+            "id": "rosa",
+            "family_id": "demo",
+            "type": "person",
+            "label": "Rosa",
+            "aliases": [],
+            "relation_to_wearer": "self"
+          },
+          {
+            "id": "nora",
+            "family_id": "demo",
+            "type": "person",
+            "label": "Nora",
+            "aliases": [],
+            "relation_to_wearer": "sister"
+          },
+          {
+            "id": "cake",
+            "family_id": "demo",
+            "type": "tradition",
+            "label": "Sunday lemon cake baking",
+            "aliases": [],
+            "relation_to_wearer": null
+          },
+          {
+            "id": "apron",
+            "family_id": "demo",
+            "type": "object",
+            "label": "yellow apron",
+            "aliases": [],
+            "relation_to_wearer": null
+          },
+          {
+            "id": "book",
+            "family_id": "demo",
+            "type": "object",
+            "label": "Nana's recipe book",
+            "aliases": [],
+            "relation_to_wearer": null
+          },
+          {
+            "id": "sam",
+            "family_id": "demo",
+            "type": "person",
+            "label": "Sam",
+            "aliases": [],
+            "relation_to_wearer": null
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "family_id": "demo",
+            "from_node": "rosa",
+            "rel": "participates_in",
+            "to_node": "cake"
+          },
+          {
+            "id": "e2",
+            "family_id": "demo",
+            "from_node": "nora",
+            "rel": "participates_in",
+            "to_node": "cake"
+          },
+          {
+            "id": "e3",
+            "family_id": "demo",
+            "from_node": "nora",
+            "rel": "sibling_of",
+            "to_node": "rosa"
+          },
+          {
+            "id": "e4",
+            "family_id": "demo",
+            "from_node": "nora",
+            "rel": "wears",
+            "to_node": "apron"
+          },
+          {
+            "id": "e5",
+            "family_id": "demo",
+            "from_node": "rosa",
+            "rel": "taught_by",
+            "to_node": "nora"
+          },
+          {
+            "id": "e6",
+            "family_id": "demo",
+            "from_node": "rosa",
+            "rel": "owns",
+            "to_node": "book"
+          },
+          {
+            "id": "e8",
+            "family_id": "demo",
+            "from_node": "sam",
+            "rel": "sibling_of",
+            "to_node": "rosa"
+          }
+        ],
+        "provenance": [
+          {
+            "id": "p1",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "rosa",
+            "edge_id": null
+          },
+          {
+            "id": "p2",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "nora",
+            "edge_id": null
+          },
+          {
+            "id": "p3",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "cake",
+            "edge_id": null
+          },
+          {
+            "id": "p4",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "apron",
+            "edge_id": null
+          },
+          {
+            "id": "p5",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e1"
+          },
+          {
+            "id": "p6",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e2"
+          },
+          {
+            "id": "p7",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e3"
+          },
+          {
+            "id": "p8",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e4"
+          },
+          {
+            "id": "p9",
+            "memory_id": "m-elena",
+            "contributor_id": "elena",
+            "node_id": "nora",
+            "edge_id": null
+          },
+          {
+            "id": "p10",
+            "memory_id": "m-elena",
+            "contributor_id": "elena",
+            "node_id": "rosa",
+            "edge_id": null
+          },
+          {
+            "id": "p11",
+            "memory_id": "m-elena",
+            "contributor_id": "elena",
+            "node_id": null,
+            "edge_id": "e5"
+          },
+          {
+            "id": "p12",
+            "memory_id": "m-david",
+            "contributor_id": "david",
+            "node_id": "book",
+            "edge_id": null
+          },
+          {
+            "id": "p13",
+            "memory_id": "m-david",
+            "contributor_id": "david",
+            "node_id": "rosa",
+            "edge_id": null
+          },
+          {
+            "id": "p14",
+            "memory_id": "m-david",
+            "contributor_id": "david",
+            "node_id": null,
+            "edge_id": "e6"
+          }
+        ],
+        "memories": [
+          {
+            "id": "m-maya",
+            "contributor_id": "maya",
+            "kind": "story",
+            "summary": "Maya on Nora and lemon cake."
+          },
+          {
+            "id": "m-elena",
+            "contributor_id": "elena",
+            "kind": "story",
+            "summary": "Elena on Nora teaching Rosa."
+          },
+          {
+            "id": "m-david",
+            "contributor_id": "david",
+            "kind": "photo",
+            "summary": "David's photo of the recipe book."
+          }
+        ],
+        "facePersonIds": [
+          "sam"
+        ],
+        "wearerNodeId": "rosa",
+        "relatives": [
+          {
+            "id": "maya",
+            "family_id": "demo",
+            "name": "Maya",
+            "relation_to_wearer": "granddaughter",
+            "color": "#E0A458"
+          },
+          {
+            "id": "david",
+            "family_id": "demo",
+            "name": "David",
+            "relation_to_wearer": "son",
+            "color": "#5B8DEF"
+          },
+          {
+            "id": "elena",
+            "family_id": "demo",
+            "name": "Elena",
+            "relation_to_wearer": "daughter",
+            "color": "#B07CC6"
+          }
+        ],
+        "openQuestionRelativeIds": []
+      },
+      "expected": {
+        "gaps": [
+          {
+            "type": "missing_origin",
+            "nodeId": "cake"
+          },
+          {
+            "type": "orphan_object",
+            "nodeId": "apron"
+          },
+          {
+            "type": "orphan_object",
+            "nodeId": "book"
+          }
+        ],
+        "topGap": {
+          "type": "missing_origin",
+          "nodeId": "cake"
+        },
+        "routedTo": "david"
+      }
+    },
+    {
+      "name": "orphan-object-single-memory",
+      "input": {
+        "nodes": [
+          {
+            "id": "rosa",
+            "family_id": "demo",
+            "type": "person",
+            "label": "Rosa",
+            "aliases": [],
+            "relation_to_wearer": "self"
+          },
+          {
+            "id": "nora",
+            "family_id": "demo",
+            "type": "person",
+            "label": "Nora",
+            "aliases": [],
+            "relation_to_wearer": "sister"
+          },
+          {
+            "id": "cake",
+            "family_id": "demo",
+            "type": "tradition",
+            "label": "Sunday lemon cake baking",
+            "aliases": [],
+            "relation_to_wearer": null
+          },
+          {
+            "id": "apron",
+            "family_id": "demo",
+            "type": "object",
+            "label": "yellow apron",
+            "aliases": [],
+            "relation_to_wearer": null
+          },
+          {
+            "id": "book",
+            "family_id": "demo",
+            "type": "object",
+            "label": "Nana's recipe book",
+            "aliases": [],
+            "relation_to_wearer": null
+          },
+          {
+            "id": "watch",
+            "family_id": "demo",
+            "type": "object",
+            "label": "gold watch",
+            "aliases": [],
+            "relation_to_wearer": null
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "family_id": "demo",
+            "from_node": "rosa",
+            "rel": "participates_in",
+            "to_node": "cake"
+          },
+          {
+            "id": "e2",
+            "family_id": "demo",
+            "from_node": "nora",
+            "rel": "participates_in",
+            "to_node": "cake"
+          },
+          {
+            "id": "e3",
+            "family_id": "demo",
+            "from_node": "nora",
+            "rel": "sibling_of",
+            "to_node": "rosa"
+          },
+          {
+            "id": "e4",
+            "family_id": "demo",
+            "from_node": "nora",
+            "rel": "wears",
+            "to_node": "apron"
+          },
+          {
+            "id": "e5",
+            "family_id": "demo",
+            "from_node": "rosa",
+            "rel": "taught_by",
+            "to_node": "nora"
+          },
+          {
+            "id": "e6",
+            "family_id": "demo",
+            "from_node": "rosa",
+            "rel": "owns",
+            "to_node": "book"
+          }
+        ],
+        "provenance": [
+          {
+            "id": "p1",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "rosa",
+            "edge_id": null
+          },
+          {
+            "id": "p2",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "nora",
+            "edge_id": null
+          },
+          {
+            "id": "p3",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "cake",
+            "edge_id": null
+          },
+          {
+            "id": "p4",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "apron",
+            "edge_id": null
+          },
+          {
+            "id": "p5",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e1"
+          },
+          {
+            "id": "p6",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e2"
+          },
+          {
+            "id": "p7",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e3"
+          },
+          {
+            "id": "p8",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e4"
+          },
+          {
+            "id": "p9",
+            "memory_id": "m-elena",
+            "contributor_id": "elena",
+            "node_id": "nora",
+            "edge_id": null
+          },
+          {
+            "id": "p10",
+            "memory_id": "m-elena",
+            "contributor_id": "elena",
+            "node_id": "rosa",
+            "edge_id": null
+          },
+          {
+            "id": "p11",
+            "memory_id": "m-elena",
+            "contributor_id": "elena",
+            "node_id": null,
+            "edge_id": "e5"
+          },
+          {
+            "id": "p12",
+            "memory_id": "m-david",
+            "contributor_id": "david",
+            "node_id": "book",
+            "edge_id": null
+          },
+          {
+            "id": "p13",
+            "memory_id": "m-david",
+            "contributor_id": "david",
+            "node_id": "rosa",
+            "edge_id": null
+          },
+          {
+            "id": "p14",
+            "memory_id": "m-david",
+            "contributor_id": "david",
+            "node_id": null,
+            "edge_id": "e6"
+          },
+          {
+            "id": "p15",
+            "memory_id": "m-david",
+            "contributor_id": "david",
+            "node_id": "watch",
+            "edge_id": null
+          }
+        ],
+        "memories": [
+          {
+            "id": "m-maya",
+            "contributor_id": "maya",
+            "kind": "story",
+            "summary": "Maya on Nora and lemon cake."
+          },
+          {
+            "id": "m-elena",
+            "contributor_id": "elena",
+            "kind": "story",
+            "summary": "Elena on Nora teaching Rosa."
+          },
+          {
+            "id": "m-david",
+            "contributor_id": "david",
+            "kind": "photo",
+            "summary": "David's photo of the recipe book."
+          }
+        ],
+        "facePersonIds": [],
+        "wearerNodeId": "rosa",
+        "relatives": [
+          {
+            "id": "maya",
+            "family_id": "demo",
+            "name": "Maya",
+            "relation_to_wearer": "granddaughter",
+            "color": "#E0A458"
+          },
+          {
+            "id": "david",
+            "family_id": "demo",
+            "name": "David",
+            "relation_to_wearer": "son",
+            "color": "#5B8DEF"
+          },
+          {
+            "id": "elena",
+            "family_id": "demo",
+            "name": "Elena",
+            "relation_to_wearer": "daughter",
+            "color": "#B07CC6"
+          }
+        ],
+        "openQuestionRelativeIds": []
+      },
+      "expected": {
+        "gaps": [
+          {
+            "type": "missing_origin",
+            "nodeId": "cake"
+          },
+          {
+            "type": "orphan_object",
+            "nodeId": "apron"
+          },
+          {
+            "type": "orphan_object",
+            "nodeId": "book"
+          },
+          {
+            "type": "orphan_object",
+            "nodeId": "watch"
+          }
+        ],
+        "topGap": {
+          "type": "missing_origin",
+          "nodeId": "cake"
+        },
+        "routedTo": "david"
+      }
+    },
+    {
+      "name": "object-linked-to-tradition-is-not-orphan",
+      "input": {
+        "nodes": [
+          {
+            "id": "rosa",
+            "family_id": "demo",
+            "type": "person",
+            "label": "Rosa",
+            "aliases": [],
+            "relation_to_wearer": "self"
+          },
+          {
+            "id": "nora",
+            "family_id": "demo",
+            "type": "person",
+            "label": "Nora",
+            "aliases": [],
+            "relation_to_wearer": "sister"
+          },
+          {
+            "id": "cake",
+            "family_id": "demo",
+            "type": "tradition",
+            "label": "Sunday lemon cake baking",
+            "aliases": [],
+            "relation_to_wearer": null
+          },
+          {
+            "id": "apron",
+            "family_id": "demo",
+            "type": "object",
+            "label": "yellow apron",
+            "aliases": [],
+            "relation_to_wearer": null
+          },
+          {
+            "id": "book",
+            "family_id": "demo",
+            "type": "object",
+            "label": "Nana's recipe book",
+            "aliases": [],
+            "relation_to_wearer": null
+          },
+          {
+            "id": "watch",
+            "family_id": "demo",
+            "type": "object",
+            "label": "gold watch",
+            "aliases": [],
+            "relation_to_wearer": null
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "family_id": "demo",
+            "from_node": "rosa",
+            "rel": "participates_in",
+            "to_node": "cake"
+          },
+          {
+            "id": "e2",
+            "family_id": "demo",
+            "from_node": "nora",
+            "rel": "participates_in",
+            "to_node": "cake"
+          },
+          {
+            "id": "e3",
+            "family_id": "demo",
+            "from_node": "nora",
+            "rel": "sibling_of",
+            "to_node": "rosa"
+          },
+          {
+            "id": "e4",
+            "family_id": "demo",
+            "from_node": "nora",
+            "rel": "wears",
+            "to_node": "apron"
+          },
+          {
+            "id": "e5",
+            "family_id": "demo",
+            "from_node": "rosa",
+            "rel": "taught_by",
+            "to_node": "nora"
+          },
+          {
+            "id": "e6",
+            "family_id": "demo",
+            "from_node": "rosa",
+            "rel": "owns",
+            "to_node": "book"
+          },
+          {
+            "id": "e9",
+            "family_id": "demo",
+            "from_node": "watch",
+            "rel": "used_in",
+            "to_node": "cake"
+          }
+        ],
+        "provenance": [
+          {
+            "id": "p1",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "rosa",
+            "edge_id": null
+          },
+          {
+            "id": "p2",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "nora",
+            "edge_id": null
+          },
+          {
+            "id": "p3",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "cake",
+            "edge_id": null
+          },
+          {
+            "id": "p4",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "apron",
+            "edge_id": null
+          },
+          {
+            "id": "p5",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e1"
+          },
+          {
+            "id": "p6",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e2"
+          },
+          {
+            "id": "p7",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e3"
+          },
+          {
+            "id": "p8",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e4"
+          },
+          {
+            "id": "p9",
+            "memory_id": "m-elena",
+            "contributor_id": "elena",
+            "node_id": "nora",
+            "edge_id": null
+          },
+          {
+            "id": "p10",
+            "memory_id": "m-elena",
+            "contributor_id": "elena",
+            "node_id": "rosa",
+            "edge_id": null
+          },
+          {
+            "id": "p11",
+            "memory_id": "m-elena",
+            "contributor_id": "elena",
+            "node_id": null,
+            "edge_id": "e5"
+          },
+          {
+            "id": "p12",
+            "memory_id": "m-david",
+            "contributor_id": "david",
+            "node_id": "book",
+            "edge_id": null
+          },
+          {
+            "id": "p13",
+            "memory_id": "m-david",
+            "contributor_id": "david",
+            "node_id": "rosa",
+            "edge_id": null
+          },
+          {
+            "id": "p14",
+            "memory_id": "m-david",
+            "contributor_id": "david",
+            "node_id": null,
+            "edge_id": "e6"
+          },
+          {
+            "id": "p15",
+            "memory_id": "m-david",
+            "contributor_id": "david",
+            "node_id": "watch",
+            "edge_id": null
+          }
+        ],
+        "memories": [
+          {
+            "id": "m-maya",
+            "contributor_id": "maya",
+            "kind": "story",
+            "summary": "Maya on Nora and lemon cake."
+          },
+          {
+            "id": "m-elena",
+            "contributor_id": "elena",
+            "kind": "story",
+            "summary": "Elena on Nora teaching Rosa."
+          },
+          {
+            "id": "m-david",
+            "contributor_id": "david",
+            "kind": "photo",
+            "summary": "David's photo of the recipe book."
+          }
+        ],
+        "facePersonIds": [],
+        "wearerNodeId": "rosa",
+        "relatives": [
+          {
+            "id": "maya",
+            "family_id": "demo",
+            "name": "Maya",
+            "relation_to_wearer": "granddaughter",
+            "color": "#E0A458"
+          },
+          {
+            "id": "david",
+            "family_id": "demo",
+            "name": "David",
+            "relation_to_wearer": "son",
+            "color": "#5B8DEF"
+          },
+          {
+            "id": "elena",
+            "family_id": "demo",
+            "name": "Elena",
+            "relation_to_wearer": "daughter",
+            "color": "#B07CC6"
+          }
+        ],
+        "openQuestionRelativeIds": []
+      },
+      "expected": {
+        "gaps": [
+          {
+            "type": "missing_origin",
+            "nodeId": "cake"
+          },
+          {
+            "type": "orphan_object",
+            "nodeId": "apron"
+          },
+          {
+            "type": "orphan_object",
+            "nodeId": "book"
+          }
+        ],
+        "topGap": {
+          "type": "missing_origin",
+          "nodeId": "cake"
+        },
+        "routedTo": "david"
+      }
+    },
+    {
+      "name": "routing-skips-relative-with-open-question",
+      "input": {
+        "nodes": [
+          {
+            "id": "rosa",
+            "family_id": "demo",
+            "type": "person",
+            "label": "Rosa",
+            "aliases": [],
+            "relation_to_wearer": "self"
+          },
+          {
+            "id": "nora",
+            "family_id": "demo",
+            "type": "person",
+            "label": "Nora",
+            "aliases": [],
+            "relation_to_wearer": "sister"
+          },
+          {
+            "id": "cake",
+            "family_id": "demo",
+            "type": "tradition",
+            "label": "Sunday lemon cake baking",
+            "aliases": [],
+            "relation_to_wearer": null
+          },
+          {
+            "id": "apron",
+            "family_id": "demo",
+            "type": "object",
+            "label": "yellow apron",
+            "aliases": [],
+            "relation_to_wearer": null
+          },
+          {
+            "id": "book",
+            "family_id": "demo",
+            "type": "object",
+            "label": "Nana's recipe book",
+            "aliases": [],
+            "relation_to_wearer": null
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "family_id": "demo",
+            "from_node": "rosa",
+            "rel": "participates_in",
+            "to_node": "cake"
+          },
+          {
+            "id": "e2",
+            "family_id": "demo",
+            "from_node": "nora",
+            "rel": "participates_in",
+            "to_node": "cake"
+          },
+          {
+            "id": "e3",
+            "family_id": "demo",
+            "from_node": "nora",
+            "rel": "sibling_of",
+            "to_node": "rosa"
+          },
+          {
+            "id": "e4",
+            "family_id": "demo",
+            "from_node": "nora",
+            "rel": "wears",
+            "to_node": "apron"
+          },
+          {
+            "id": "e5",
+            "family_id": "demo",
+            "from_node": "rosa",
+            "rel": "taught_by",
+            "to_node": "nora"
+          },
+          {
+            "id": "e6",
+            "family_id": "demo",
+            "from_node": "rosa",
+            "rel": "owns",
+            "to_node": "book"
+          }
+        ],
+        "provenance": [
+          {
+            "id": "p1",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "rosa",
+            "edge_id": null
+          },
+          {
+            "id": "p2",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "nora",
+            "edge_id": null
+          },
+          {
+            "id": "p3",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "cake",
+            "edge_id": null
+          },
+          {
+            "id": "p4",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "apron",
+            "edge_id": null
+          },
+          {
+            "id": "p5",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e1"
+          },
+          {
+            "id": "p6",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e2"
+          },
+          {
+            "id": "p7",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e3"
+          },
+          {
+            "id": "p8",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e4"
+          },
+          {
+            "id": "p9",
+            "memory_id": "m-elena",
+            "contributor_id": "elena",
+            "node_id": "nora",
+            "edge_id": null
+          },
+          {
+            "id": "p10",
+            "memory_id": "m-elena",
+            "contributor_id": "elena",
+            "node_id": "rosa",
+            "edge_id": null
+          },
+          {
+            "id": "p11",
+            "memory_id": "m-elena",
+            "contributor_id": "elena",
+            "node_id": null,
+            "edge_id": "e5"
+          },
+          {
+            "id": "p12",
+            "memory_id": "m-david",
+            "contributor_id": "david",
+            "node_id": "book",
+            "edge_id": null
+          },
+          {
+            "id": "p13",
+            "memory_id": "m-david",
+            "contributor_id": "david",
+            "node_id": "rosa",
+            "edge_id": null
+          },
+          {
+            "id": "p14",
+            "memory_id": "m-david",
+            "contributor_id": "david",
+            "node_id": null,
+            "edge_id": "e6"
+          }
+        ],
+        "memories": [
+          {
+            "id": "m-maya",
+            "contributor_id": "maya",
+            "kind": "story",
+            "summary": "Maya on Nora and lemon cake."
+          },
+          {
+            "id": "m-elena",
+            "contributor_id": "elena",
+            "kind": "story",
+            "summary": "Elena on Nora teaching Rosa."
+          },
+          {
+            "id": "m-david",
+            "contributor_id": "david",
+            "kind": "photo",
+            "summary": "David's photo of the recipe book."
+          }
+        ],
+        "facePersonIds": [],
+        "wearerNodeId": "rosa",
+        "relatives": [
+          {
+            "id": "maya",
+            "family_id": "demo",
+            "name": "Maya",
+            "relation_to_wearer": "granddaughter",
+            "color": "#E0A458"
+          },
+          {
+            "id": "david",
+            "family_id": "demo",
+            "name": "David",
+            "relation_to_wearer": "son",
+            "color": "#5B8DEF"
+          },
+          {
+            "id": "elena",
+            "family_id": "demo",
+            "name": "Elena",
+            "relation_to_wearer": "daughter",
+            "color": "#B07CC6"
+          }
+        ],
+        "openQuestionRelativeIds": [
+          "david"
+        ]
+      },
+      "expected": {
+        "gaps": [
+          {
+            "type": "missing_origin",
+            "nodeId": "cake"
+          },
+          {
+            "type": "orphan_object",
+            "nodeId": "apron"
+          },
+          {
+            "type": "orphan_object",
+            "nodeId": "book"
+          }
+        ],
+        "topGap": {
+          "type": "missing_origin",
+          "nodeId": "cake"
+        },
+        "routedTo": "elena"
+      }
+    },
+    {
+      "name": "routing-falls-back-when-all-describers",
+      "input": {
+        "nodes": [
+          {
+            "id": "rosa",
+            "family_id": "demo",
+            "type": "person",
+            "label": "Rosa",
+            "aliases": [],
+            "relation_to_wearer": "self"
+          },
+          {
+            "id": "nora",
+            "family_id": "demo",
+            "type": "person",
+            "label": "Nora",
+            "aliases": [],
+            "relation_to_wearer": "sister"
+          },
+          {
+            "id": "cake",
+            "family_id": "demo",
+            "type": "tradition",
+            "label": "Sunday lemon cake baking",
+            "aliases": [],
+            "relation_to_wearer": null
+          },
+          {
+            "id": "apron",
+            "family_id": "demo",
+            "type": "object",
+            "label": "yellow apron",
+            "aliases": [],
+            "relation_to_wearer": null
+          },
+          {
+            "id": "book",
+            "family_id": "demo",
+            "type": "object",
+            "label": "Nana's recipe book",
+            "aliases": [],
+            "relation_to_wearer": null
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "family_id": "demo",
+            "from_node": "rosa",
+            "rel": "participates_in",
+            "to_node": "cake"
+          },
+          {
+            "id": "e2",
+            "family_id": "demo",
+            "from_node": "nora",
+            "rel": "participates_in",
+            "to_node": "cake"
+          },
+          {
+            "id": "e3",
+            "family_id": "demo",
+            "from_node": "nora",
+            "rel": "sibling_of",
+            "to_node": "rosa"
+          },
+          {
+            "id": "e4",
+            "family_id": "demo",
+            "from_node": "nora",
+            "rel": "wears",
+            "to_node": "apron"
+          },
+          {
+            "id": "e5",
+            "family_id": "demo",
+            "from_node": "rosa",
+            "rel": "taught_by",
+            "to_node": "nora"
+          },
+          {
+            "id": "e6",
+            "family_id": "demo",
+            "from_node": "rosa",
+            "rel": "owns",
+            "to_node": "book"
+          }
+        ],
+        "provenance": [
+          {
+            "id": "p1",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "rosa",
+            "edge_id": null
+          },
+          {
+            "id": "p2",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "nora",
+            "edge_id": null
+          },
+          {
+            "id": "p3",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "cake",
+            "edge_id": null
+          },
+          {
+            "id": "p4",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "apron",
+            "edge_id": null
+          },
+          {
+            "id": "p5",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e1"
+          },
+          {
+            "id": "p6",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e2"
+          },
+          {
+            "id": "p7",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e3"
+          },
+          {
+            "id": "p8",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e4"
+          },
+          {
+            "id": "p9",
+            "memory_id": "m-elena",
+            "contributor_id": "elena",
+            "node_id": "nora",
+            "edge_id": null
+          },
+          {
+            "id": "p10",
+            "memory_id": "m-elena",
+            "contributor_id": "elena",
+            "node_id": "rosa",
+            "edge_id": null
+          },
+          {
+            "id": "p11",
+            "memory_id": "m-elena",
+            "contributor_id": "elena",
+            "node_id": null,
+            "edge_id": "e5"
+          },
+          {
+            "id": "p12",
+            "memory_id": "m-david",
+            "contributor_id": "david",
+            "node_id": "book",
+            "edge_id": null
+          },
+          {
+            "id": "p13",
+            "memory_id": "m-david",
+            "contributor_id": "david",
+            "node_id": "rosa",
+            "edge_id": null
+          },
+          {
+            "id": "p14",
+            "memory_id": "m-david",
+            "contributor_id": "david",
+            "node_id": null,
+            "edge_id": "e6"
+          }
+        ],
+        "memories": [
+          {
+            "id": "m-maya",
+            "contributor_id": "maya",
+            "kind": "story",
+            "summary": "Maya on Nora and lemon cake."
+          },
+          {
+            "id": "m-elena",
+            "contributor_id": "elena",
+            "kind": "story",
+            "summary": "Elena on Nora teaching Rosa."
+          },
+          {
+            "id": "m-david",
+            "contributor_id": "david",
+            "kind": "photo",
+            "summary": "David's photo of the recipe book."
+          }
+        ],
+        "facePersonIds": [],
+        "wearerNodeId": "rosa",
+        "relatives": [
+          {
+            "id": "maya",
+            "family_id": "demo",
+            "name": "Maya",
+            "relation_to_wearer": "granddaughter",
+            "color": "#E0A458"
+          },
+          {
+            "id": "david",
+            "family_id": "demo",
+            "name": "David",
+            "relation_to_wearer": "son",
+            "color": "#5B8DEF"
+          },
+          {
+            "id": "elena",
+            "family_id": "demo",
+            "name": "Elena",
+            "relation_to_wearer": "daughter",
+            "color": "#B07CC6"
+          }
+        ],
+        "openQuestionRelativeIds": [
+          "maya",
+          "elena"
+        ]
+      },
+      "expected": {
+        "gaps": [
+          {
+            "type": "missing_origin",
+            "nodeId": "cake"
+          },
+          {
+            "type": "orphan_object",
+            "nodeId": "apron"
+          },
+          {
+            "type": "orphan_object",
+            "nodeId": "book"
+          }
+        ],
+        "topGap": {
+          "type": "missing_origin",
+          "nodeId": "cake"
+        },
+        "routedTo": "david"
+      }
+    },
+    {
+      "name": "routing-returns-null-when-everyone-has-open-question",
+      "input": {
+        "nodes": [
+          {
+            "id": "rosa",
+            "family_id": "demo",
+            "type": "person",
+            "label": "Rosa",
+            "aliases": [],
+            "relation_to_wearer": "self"
+          },
+          {
+            "id": "nora",
+            "family_id": "demo",
+            "type": "person",
+            "label": "Nora",
+            "aliases": [],
+            "relation_to_wearer": "sister"
+          },
+          {
+            "id": "cake",
+            "family_id": "demo",
+            "type": "tradition",
+            "label": "Sunday lemon cake baking",
+            "aliases": [],
+            "relation_to_wearer": null
+          },
+          {
+            "id": "apron",
+            "family_id": "demo",
+            "type": "object",
+            "label": "yellow apron",
+            "aliases": [],
+            "relation_to_wearer": null
+          },
+          {
+            "id": "book",
+            "family_id": "demo",
+            "type": "object",
+            "label": "Nana's recipe book",
+            "aliases": [],
+            "relation_to_wearer": null
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "family_id": "demo",
+            "from_node": "rosa",
+            "rel": "participates_in",
+            "to_node": "cake"
+          },
+          {
+            "id": "e2",
+            "family_id": "demo",
+            "from_node": "nora",
+            "rel": "participates_in",
+            "to_node": "cake"
+          },
+          {
+            "id": "e3",
+            "family_id": "demo",
+            "from_node": "nora",
+            "rel": "sibling_of",
+            "to_node": "rosa"
+          },
+          {
+            "id": "e4",
+            "family_id": "demo",
+            "from_node": "nora",
+            "rel": "wears",
+            "to_node": "apron"
+          },
+          {
+            "id": "e5",
+            "family_id": "demo",
+            "from_node": "rosa",
+            "rel": "taught_by",
+            "to_node": "nora"
+          },
+          {
+            "id": "e6",
+            "family_id": "demo",
+            "from_node": "rosa",
+            "rel": "owns",
+            "to_node": "book"
+          }
+        ],
+        "provenance": [
+          {
+            "id": "p1",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "rosa",
+            "edge_id": null
+          },
+          {
+            "id": "p2",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "nora",
+            "edge_id": null
+          },
+          {
+            "id": "p3",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "cake",
+            "edge_id": null
+          },
+          {
+            "id": "p4",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": "apron",
+            "edge_id": null
+          },
+          {
+            "id": "p5",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e1"
+          },
+          {
+            "id": "p6",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e2"
+          },
+          {
+            "id": "p7",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e3"
+          },
+          {
+            "id": "p8",
+            "memory_id": "m-maya",
+            "contributor_id": "maya",
+            "node_id": null,
+            "edge_id": "e4"
+          },
+          {
+            "id": "p9",
+            "memory_id": "m-elena",
+            "contributor_id": "elena",
+            "node_id": "nora",
+            "edge_id": null
+          },
+          {
+            "id": "p10",
+            "memory_id": "m-elena",
+            "contributor_id": "elena",
+            "node_id": "rosa",
+            "edge_id": null
+          },
+          {
+            "id": "p11",
+            "memory_id": "m-elena",
+            "contributor_id": "elena",
+            "node_id": null,
+            "edge_id": "e5"
+          },
+          {
+            "id": "p12",
+            "memory_id": "m-david",
+            "contributor_id": "david",
+            "node_id": "book",
+            "edge_id": null
+          },
+          {
+            "id": "p13",
+            "memory_id": "m-david",
+            "contributor_id": "david",
+            "node_id": "rosa",
+            "edge_id": null
+          },
+          {
+            "id": "p14",
+            "memory_id": "m-david",
+            "contributor_id": "david",
+            "node_id": null,
+            "edge_id": "e6"
+          }
+        ],
+        "memories": [
+          {
+            "id": "m-maya",
+            "contributor_id": "maya",
+            "kind": "story",
+            "summary": "Maya on Nora and lemon cake."
+          },
+          {
+            "id": "m-elena",
+            "contributor_id": "elena",
+            "kind": "story",
+            "summary": "Elena on Nora teaching Rosa."
+          },
+          {
+            "id": "m-david",
+            "contributor_id": "david",
+            "kind": "photo",
+            "summary": "David's photo of the recipe book."
+          }
+        ],
+        "facePersonIds": [],
+        "wearerNodeId": "rosa",
+        "relatives": [
+          {
+            "id": "maya",
+            "family_id": "demo",
+            "name": "Maya",
+            "relation_to_wearer": "granddaughter",
+            "color": "#E0A458"
+          },
+          {
+            "id": "david",
+            "family_id": "demo",
+            "name": "David",
+            "relation_to_wearer": "son",
+            "color": "#5B8DEF"
+          },
+          {
+            "id": "elena",
+            "family_id": "demo",
+            "name": "Elena",
+            "relation_to_wearer": "daughter",
+            "color": "#B07CC6"
+          }
+        ],
+        "openQuestionRelativeIds": [
+          "maya",
+          "david",
+          "elena"
+        ]
+      },
+      "expected": {
+        "gaps": [
+          {
+            "type": "missing_origin",
+            "nodeId": "cake"
+          },
+          {
+            "type": "orphan_object",
+            "nodeId": "apron"
+          },
+          {
+            "type": "orphan_object",
+            "nodeId": "book"
+          }
+        ],
+        "topGap": {
+          "type": "missing_origin",
+          "nodeId": "cake"
+        },
+        "routedTo": null
+      }
+    },
+    {
+      "name": "empty-graph",
+      "input": {
+        "nodes": [],
+        "edges": [],
+        "provenance": [],
+        "memories": [],
+        "facePersonIds": [],
+        "wearerNodeId": null,
+        "relatives": [
+          {
+            "id": "maya",
+            "family_id": "demo",
+            "name": "Maya",
+            "relation_to_wearer": "granddaughter",
+            "color": "#E0A458"
+          },
+          {
+            "id": "david",
+            "family_id": "demo",
+            "name": "David",
+            "relation_to_wearer": "son",
+            "color": "#5B8DEF"
+          },
+          {
+            "id": "elena",
+            "family_id": "demo",
+            "name": "Elena",
+            "relation_to_wearer": "daughter",
+            "color": "#B07CC6"
+          }
+        ],
+        "openQuestionRelativeIds": []
+      },
+      "expected": {
+        "gaps": [],
+        "topGap": null,
+        "routedTo": null
+      }
+    }
+  ]
+}
