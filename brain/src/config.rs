@@ -17,7 +17,7 @@ pub const GATE: GateConfig = GateConfig {
     w_a: 0.20,
     w_s: 0.15,
     w_x: 0.25,
-    threshold: 0.80,
+    threshold: 0.85,
     single_claimant_agreement: 0.75,
 };
 

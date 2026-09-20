@@ -1,105 +1,41 @@
-import { describe, it, expect } from "vitest";
-import {
-  validateGrounding,
-  synthesizeCue,
-  identitySentence,
-  pickContextPath,
-} from "../lib/synthesize";
-import type { GraphEdgeRow, GraphNodeRow } from "../lib/types";
-
-const node = (id: string, label: string, type: GraphNodeRow["type"], rel: string | null = null): GraphNodeRow => ({
-  id,
-  family_id: "demo",
-  type,
-  label,
-  aliases: [],
-  relation_to_wearer: rel,
-});
-
-const nodes = [
-  node("rosa", "Rosa", "person", "self"),
-  node("nora", "Nora", "person", "sister"),
-  node("cake", "bake lemon cake on Sundays", "tradition"),
+import { describe, it, expect, vi } from "vitest";
+import { renderFacts, validateGrounding, synthesizeCue } from "../lib/synthesize";
+import type { VerifiedFact } from "../lib/types";
+const facts: VerifiedFact[] = [
+  { id: "f1", subjectNodeId: "nora", memoryId: "m1", contributorId: "maya", text: "Nora bakes lemon cake every Sunday." },
+  { id: "f2", subjectNodeId: "nora", memoryId: "m2", contributorId: "david", text: "The lemon cake recipe came from Nora’s mother." },
 ];
-const edges: GraphEdgeRow[] = [
-  { id: "e1", family_id: "demo", from_node: "nora", rel: "participates_in", to_node: "cake" },
-];
-const summaries = [
-  "Maya shared a story: Grandma Rosa and Nora used to bake lemon cake every Sunday.",
-];
-
-describe("grounding validator", () => {
-  const corpus = [...summaries, "Nora", "Rosa", "bake lemon cake on Sundays"];
-
-  it("accepts a sentence whose named words are in the corpus", () => {
-    expect(validateGrounding("You two baked lemon cake with Nora on Sundays.", corpus)).toBe(true);
+describe("exact fact grounding", () => {
+  it("accepts only exact composition of selected facts", () => {
+    expect(validateGrounding({ factIds: ["f2"], cue: renderFacts([facts[1]]) }, facts)).toBe(true);
   });
-
-  it("rejects a name absent from the corpus", () => {
-    expect(validateGrounding("You two baked with Uncle Marco.", corpus)).toBe(false);
+  it.each([
+    "You two baked lemon cake every Sunday.",
+    "nora won a baking prize.",
+    "A relative said: “Nora is your mother.”",
+    "A relative said: “Nora bakes lemon cake in 1972.”",
+  ])("rejects invented lowercase claims, relationships, dates, and participation: %s", cue => {
+    expect(validateGrounding({ factIds: ["f1"], cue }, facts)).toBe(false);
   });
-
-  it("rejects invented numbers", () => {
-    expect(validateGrounding("You baked for 40 years.", corpus)).toBe(false);
+  it("rejects valid words recombined into a false claim", () => {
+    expect(validateGrounding({ factIds: ["f1", "f2"], cue: "Nora came from lemon cake." }, facts)).toBe(false);
   });
-});
-
-describe("cue synthesis", () => {
-  it("builds identity + grounded context", async () => {
-    const cue = await synthesizeCue({
-      subject: nodes[1],
-      nodes,
-      edges,
-      contextSummaries: summaries,
-      wearerName: "Rosa",
-      rewrite: async () => "You two baked lemon cake every Sunday.",
-    });
-    expect(cue.text).toBe("That's Nora, your sister. You two baked lemon cake every Sunday.");
-    expect(cue.grounded).toBe(true);
+  it("rejects unknown or duplicate IDs", () => {
+    expect(validateGrounding({ factIds: ["unknown"], cue: renderFacts([facts[0]]) }, facts)).toBe(false);
+    expect(validateGrounding({ factIds: ["f1", "f1"], cue: renderFacts([facts[0], facts[0]]) }, facts)).toBe(false);
   });
-
-  it("falls back to a template when the LLM invents a name", async () => {
-    const cue = await synthesizeCue({
-      subject: nodes[1],
-      nodes,
-      edges,
-      contextSummaries: summaries,
-      wearerName: "Rosa",
-      rewrite: async () => "You two visited Florence with Marco.",
-    });
-    expect(cue.grounded).toBe(false);
-    expect(cue.text).toBe("That's Nora, your sister. You two bake lemon cake on Sundays.");
+  it("invalid model rewrite falls back to a literal attributed fact", async () => {
+    const cue = await synthesizeCue({ facts, rewrite: async () => ({ factIds: ["f1"], cue: "You two loved Rome." }) });
+    expect(cue.grounded).toBe(true); expect(cue.text).toBe(renderFacts([facts[0]]));
+    expect(cue.text.split(/\s+/).length).toBeLessThanOrEqual(30);
   });
-
-  it("uses identity only when there is no context path", async () => {
-    const cue = await synthesizeCue({
-      subject: node("book", "recipe book", "object"),
-      nodes,
-      edges: [],
-      contextSummaries: [],
-      wearerName: "Rosa",
-      rewrite: async () => "unused",
-    });
-    expect(cue.text).toBe("That's recipe book.");
+  it("model failure still permits an independently grounded local fallback", async () => {
+    expect((await synthesizeCue({ facts, rewrite: async () => { throw new Error("offline"); } })).grounded).toBe(true);
   });
-
-  it("picks participates_in then origin for the context path", () => {
-    const italy = node("italy", "Italy", "place");
-    const es: GraphEdgeRow[] = [
-      ...edges,
-      { id: "e2", family_id: "demo", from_node: "cake", rel: "origin", to_node: "italy" },
-    ];
-    const path = pickContextPath("nora", [...nodes, italy], es);
-    expect(path?.node.id).toBe("cake");
-    expect(path?.edges.map((e) => e.id)).toEqual(["e1", "e2"]);
-  });
-
-  it("identitySentence handles objects and related people", () => {
-    expect(identitySentence({ label: "Nora", type: "person", relation_to_wearer: "sister" })).toBe(
-      "That's Nora, your sister."
-    );
-    expect(identitySentence({ label: "recipe book", type: "object", relation_to_wearer: null })).toBe(
-      "That's recipe book."
-    );
+  it("no short verified fact fails closed without calling the model", async () => {
+    const rewrite = vi.fn();
+    expect((await synthesizeCue({ facts: [], rewrite })).grounded).toBe(false);
+    expect((await synthesizeCue({ facts: [{ ...facts[0], text: "word ".repeat(40) }], rewrite })).grounded).toBe(false);
+    expect(rewrite).not.toHaveBeenCalled();
   });
 });

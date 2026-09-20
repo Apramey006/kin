@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getAnonClient, FAMILY_ID } from "@/lib/supabase";
+import { getAnonClient } from "@/lib/supabase";
+import { authenticatedFetch, responseJSON, contributionKey } from "@/lib/client-auth";
 import { Recorder } from "@/components/Recorder";
 import { Sparkles } from "lucide-react";
 import type { Relative, WeaverQuestionRow } from "@/lib/types";
@@ -9,10 +10,13 @@ import type { Relative, WeaverQuestionRow } from "@/lib/types";
 export function WeaverInbox({
   me,
   relatives,
+  onAnswered,
 }: {
   me: Relative;
   relatives: Relative[];
+  onAnswered?: () => void;
 }) {
+  const [error, setError] = useState<string | null>(null);
   const [questions, setQuestions] = useState<WeaverQuestionRow[]>([]);
   const [answered, setAnswered] = useState<Record<string, string>>({});
   const [submittingId, setSubmittingId] = useState<string | null>(null);
@@ -22,13 +26,14 @@ export function WeaverInbox({
     if (!sb) return;
     let cancelled = false;
     const load = async () => {
-      const { data } = await sb
+      const { data, error: failure } = await sb
         .from("weaver_questions")
         .select("*")
-        .eq("family_id", FAMILY_ID)
+        .eq("family_id", me.family_id)
         .eq("target_relative_id", me.id)
         .eq("status", "open")
         .order("created_at", { ascending: false });
+      if (failure) { if (!cancelled) setError("Could not load your questions. Please refresh."); return; }
       if (!cancelled) setQuestions((data ?? []) as WeaverQuestionRow[]);
     };
     load();
@@ -40,7 +45,7 @@ export function WeaverInbox({
           event: "*",
           schema: "public",
           table: "weaver_questions",
-          filter: `family_id=eq.${FAMILY_ID}`,
+          filter: `family_id=eq.${me.family_id}`,
         },
         () => load()
       )
@@ -49,26 +54,28 @@ export function WeaverInbox({
       cancelled = true;
       sb.removeChannel(channel);
     };
-  }, [me.id]);
+  }, [me.id, me.family_id]);
 
-  if (!questions.length) return null;
+  if (!questions.length && !Object.keys(answered).length && !error) return null;
 
   const nameOf = (id: string) =>
     relatives.find((r) => r.id === id)?.name ?? "Someone";
 
   const answer = async (q: WeaverQuestionRow, blob: Blob, mime: string) => {
+    if (submittingId) return;
     setSubmittingId(q.id);
+    setError(null);
     try {
       const fd = new FormData();
       fd.append("file", new File([blob], "answer." + (mime.includes("mp4") ? "m4a" : "webm"), { type: mime }));
       fd.append("contributor_id", me.id);
       fd.append("question_id", q.id);
-      const res = await fetch("/api/weaver/answer", { method: "POST", body: fd });
-      const json = await res.json();
-      if (res.ok) {
-        setAnswered((a) => ({ ...a, [q.id]: json.summary }));
-        setQuestions((qs) => qs.filter((x) => x.id !== q.id));
-      }
+      const json = await responseJSON(await authenticatedFetch("/api/weaver/answer", { method: "POST", body: fd, headers: { "Idempotency-Key": await contributionKey(blob, [me.id, q.id]) } }));
+      setAnswered((a) => ({ ...a, [q.id]: json.summary }));
+      setQuestions((qs) => qs.filter((x) => x.id !== q.id));
+      onAnswered?.();
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : "Your answer could not be saved. Please retry.");
     } finally {
       setSubmittingId(null);
     }
@@ -84,6 +91,8 @@ export function WeaverInbox({
         </span>
       </div>
       <div className="space-y-3">
+        {error && <p role="alert" className="text-amber-700">{error}</p>}
+        {Object.entries(answered).map(([id, summary]) => <p key={id} role="status" className="mb-3 text-primary">Thank you. Kin added: {summary}</p>)}
         {questions.map((q) => (
           <div
             key={q.id}
@@ -108,7 +117,7 @@ export function WeaverInbox({
               <>
                 <Recorder
                   label="Record answer"
-                  disabled={submittingId === q.id}
+                  disabled={submittingId !== null}
                   onRecorded={(b, m) => answer(q, b, m)}
                 />
                 {submittingId === q.id && (

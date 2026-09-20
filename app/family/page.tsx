@@ -1,16 +1,10 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { getAnonClient, FAMILY_ID } from "@/lib/supabase";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { getAnonClient } from "@/lib/supabase";
+import { AuthBoundary, useKinAuth, authenticatedFetch, responseJSON, contributionKey, SignOutButton } from "@/lib/client-auth";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ImagePlus, Mic, BookHeart } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Recorder } from "@/components/Recorder";
 import { PhotoUploader } from "@/components/PhotoUploader";
 import { WeaverInbox } from "@/components/WeaverInbox";
@@ -22,7 +16,10 @@ interface Chip {
   relation_to_wearer: string | null;
 }
 
-export default function FamilyPage() {
+export default function FamilyPage() { return <AuthBoundary contributorOnly><FamilyContent /></AuthBoundary>; }
+
+function FamilyContent() {
+  const { familyId, contributorId } = useKinAuth();
   const [relatives, setRelatives] = useState<Relative[]>([]);
   const [personNodes, setPersonNodes] = useState<GraphNodeRow[]>([]);
   const [me, setMe] = useState<Relative | null>(null);
@@ -38,13 +35,14 @@ export default function FamilyPage() {
   const loadPersonNodes = useCallback(async () => {
     const sb = getAnonClient();
     if (!sb) return;
-    const { data } = await sb
+    const { data, error: failure } = await sb
       .from("graph_nodes")
       .select("*")
-      .eq("family_id", FAMILY_ID)
+      .eq("family_id", familyId)
       .eq("type", "person");
+    if (failure) { setError("Could not load family people. Please refresh."); return; }
     setPersonNodes((data ?? []) as GraphNodeRow[]);
-  }, []);
+  }, [familyId]);
 
   useEffect(() => {
     const sb = getAnonClient();
@@ -53,60 +51,48 @@ export default function FamilyPage() {
       return;
     }
     (async () => {
-      const { data: rels } = await sb
+      const { data: rels, error: failure } = await sb
         .from("relatives")
         .select("*")
-        .eq("family_id", FAMILY_ID);
+        .eq("family_id", familyId);
+      if (failure) { setError("Could not load family membership. Please refresh."); return; }
       const sorted = ((rels ?? []) as Relative[]).sort((a, b) =>
         a.name.localeCompare(b.name)
       );
       setRelatives(sorted);
-      try {
-        const saved = window.localStorage.getItem("kin_relative_id");
-        const found = (rels ?? []).find((r: Relative) => r.id === saved);
-        if (found) setMe(found);
-      } catch {
-        // localStorage unavailable; picker stays up
-      }
+      setMe(sorted.find((relative) => relative.id === contributorId) ?? null);
+      if (!sorted.some((relative) => relative.id === contributorId)) setError("Your family membership is not available. Ask the demo owner to run the seed.");
     })();
     loadPersonNodes();
     const channel = sb
       .channel("family-graph-nodes")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "graph_nodes", filter: `family_id=eq.${FAMILY_ID}` },
+        { event: "*", schema: "public", table: "graph_nodes", filter: `family_id=eq.${familyId}` },
         () => loadPersonNodes()
       )
       .subscribe();
     return () => {
       sb.removeChannel(channel);
     };
-  }, [loadPersonNodes]);
+  }, [loadPersonNodes, familyId, contributorId]);
 
   const loadMyMemories = useCallback(async (id: string) => {
     const sb = getAnonClient();
     if (!sb) return;
-    const { data } = await sb
+    const { data, error: failure } = await sb
       .from("memories")
       .select("id, kind, summary, caption, transcript, created_at")
-      .eq("family_id", FAMILY_ID)
+      .eq("family_id", familyId)
       .eq("contributor_id", id)
       .order("created_at", { ascending: false });
+    if (failure) { setError("Could not load your memories. Please refresh."); return; }
     setMyMemories((data ?? []) as MemoryRow[]);
-  }, []);
+  }, [familyId]);
 
   useEffect(() => {
     if (me) loadMyMemories(me.id);
   }, [me, loadMyMemories]);
-
-  const pickMe = (r: Relative) => {
-    setMe(r);
-    try {
-      window.localStorage.setItem("kin_relative_id", r.id);
-    } catch {
-      // ignore
-    }
-  };
 
   const submitStory = async (blob: Blob, mime: string) => {
     if (!me) return;
@@ -120,9 +106,7 @@ export default function FamilyPage() {
         new File([blob], `story.${mime.includes("mp4") ? "m4a" : "webm"}`, { type: mime })
       );
       fd.append("contributor_id", me.id);
-      const res = await fetch("/api/memories/story", { method: "POST", body: fd });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "story failed");
+      const json = await responseJSON(await authenticatedFetch("/api/memories/story", { method: "POST", body: fd, headers: { "Idempotency-Key": await contributionKey(blob, [me.id, mime]) } }));
       setStoryResult({ transcript: json.transcript, entities: json.entities });
       loadMyMemories(me.id);
       loadPersonNodes();
@@ -157,48 +141,7 @@ export default function FamilyPage() {
     );
   }
 
-  if (!me) {
-    return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-paper p-6">
-        <div className="w-full max-w-md">
-          <p className="mb-2 text-center text-xs font-semibold uppercase tracking-[0.28em] text-primary">
-            Kin
-          </p>
-          <h1 className="mb-8 text-center text-3xl font-semibold tracking-[-0.02em]">
-            Who are you?
-          </h1>
-          <div className="grid gap-3">
-            {relatives.map((r) => (
-              <button
-                key={r.id}
-                onClick={() => pickMe(r)}
-                className="group flex items-center gap-4 rounded-2xl border border-ink/[0.08] bg-paper-card px-5 py-4 text-left shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lift"
-              >
-                <span
-                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-lg font-semibold text-white"
-                  style={{ background: r.color }}
-                  aria-hidden
-                >
-                  {r.name.trim().charAt(0).toUpperCase()}
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-xl font-medium">{r.name}</span>
-                  <span className="block text-base text-ink/55">
-                    {r.relation_to_wearer}
-                  </span>
-                </span>
-              </button>
-            ))}
-            {!relatives.length && (
-              <p className="rounded-2xl border border-dashed border-ink/15 px-5 py-6 text-center text-ink/55">
-                No relatives yet. Run the seed (Stage → Seed) first.
-              </p>
-            )}
-          </div>
-        </div>
-      </main>
-    );
-  }
+  if (!me) return <main className="min-h-screen bg-paper p-6"><p role="status">{error ?? "Loading your family…"}</p><SignOutButton /></main>;
 
   return (
     <main className="min-h-screen bg-paper pb-16">
@@ -217,14 +160,11 @@ export default function FamilyPage() {
             </h1>
             <p className="truncate text-sm text-ink/50">{me.relation_to_wearer}</p>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => setMe(null)}>
-            Not {me.name}?
-          </Button>
+          <SignOutButton />
         </div>
       </header>
-
       <div className="mx-auto max-w-2xl space-y-5 px-4 py-6">
-        <WeaverInbox me={me} relatives={relatives} />
+        <WeaverInbox me={me} relatives={relatives} onAnswered={() => { loadMyMemories(me.id); loadPersonNodes(); }} />
 
         <Card>
           <CardHeader>

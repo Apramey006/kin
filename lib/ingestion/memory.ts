@@ -9,6 +9,8 @@ import { authenticateIngestion, assertOwnership } from "./auth";
 import { idSchema, ingestionError, IngestionError, multipart, upload } from "./http";
 import { digest, stableId } from "./ids";
 import { commitIngestion, existingReceipt, prepareGraph } from "./persist";
+import { literalFacts } from "./facts";
+import { anchorOriginAnswer } from "./answer";
 
 const labelsSchema = z.array(z.object({
   person_node_id: idSchema.optional(),
@@ -36,6 +38,7 @@ export async function ingestMemory(req: Request, kind: MemoryKind) {
     if (prior) return NextResponse.json(prior);
 
     let questionContext: string | undefined;
+    let answerQuestion: { gap_node_id?: string; gap_type?: string } = {};
     if (questionId) {
       const { data: question, error } = await sb.from("weaver_questions").select("*")
         .eq("id", questionId).eq("family_id", identity.familyId).maybeSingle();
@@ -44,6 +47,7 @@ export async function ingestMemory(req: Request, kind: MemoryKind) {
       if (question.target_relative_id !== identity.contributorId) throw new IngestionError(403, "Question belongs to another contributor");
       if (question.status !== "open") throw new IngestionError(409, "Question already answered");
       questionContext = question.question_text;
+      answerQuestion = question;
     }
     const [wearerResult, nodesResult, edgesResult] = await Promise.all([
       sb.from("wearer").select("name").eq("family_id", identity.familyId).maybeSingle(),
@@ -83,7 +87,18 @@ export async function ingestMemory(req: Request, kind: MemoryKind) {
     for (const label of labelNodes) {
       if (!extraction.nodes.some((node) => node.ref === label.ref)) extraction.nodes.push(label);
     }
+    const answerSubjects = kind === "answer" ? anchorOriginAnswer(extraction, transcript!, answerQuestion,
+      nodes, (edgesResult.data ?? []) as GraphEdgeRow[]) : [];
     const graph = prepareGraph(identity, memoryId, extraction, nodes, (edgesResult.data ?? []) as GraphEdgeRow[]);
+    const humanText = kind === "photo" ? caption : transcript!;
+    const verifiedFacts = literalFacts(humanText, [...nodes, ...graph.nodes].filter((n) =>
+      [...graph.refs.values()].includes(n.id)), memoryId, identity.contributorId);
+    for (const subject of answerSubjects) {
+      verifiedFacts.push({ id: stableId(memoryId, subject.id, transcript!), subjectNodeId: subject.id,
+        text: transcript!, sourceSpan: { start: 0, end: transcript!.length }, memoryId, contributorId: identity.contributorId });
+    }
+    const humanSource = { type: "human", user_id: identity.userId, caption, labels, consent,
+      question_context: questionContext ?? null, gap_node_id: answerQuestion.gap_node_id ?? null };
     const embeddingResult = z.array(z.number().finite()).length(1536).safeParse(await embedText(extraction.summary));
     if (!embeddingResult.success) throw new IngestionError(502, "Invalid embedding");
     const embedding = embeddingResult.data;
@@ -97,9 +112,10 @@ export async function ingestMemory(req: Request, kind: MemoryKind) {
     const result = await commitIngestion(sb, {
       id: memoryId, request_hash: requestHash, family_id: identity.familyId, contributor_id: identity.contributorId,
       memory: { id: memoryId, family_id: identity.familyId, contributor_id: identity.contributorId, kind,
-        media_path: path, transcript, caption: visionCaption, summary: extraction.summary, embedding, source_question_id: questionId },
+        media_path: path, transcript, caption: visionCaption, summary: extraction.summary, embedding, source_question_id: questionId,
+        source: humanSource, verified_facts: verifiedFacts },
       nodes: graph.nodes, edges: graph.edges, provenance: graph.provenance, response,
-      source: { type: "human", user_id: identity.userId, caption, labels, consent, question_context: questionContext ?? null },
+      source: humanSource,
     });
     return NextResponse.json(result);
   } catch (error) {

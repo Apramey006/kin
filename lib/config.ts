@@ -1,5 +1,7 @@
+import { DEMO_FAMILY_ID } from "./demo";
+
 export const CONFIG = {
-  familyId: process.env.KIN_FAMILY_ID ?? "demo",
+  familyId: process.env.KIN_FAMILY_ID ?? DEMO_FAMILY_ID,
   storageBucket: "media",
   snapshotMaxPx: 1024,
   storyMaxSeconds: 60,
@@ -29,7 +31,7 @@ export const CONFIG = {
     wA: 0.2,
     wS: 0.15,
     wX: 0.25,
-    threshold: 0.8,
+    threshold: gateThreshold(),
     singleClaimantAgreement: 0.75,
   },
 
@@ -48,6 +50,14 @@ export const CONFIG = {
 
   maxUploadBytes: 15 * 1024 * 1024,
 } as const;
+
+function gateThreshold(): number {
+  const value = Number(process.env.KIN_GATE_THRESHOLD || "0.85");
+  if (!Number.isFinite(value) || value < 0.85 || value > 1) {
+    throw new Error("KIN_GATE_THRESHOLD must be between 0.85 and 1");
+  }
+  return value;
+}
 
 export const SILENCE_REASONS = {
   noClaims: "no reliable memory",

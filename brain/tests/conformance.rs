@@ -40,6 +40,7 @@ fn matches_typescript_gate() {
         let want = &case.expected;
 
         let got_json = serde_json::to_value(&got).expect("serialize result");
+        assert_eq!(got_json["reasonCode"], want["reasonCode"], "{}: reasonCode differs", case.name);
 
         let want_decision = want["decision"].as_str().expect("decision");
         let got_decision = got_json["decision"].as_str().expect("decision");

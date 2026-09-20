@@ -1,7 +1,7 @@
 {
   "cases": [
     {
-      "name": "face-distance-0.2",
+      "name": "empty",
       "input": {
         "keeper": {
           "relativeId": "maya",
@@ -9,361 +9,18 @@
           "color": "#f00"
         },
         "input": {
-          "faceMatches": [
-            {
-              "person_node_id": "nora",
-              "contributor_id": "maya",
-              "memory_id": "m1",
-              "distance": 0.2
-            }
-          ],
-          "nodeLabels": {
-            "nora": "Nora",
-            "cabin": "the cabin",
-            "sam": "Sam"
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
           },
-          "nodeTypes": {
-            "nora": "person",
-            "cabin": "object",
-            "sunday": "tradition",
-            "sam": "person"
-          },
-          "memoryOwners": {
-            "m1": "maya"
-          },
-          "memories": [],
-          "memoryNodeLinks": {},
-          "personLinkedMemories": [
-            {
-              "id": "m2",
-              "summary": "sunday baking",
-              "similarity": 0
-            }
-          ]
-        }
-      },
-      "expected": {
-        "keeperId": "maya",
-        "claim": {
-          "subjectNodeId": "nora",
-          "label": "Nora"
-        },
-        "memoryIds": [
-          "m1"
-        ],
-        "v": 1,
-        "r": 0,
-        "reason": "face match (d=0.20)"
-      }
-    },
-    {
-      "name": "face-distance-0.35",
-      "input": {
-        "keeper": {
-          "relativeId": "maya",
-          "name": "Maya",
-          "color": "#f00"
-        },
-        "input": {
-          "faceMatches": [
-            {
-              "person_node_id": "nora",
-              "contributor_id": "maya",
-              "memory_id": "m1",
-              "distance": 0.35
-            }
-          ],
-          "nodeLabels": {
-            "nora": "Nora",
-            "cabin": "the cabin",
-            "sam": "Sam"
-          },
-          "nodeTypes": {
-            "nora": "person",
-            "cabin": "object",
-            "sunday": "tradition",
-            "sam": "person"
-          },
-          "memoryOwners": {
-            "m1": "maya"
-          },
-          "memories": [],
-          "memoryNodeLinks": {},
-          "personLinkedMemories": [
-            {
-              "id": "m2",
-              "summary": "sunday baking",
-              "similarity": 0
-            }
-          ]
-        }
-      },
-      "expected": {
-        "keeperId": "maya",
-        "claim": {
-          "subjectNodeId": "nora",
-          "label": "Nora"
-        },
-        "memoryIds": [
-          "m1"
-        ],
-        "v": 1,
-        "r": 0,
-        "reason": "face match (d=0.35)"
-      }
-    },
-    {
-      "name": "face-distance-0.45",
-      "input": {
-        "keeper": {
-          "relativeId": "maya",
-          "name": "Maya",
-          "color": "#f00"
-        },
-        "input": {
-          "faceMatches": [
-            {
-              "person_node_id": "nora",
-              "contributor_id": "maya",
-              "memory_id": "m1",
-              "distance": 0.45
-            }
-          ],
-          "nodeLabels": {
-            "nora": "Nora",
-            "cabin": "the cabin",
-            "sam": "Sam"
-          },
-          "nodeTypes": {
-            "nora": "person",
-            "cabin": "object",
-            "sunday": "tradition",
-            "sam": "person"
-          },
-          "memoryOwners": {
-            "m1": "maya"
-          },
-          "memories": [],
-          "memoryNodeLinks": {},
-          "personLinkedMemories": [
-            {
-              "id": "m2",
-              "summary": "sunday baking",
-              "similarity": 0
-            }
-          ]
-        }
-      },
-      "expected": {
-        "keeperId": "maya",
-        "claim": {
-          "subjectNodeId": "nora",
-          "label": "Nora"
-        },
-        "memoryIds": [
-          "m1"
-        ],
-        "v": 0.5999999999999999,
-        "r": 0,
-        "reason": "face match (d=0.45)"
-      }
-    },
-    {
-      "name": "face-distance-0.55",
-      "input": {
-        "keeper": {
-          "relativeId": "maya",
-          "name": "Maya",
-          "color": "#f00"
-        },
-        "input": {
-          "faceMatches": [
-            {
-              "person_node_id": "nora",
-              "contributor_id": "maya",
-              "memory_id": "m1",
-              "distance": 0.55
-            }
-          ],
-          "nodeLabels": {
-            "nora": "Nora",
-            "cabin": "the cabin",
-            "sam": "Sam"
-          },
-          "nodeTypes": {
-            "nora": "person",
-            "cabin": "object",
-            "sunday": "tradition",
-            "sam": "person"
-          },
-          "memoryOwners": {
-            "m1": "maya"
-          },
-          "memories": [],
-          "memoryNodeLinks": {},
-          "personLinkedMemories": [
-            {
-              "id": "m2",
-              "summary": "sunday baking",
-              "similarity": 0
-            }
-          ]
-        }
-      },
-      "expected": {
-        "keeperId": "maya",
-        "claim": {
-          "subjectNodeId": "nora",
-          "label": "Nora"
-        },
-        "memoryIds": [
-          "m1"
-        ],
-        "v": 0.19999999999999973,
-        "r": 0,
-        "reason": "face match (d=0.55)"
-      }
-    },
-    {
-      "name": "face-distance-0.6",
-      "input": {
-        "keeper": {
-          "relativeId": "maya",
-          "name": "Maya",
-          "color": "#f00"
-        },
-        "input": {
-          "faceMatches": [
-            {
-              "person_node_id": "nora",
-              "contributor_id": "maya",
-              "memory_id": "m1",
-              "distance": 0.6
-            }
-          ],
-          "nodeLabels": {
-            "nora": "Nora",
-            "cabin": "the cabin",
-            "sam": "Sam"
-          },
-          "nodeTypes": {
-            "nora": "person",
-            "cabin": "object",
-            "sunday": "tradition",
-            "sam": "person"
-          },
-          "memoryOwners": {
-            "m1": "maya"
-          },
-          "memories": [],
-          "memoryNodeLinks": {},
-          "personLinkedMemories": [
-            {
-              "id": "m2",
-              "summary": "sunday baking",
-              "similarity": 0
-            }
-          ]
-        }
-      },
-      "expected": {
-        "keeperId": "maya",
-        "claim": null,
-        "memoryIds": [
-          "m1"
-        ],
-        "v": 0,
-        "r": 0,
-        "reason": "weak face match (d=0.60)"
-      }
-    },
-    {
-      "name": "face-distance-0.7",
-      "input": {
-        "keeper": {
-          "relativeId": "maya",
-          "name": "Maya",
-          "color": "#f00"
-        },
-        "input": {
-          "faceMatches": [
-            {
-              "person_node_id": "nora",
-              "contributor_id": "maya",
-              "memory_id": "m1",
-              "distance": 0.7
-            }
-          ],
-          "nodeLabels": {
-            "nora": "Nora",
-            "cabin": "the cabin",
-            "sam": "Sam"
-          },
-          "nodeTypes": {
-            "nora": "person",
-            "cabin": "object",
-            "sunday": "tradition",
-            "sam": "person"
-          },
-          "memoryOwners": {
-            "m1": "maya"
-          },
-          "memories": [],
-          "memoryNodeLinks": {},
-          "personLinkedMemories": [
-            {
-              "id": "m2",
-              "summary": "sunday baking",
-              "similarity": 0
-            }
-          ]
-        }
-      },
-      "expected": {
-        "keeperId": "maya",
-        "claim": null,
-        "memoryIds": [
-          "m1"
-        ],
-        "v": 0,
-        "r": 0,
-        "reason": "weak face match (d=0.70)"
-      }
-    },
-    {
-      "name": "face-match-belongs-to-another-keeper",
-      "input": {
-        "keeper": {
-          "relativeId": "maya",
-          "name": "Maya",
-          "color": "#f00"
-        },
-        "input": {
-          "faceMatches": [
-            {
-              "person_node_id": "nora",
-              "contributor_id": "david",
-              "memory_id": "m9",
-              "distance": 0.2
-            }
-          ],
-          "nodeLabels": {
-            "nora": "Nora",
-            "cabin": "the cabin",
-            "sam": "Sam"
-          },
-          "nodeTypes": {
-            "nora": "person",
-            "cabin": "object",
-            "sunday": "tradition",
-            "sam": "person"
-          },
-          "memoryOwners": {
-            "m9": "david"
-          },
-          "memories": [],
-          "memoryNodeLinks": {},
-          "personLinkedMemories": []
+          "subjectLabel": "Nora",
+          "memories": []
         }
       },
       "expected": {
@@ -372,11 +29,13 @@
         "memoryIds": [],
         "v": 0,
         "r": 0,
-        "reason": "no reliable memory"
+        "reason": "No meaningful human story linked to this subject",
+        "support": "abstains",
+        "evidence": []
       }
     },
     {
-      "name": "picks-closest-own-face-over-foreign",
+      "name": "literal-human-story",
       "input": {
         "keeper": {
           "relativeId": "maya",
@@ -384,270 +43,78 @@
           "color": "#f00"
         },
         "input": {
-          "faceMatches": [
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          },
+          "subjectLabel": "Nora",
+          "memories": [
             {
-              "person_node_id": "sam",
-              "contributor_id": "david",
-              "memory_id": "m9",
-              "distance": 0.1
-            },
-            {
-              "person_node_id": "nora",
+              "id": "m",
+              "family_id": "670f5075-c286-4b29-8074-86401c18d0c0",
               "contributor_id": "maya",
-              "memory_id": "m1",
-              "distance": 0.5
-            },
-            {
-              "person_node_id": "sam",
-              "contributor_id": "maya",
-              "memory_id": "m4",
-              "distance": 0.3
+              "kind": "story",
+              "media_path": null,
+              "transcript": "Nora bakes lemon cake on Sundays.",
+              "caption": null,
+              "summary": "model summary",
+              "source_question_id": null,
+              "created_at": "2026-01-01",
+              "source": {
+                "type": "human"
+              },
+              "similarity": 0.6,
+              "verified_facts": [
+                {
+                  "id": "m-fact",
+                  "subjectNodeId": "nora",
+                  "text": "Nora bakes lemon cake on Sundays.",
+                  "contributorId": "maya",
+                  "memoryId": "m",
+                  "sourceSpan": {
+                    "start": 0,
+                    "end": 33
+                  }
+                }
+              ]
             }
-          ],
-          "nodeLabels": {
-            "nora": "Nora",
-            "cabin": "the cabin",
-            "sam": "Sam"
-          },
-          "nodeTypes": {
-            "nora": "person",
-            "cabin": "object",
-            "sunday": "tradition",
-            "sam": "person"
-          },
-          "memoryOwners": {
-            "m1": "maya",
-            "m4": "maya",
-            "m9": "david"
-          },
-          "memories": [],
-          "memoryNodeLinks": {},
-          "personLinkedMemories": []
+          ]
         }
       },
       "expected": {
         "keeperId": "maya",
         "claim": {
-          "subjectNodeId": "sam",
-          "label": "Sam"
+          "subjectNodeId": "nora",
+          "label": "Nora"
         },
         "memoryIds": [
-          "m4"
+          "m"
         ],
         "v": 1,
-        "r": 0,
-        "reason": "face match (d=0.30)"
-      }
-    },
-    {
-      "name": "memory-similarity-0.2",
-      "input": {
-        "keeper": {
-          "relativeId": "maya",
-          "name": "Maya",
-          "color": "#f00"
-        },
-        "input": {
-          "faceMatches": [],
-          "nodeLabels": {
-            "nora": "Nora",
-            "cabin": "the cabin",
-            "sam": "Sam"
-          },
-          "nodeTypes": {
-            "nora": "person",
-            "cabin": "object",
-            "sunday": "tradition",
-            "sam": "person"
-          },
-          "memoryOwners": {
-            "m1": "maya"
-          },
-          "memories": [
-            {
-              "id": "m1",
-              "summary": "nora bakes",
-              "similarity": 0.2
-            }
-          ],
-          "memoryNodeLinks": {
-            "m1": [
-              "nora"
-            ]
-          },
-          "personLinkedMemories": []
-        }
-      },
-      "expected": {
-        "keeperId": "maya",
-        "claim": null,
-        "memoryIds": [],
-        "v": 0,
-        "r": 0,
-        "reason": "no reliable memory"
-      }
-    },
-    {
-      "name": "memory-similarity-0.4",
-      "input": {
-        "keeper": {
-          "relativeId": "maya",
-          "name": "Maya",
-          "color": "#f00"
-        },
-        "input": {
-          "faceMatches": [],
-          "nodeLabels": {
-            "nora": "Nora",
-            "cabin": "the cabin",
-            "sam": "Sam"
-          },
-          "nodeTypes": {
-            "nora": "person",
-            "cabin": "object",
-            "sunday": "tradition",
-            "sam": "person"
-          },
-          "memoryOwners": {
-            "m1": "maya"
-          },
-          "memories": [
-            {
-              "id": "m1",
-              "summary": "nora bakes",
-              "similarity": 0.4
-            }
-          ],
-          "memoryNodeLinks": {
-            "m1": [
-              "nora"
-            ]
-          },
-          "personLinkedMemories": []
-        }
-      },
-      "expected": {
-        "keeperId": "maya",
-        "claim": {
-          "subjectNodeId": "nora",
-          "label": "Nora"
-        },
-        "memoryIds": [
-          "m1"
-        ],
-        "v": 0,
-        "r": 0.5,
-        "reason": "memory match (sim=0.40)"
-      }
-    },
-    {
-      "name": "memory-similarity-0.5",
-      "input": {
-        "keeper": {
-          "relativeId": "maya",
-          "name": "Maya",
-          "color": "#f00"
-        },
-        "input": {
-          "faceMatches": [],
-          "nodeLabels": {
-            "nora": "Nora",
-            "cabin": "the cabin",
-            "sam": "Sam"
-          },
-          "nodeTypes": {
-            "nora": "person",
-            "cabin": "object",
-            "sunday": "tradition",
-            "sam": "person"
-          },
-          "memoryOwners": {
-            "m1": "maya"
-          },
-          "memories": [
-            {
-              "id": "m1",
-              "summary": "nora bakes",
-              "similarity": 0.5
-            }
-          ],
-          "memoryNodeLinks": {
-            "m1": [
-              "nora"
-            ]
-          },
-          "personLinkedMemories": []
-        }
-      },
-      "expected": {
-        "keeperId": "maya",
-        "claim": {
-          "subjectNodeId": "nora",
-          "label": "Nora"
-        },
-        "memoryIds": [
-          "m1"
-        ],
-        "v": 0,
-        "r": 0.7499999999999999,
-        "reason": "memory match (sim=0.50)"
-      }
-    },
-    {
-      "name": "memory-similarity-0.6",
-      "input": {
-        "keeper": {
-          "relativeId": "maya",
-          "name": "Maya",
-          "color": "#f00"
-        },
-        "input": {
-          "faceMatches": [],
-          "nodeLabels": {
-            "nora": "Nora",
-            "cabin": "the cabin",
-            "sam": "Sam"
-          },
-          "nodeTypes": {
-            "nora": "person",
-            "cabin": "object",
-            "sunday": "tradition",
-            "sam": "person"
-          },
-          "memoryOwners": {
-            "m1": "maya"
-          },
-          "memories": [
-            {
-              "id": "m1",
-              "summary": "nora bakes",
-              "similarity": 0.6
-            }
-          ],
-          "memoryNodeLinks": {
-            "m1": [
-              "nora"
-            ]
-          },
-          "personLinkedMemories": []
-        }
-      },
-      "expected": {
-        "keeperId": "maya",
-        "claim": {
-          "subjectNodeId": "nora",
-          "label": "Nora"
-        },
-        "memoryIds": [
-          "m1"
-        ],
-        "v": 0,
         "r": 0.9999999999999999,
-        "reason": "memory match (sim=0.60)"
+        "reason": "Contributor's human story supports the matched subject",
+        "support": "supports",
+        "evidence": [
+          {
+            "memoryId": "m",
+            "contributorId": "maya",
+            "subjectNodeId": "nora",
+            "source": "human",
+            "supportedFacts": [
+              "Nora bakes lemon cake on Sundays."
+            ]
+          }
+        ]
       }
     },
     {
-      "name": "memory-similarity-0.8",
+      "name": "foreign-owner",
       "input": {
         "keeper": {
           "relativeId": "maya",
@@ -655,241 +122,48 @@
           "color": "#f00"
         },
         "input": {
-          "faceMatches": [],
-          "nodeLabels": {
-            "nora": "Nora",
-            "cabin": "the cabin",
-            "sam": "Sam"
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
           },
-          "nodeTypes": {
-            "nora": "person",
-            "cabin": "object",
-            "sunday": "tradition",
-            "sam": "person"
-          },
-          "memoryOwners": {
-            "m1": "maya"
-          },
+          "subjectLabel": "Nora",
           "memories": [
             {
-              "id": "m1",
-              "summary": "nora bakes",
-              "similarity": 0.8
+              "id": "foreign",
+              "family_id": "670f5075-c286-4b29-8074-86401c18d0c0",
+              "contributor_id": "david",
+              "kind": "story",
+              "media_path": null,
+              "transcript": "Nora bakes lemon cake on Sundays.",
+              "caption": null,
+              "summary": "model summary",
+              "source_question_id": null,
+              "created_at": "2026-01-01",
+              "source": {
+                "type": "human"
+              },
+              "similarity": 0.6,
+              "verified_facts": [
+                {
+                  "id": "foreign-fact",
+                  "subjectNodeId": "nora",
+                  "text": "Nora bakes lemon cake on Sundays.",
+                  "contributorId": "david",
+                  "memoryId": "foreign",
+                  "sourceSpan": {
+                    "start": 0,
+                    "end": 33
+                  }
+                }
+              ]
             }
-          ],
-          "memoryNodeLinks": {
-            "m1": [
-              "nora"
-            ]
-          },
-          "personLinkedMemories": []
-        }
-      },
-      "expected": {
-        "keeperId": "maya",
-        "claim": {
-          "subjectNodeId": "nora",
-          "label": "Nora"
-        },
-        "memoryIds": [
-          "m1"
-        ],
-        "v": 0,
-        "r": 1,
-        "reason": "memory match (sim=0.80)"
-      }
-    },
-    {
-      "name": "memory-similarity-1",
-      "input": {
-        "keeper": {
-          "relativeId": "maya",
-          "name": "Maya",
-          "color": "#f00"
-        },
-        "input": {
-          "faceMatches": [],
-          "nodeLabels": {
-            "nora": "Nora",
-            "cabin": "the cabin",
-            "sam": "Sam"
-          },
-          "nodeTypes": {
-            "nora": "person",
-            "cabin": "object",
-            "sunday": "tradition",
-            "sam": "person"
-          },
-          "memoryOwners": {
-            "m1": "maya"
-          },
-          "memories": [
-            {
-              "id": "m1",
-              "summary": "nora bakes",
-              "similarity": 1
-            }
-          ],
-          "memoryNodeLinks": {
-            "m1": [
-              "nora"
-            ]
-          },
-          "personLinkedMemories": []
-        }
-      },
-      "expected": {
-        "keeperId": "maya",
-        "claim": {
-          "subjectNodeId": "nora",
-          "label": "Nora"
-        },
-        "memoryIds": [
-          "m1"
-        ],
-        "v": 0,
-        "r": 1,
-        "reason": "memory match (sim=1.00)"
-      }
-    },
-    {
-      "name": "memory-linked-only-to-tradition",
-      "input": {
-        "keeper": {
-          "relativeId": "maya",
-          "name": "Maya",
-          "color": "#f00"
-        },
-        "input": {
-          "faceMatches": [],
-          "nodeLabels": {
-            "nora": "Nora",
-            "cabin": "the cabin",
-            "sam": "Sam"
-          },
-          "nodeTypes": {
-            "nora": "person",
-            "cabin": "object",
-            "sunday": "tradition",
-            "sam": "person"
-          },
-          "memoryOwners": {
-            "m1": "maya"
-          },
-          "memories": [
-            {
-              "id": "m1",
-              "summary": "every sunday",
-              "similarity": 0.9
-            }
-          ],
-          "memoryNodeLinks": {
-            "m1": [
-              "sunday"
-            ]
-          },
-          "personLinkedMemories": []
-        }
-      },
-      "expected": {
-        "keeperId": "maya",
-        "claim": null,
-        "memoryIds": [],
-        "v": 0,
-        "r": 1,
-        "reason": "memory match but no linked subject"
-      }
-    },
-    {
-      "name": "memory-linked-to-object",
-      "input": {
-        "keeper": {
-          "relativeId": "maya",
-          "name": "Maya",
-          "color": "#f00"
-        },
-        "input": {
-          "faceMatches": [],
-          "nodeLabels": {
-            "nora": "Nora",
-            "cabin": "the cabin",
-            "sam": "Sam"
-          },
-          "nodeTypes": {
-            "nora": "person",
-            "cabin": "object",
-            "sunday": "tradition",
-            "sam": "person"
-          },
-          "memoryOwners": {
-            "m1": "maya"
-          },
-          "memories": [
-            {
-              "id": "m1",
-              "summary": "the cabin",
-              "similarity": 0.9
-            }
-          ],
-          "memoryNodeLinks": {
-            "m1": [
-              "cabin"
-            ]
-          },
-          "personLinkedMemories": []
-        }
-      },
-      "expected": {
-        "keeperId": "maya",
-        "claim": {
-          "subjectNodeId": "cabin",
-          "label": "the cabin"
-        },
-        "memoryIds": [
-          "m1"
-        ],
-        "v": 0,
-        "r": 1,
-        "reason": "memory match (sim=0.90)"
-      }
-    },
-    {
-      "name": "memory-not-owned-by-keeper",
-      "input": {
-        "keeper": {
-          "relativeId": "maya",
-          "name": "Maya",
-          "color": "#f00"
-        },
-        "input": {
-          "faceMatches": [],
-          "nodeLabels": {
-            "nora": "Nora",
-            "cabin": "the cabin",
-            "sam": "Sam"
-          },
-          "nodeTypes": {
-            "nora": "person",
-            "cabin": "object",
-            "sunday": "tradition",
-            "sam": "person"
-          },
-          "memoryOwners": {
-            "m9": "david"
-          },
-          "memories": [
-            {
-              "id": "m9",
-              "summary": "someone else's",
-              "similarity": 0.95
-            }
-          ],
-          "memoryNodeLinks": {
-            "m9": [
-              "nora"
-            ]
-          },
-          "personLinkedMemories": []
+          ]
         }
       },
       "expected": {
@@ -898,11 +172,13 @@
         "memoryIds": [],
         "v": 0,
         "r": 0,
-        "reason": "no reliable memory"
+        "reason": "No meaningful human story linked to this subject",
+        "support": "abstains",
+        "evidence": []
       }
     },
     {
-      "name": "citation-cap-with-many-person-linked",
+      "name": "unrelated-subject",
       "input": {
         "keeper": {
           "relativeId": "maya",
@@ -910,60 +186,226 @@
           "color": "#f00"
         },
         "input": {
-          "faceMatches": [
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          },
+          "subjectLabel": "Nora",
+          "memories": [
             {
-              "person_node_id": "nora",
+              "id": "unrelated",
+              "family_id": "670f5075-c286-4b29-8074-86401c18d0c0",
               "contributor_id": "maya",
-              "memory_id": "m1",
-              "distance": 0.2
+              "kind": "story",
+              "media_path": null,
+              "transcript": "Nora bakes lemon cake on Sundays.",
+              "caption": null,
+              "summary": "model summary",
+              "source_question_id": null,
+              "created_at": "2026-01-01",
+              "source": {
+                "type": "human"
+              },
+              "similarity": 0.6,
+              "verified_facts": [
+                {
+                  "id": "unrelated-fact",
+                  "subjectNodeId": "sam",
+                  "text": "Nora bakes lemon cake on Sundays.",
+                  "contributorId": "maya",
+                  "memoryId": "unrelated",
+                  "sourceSpan": {
+                    "start": 0,
+                    "end": 33
+                  }
+                }
+              ]
             }
-          ],
-          "nodeLabels": {
-            "nora": "Nora",
-            "cabin": "the cabin",
-            "sam": "Sam"
+          ]
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": null,
+        "memoryIds": [],
+        "v": 0,
+        "r": 0,
+        "reason": "No meaningful human story linked to this subject",
+        "support": "abstains",
+        "evidence": []
+      }
+    },
+    {
+      "name": "citation-cap",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
           },
-          "nodeTypes": {
-            "nora": "person",
-            "cabin": "object",
-            "sunday": "tradition",
-            "sam": "person"
-          },
-          "memoryOwners": {
-            "m1": "maya",
-            "m2": "maya",
-            "m3": "maya",
-            "m4": "maya",
-            "m5": "maya",
-            "m6": "david"
-          },
-          "memories": [],
-          "memoryNodeLinks": {},
-          "personLinkedMemories": [
+          "subjectLabel": "Nora",
+          "memories": [
+            {
+              "id": "m0",
+              "family_id": "670f5075-c286-4b29-8074-86401c18d0c0",
+              "contributor_id": "maya",
+              "kind": "story",
+              "media_path": null,
+              "transcript": "Nora bakes lemon cake on Sundays.",
+              "caption": null,
+              "summary": "model summary",
+              "source_question_id": null,
+              "created_at": "2026-01-01",
+              "source": {
+                "type": "human"
+              },
+              "similarity": 0.6,
+              "verified_facts": [
+                {
+                  "id": "m0-fact",
+                  "subjectNodeId": "nora",
+                  "text": "Nora bakes lemon cake on Sundays.",
+                  "contributorId": "maya",
+                  "memoryId": "m0",
+                  "sourceSpan": {
+                    "start": 0,
+                    "end": 33
+                  }
+                }
+              ]
+            },
+            {
+              "id": "m1",
+              "family_id": "670f5075-c286-4b29-8074-86401c18d0c0",
+              "contributor_id": "maya",
+              "kind": "story",
+              "media_path": null,
+              "transcript": "Nora bakes lemon cake on Sundays.",
+              "caption": null,
+              "summary": "model summary",
+              "source_question_id": null,
+              "created_at": "2026-01-01",
+              "source": {
+                "type": "human"
+              },
+              "similarity": 0.6,
+              "verified_facts": [
+                {
+                  "id": "m1-fact",
+                  "subjectNodeId": "nora",
+                  "text": "Nora bakes lemon cake on Sundays.",
+                  "contributorId": "maya",
+                  "memoryId": "m1",
+                  "sourceSpan": {
+                    "start": 0,
+                    "end": 33
+                  }
+                }
+              ]
+            },
             {
               "id": "m2",
-              "summary": "a",
-              "similarity": 0
+              "family_id": "670f5075-c286-4b29-8074-86401c18d0c0",
+              "contributor_id": "maya",
+              "kind": "story",
+              "media_path": null,
+              "transcript": "Nora bakes lemon cake on Sundays.",
+              "caption": null,
+              "summary": "model summary",
+              "source_question_id": null,
+              "created_at": "2026-01-01",
+              "source": {
+                "type": "human"
+              },
+              "similarity": 0.6,
+              "verified_facts": [
+                {
+                  "id": "m2-fact",
+                  "subjectNodeId": "nora",
+                  "text": "Nora bakes lemon cake on Sundays.",
+                  "contributorId": "maya",
+                  "memoryId": "m2",
+                  "sourceSpan": {
+                    "start": 0,
+                    "end": 33
+                  }
+                }
+              ]
             },
             {
               "id": "m3",
-              "summary": "b",
-              "similarity": 0
+              "family_id": "670f5075-c286-4b29-8074-86401c18d0c0",
+              "contributor_id": "maya",
+              "kind": "story",
+              "media_path": null,
+              "transcript": "Nora bakes lemon cake on Sundays.",
+              "caption": null,
+              "summary": "model summary",
+              "source_question_id": null,
+              "created_at": "2026-01-01",
+              "source": {
+                "type": "human"
+              },
+              "similarity": 0.6,
+              "verified_facts": [
+                {
+                  "id": "m3-fact",
+                  "subjectNodeId": "nora",
+                  "text": "Nora bakes lemon cake on Sundays.",
+                  "contributorId": "maya",
+                  "memoryId": "m3",
+                  "sourceSpan": {
+                    "start": 0,
+                    "end": 33
+                  }
+                }
+              ]
             },
             {
               "id": "m4",
-              "summary": "c",
-              "similarity": 0
-            },
-            {
-              "id": "m5",
-              "summary": "d",
-              "similarity": 0
-            },
-            {
-              "id": "m6",
-              "summary": "not mine",
-              "similarity": 0
+              "family_id": "670f5075-c286-4b29-8074-86401c18d0c0",
+              "contributor_id": "maya",
+              "kind": "story",
+              "media_path": null,
+              "transcript": "Nora bakes lemon cake on Sundays.",
+              "caption": null,
+              "summary": "model summary",
+              "source_question_id": null,
+              "created_at": "2026-01-01",
+              "source": {
+                "type": "human"
+              },
+              "similarity": 0.6,
+              "verified_facts": [
+                {
+                  "id": "m4-fact",
+                  "subjectNodeId": "nora",
+                  "text": "Nora bakes lemon cake on Sundays.",
+                  "contributorId": "maya",
+                  "memoryId": "m4",
+                  "sourceSpan": {
+                    "start": 0,
+                    "end": 33
+                  }
+                }
+              ]
             }
           ]
         }
@@ -975,18 +417,47 @@
           "label": "Nora"
         },
         "memoryIds": [
+          "m0",
           "m1",
-          "m2",
-          "m3",
-          "m4"
+          "m2"
         ],
         "v": 1,
-        "r": 0,
-        "reason": "face match (d=0.20)"
+        "r": 0.9999999999999999,
+        "reason": "Contributor's human story supports the matched subject",
+        "support": "supports",
+        "evidence": [
+          {
+            "memoryId": "m0",
+            "contributorId": "maya",
+            "subjectNodeId": "nora",
+            "source": "human",
+            "supportedFacts": [
+              "Nora bakes lemon cake on Sundays."
+            ]
+          },
+          {
+            "memoryId": "m1",
+            "contributorId": "maya",
+            "subjectNodeId": "nora",
+            "source": "human",
+            "supportedFacts": [
+              "Nora bakes lemon cake on Sundays."
+            ]
+          },
+          {
+            "memoryId": "m2",
+            "contributorId": "maya",
+            "subjectNodeId": "nora",
+            "source": "human",
+            "supportedFacts": [
+              "Nora bakes lemon cake on Sundays."
+            ]
+          }
+        ]
       }
     },
     {
-      "name": "no-evidence",
+      "name": "no_face",
       "input": {
         "keeper": {
           "relativeId": "maya",
@@ -994,22 +465,42 @@
           "color": "#f00"
         },
         "input": {
-          "faceMatches": [],
-          "nodeLabels": {
-            "nora": "Nora",
-            "cabin": "the cabin",
-            "sam": "Sam"
+          "face": {
+            "status": "no_face",
+            "model": "fixture-only"
           },
-          "nodeTypes": {
-            "nora": "person",
-            "cabin": "object",
-            "sunday": "tradition",
-            "sam": "person"
-          },
-          "memoryOwners": {},
-          "memories": [],
-          "memoryNodeLinks": {},
-          "personLinkedMemories": []
+          "subjectLabel": "Nora",
+          "memories": [
+            {
+              "id": "m",
+              "family_id": "670f5075-c286-4b29-8074-86401c18d0c0",
+              "contributor_id": "maya",
+              "kind": "story",
+              "media_path": null,
+              "transcript": "Nora bakes lemon cake on Sundays.",
+              "caption": null,
+              "summary": "model summary",
+              "source_question_id": null,
+              "created_at": "2026-01-01",
+              "source": {
+                "type": "human"
+              },
+              "similarity": 0.6,
+              "verified_facts": [
+                {
+                  "id": "m-fact",
+                  "subjectNodeId": "nora",
+                  "text": "Nora bakes lemon cake on Sundays.",
+                  "contributorId": "maya",
+                  "memoryId": "m",
+                  "sourceSpan": {
+                    "start": 0,
+                    "end": 33
+                  }
+                }
+              ]
+            }
+          ]
         }
       },
       "expected": {
@@ -1018,7 +509,1433 @@
         "memoryIds": [],
         "v": 0,
         "r": 0,
-        "reason": "no reliable memory"
+        "reason": "No meaningful human story linked to this subject",
+        "support": "abstains",
+        "evidence": []
+      }
+    },
+    {
+      "name": "unknown",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "face": {
+            "status": "unknown",
+            "model": "fixture-only"
+          },
+          "subjectLabel": "Nora",
+          "memories": [
+            {
+              "id": "m",
+              "family_id": "670f5075-c286-4b29-8074-86401c18d0c0",
+              "contributor_id": "maya",
+              "kind": "story",
+              "media_path": null,
+              "transcript": "Nora bakes lemon cake on Sundays.",
+              "caption": null,
+              "summary": "model summary",
+              "source_question_id": null,
+              "created_at": "2026-01-01",
+              "source": {
+                "type": "human"
+              },
+              "similarity": 0.6,
+              "verified_facts": [
+                {
+                  "id": "m-fact",
+                  "subjectNodeId": "nora",
+                  "text": "Nora bakes lemon cake on Sundays.",
+                  "contributorId": "maya",
+                  "memoryId": "m",
+                  "sourceSpan": {
+                    "start": 0,
+                    "end": 33
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": null,
+        "memoryIds": [],
+        "v": 0,
+        "r": 0,
+        "reason": "No meaningful human story linked to this subject",
+        "support": "abstains",
+        "evidence": []
+      }
+    },
+    {
+      "name": "ambiguous",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "face": {
+            "status": "ambiguous",
+            "model": "fixture-only"
+          },
+          "subjectLabel": "Nora",
+          "memories": [
+            {
+              "id": "m",
+              "family_id": "670f5075-c286-4b29-8074-86401c18d0c0",
+              "contributor_id": "maya",
+              "kind": "story",
+              "media_path": null,
+              "transcript": "Nora bakes lemon cake on Sundays.",
+              "caption": null,
+              "summary": "model summary",
+              "source_question_id": null,
+              "created_at": "2026-01-01",
+              "source": {
+                "type": "human"
+              },
+              "similarity": 0.6,
+              "verified_facts": [
+                {
+                  "id": "m-fact",
+                  "subjectNodeId": "nora",
+                  "text": "Nora bakes lemon cake on Sundays.",
+                  "contributorId": "maya",
+                  "memoryId": "m",
+                  "sourceSpan": {
+                    "start": 0,
+                    "end": 33
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": null,
+        "memoryIds": [],
+        "v": 0,
+        "r": 0,
+        "reason": "No meaningful human story linked to this subject",
+        "support": "abstains",
+        "evidence": []
+      }
+    },
+    {
+      "name": "unavailable",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "face": {
+            "status": "unavailable",
+            "model": "fixture-only"
+          },
+          "subjectLabel": "Nora",
+          "memories": [
+            {
+              "id": "m",
+              "family_id": "670f5075-c286-4b29-8074-86401c18d0c0",
+              "contributor_id": "maya",
+              "kind": "story",
+              "media_path": null,
+              "transcript": "Nora bakes lemon cake on Sundays.",
+              "caption": null,
+              "summary": "model summary",
+              "source_question_id": null,
+              "created_at": "2026-01-01",
+              "source": {
+                "type": "human"
+              },
+              "similarity": 0.6,
+              "verified_facts": [
+                {
+                  "id": "m-fact",
+                  "subjectNodeId": "nora",
+                  "text": "Nora bakes lemon cake on Sundays.",
+                  "contributorId": "maya",
+                  "memoryId": "m",
+                  "sourceSpan": {
+                    "start": 0,
+                    "end": 33
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": null,
+        "memoryIds": [],
+        "v": 0,
+        "r": 0,
+        "reason": "No meaningful human story linked to this subject",
+        "support": "abstains",
+        "evidence": []
+      }
+    },
+    {
+      "name": "similarity-0",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          },
+          "subjectLabel": "Nora",
+          "memories": [
+            {
+              "id": "m",
+              "family_id": "670f5075-c286-4b29-8074-86401c18d0c0",
+              "contributor_id": "maya",
+              "kind": "story",
+              "media_path": null,
+              "transcript": "Nora bakes lemon cake on Sundays.",
+              "caption": null,
+              "summary": "model summary",
+              "source_question_id": null,
+              "created_at": "2026-01-01",
+              "source": {
+                "type": "human"
+              },
+              "similarity": 0,
+              "verified_facts": [
+                {
+                  "id": "m-fact",
+                  "subjectNodeId": "nora",
+                  "text": "Nora bakes lemon cake on Sundays.",
+                  "contributorId": "maya",
+                  "memoryId": "m",
+                  "sourceSpan": {
+                    "start": 0,
+                    "end": 33
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": {
+          "subjectNodeId": "nora",
+          "label": "Nora"
+        },
+        "memoryIds": [
+          "m"
+        ],
+        "v": 1,
+        "r": 0,
+        "reason": "Contributor's human story supports the matched subject",
+        "support": "supports",
+        "evidence": [
+          {
+            "memoryId": "m",
+            "contributorId": "maya",
+            "subjectNodeId": "nora",
+            "source": "human",
+            "supportedFacts": [
+              "Nora bakes lemon cake on Sundays."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "similarity-0.2",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          },
+          "subjectLabel": "Nora",
+          "memories": [
+            {
+              "id": "m",
+              "family_id": "670f5075-c286-4b29-8074-86401c18d0c0",
+              "contributor_id": "maya",
+              "kind": "story",
+              "media_path": null,
+              "transcript": "Nora bakes lemon cake on Sundays.",
+              "caption": null,
+              "summary": "model summary",
+              "source_question_id": null,
+              "created_at": "2026-01-01",
+              "source": {
+                "type": "human"
+              },
+              "similarity": 0.2,
+              "verified_facts": [
+                {
+                  "id": "m-fact",
+                  "subjectNodeId": "nora",
+                  "text": "Nora bakes lemon cake on Sundays.",
+                  "contributorId": "maya",
+                  "memoryId": "m",
+                  "sourceSpan": {
+                    "start": 0,
+                    "end": 33
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": {
+          "subjectNodeId": "nora",
+          "label": "Nora"
+        },
+        "memoryIds": [
+          "m"
+        ],
+        "v": 1,
+        "r": 0,
+        "reason": "Contributor's human story supports the matched subject",
+        "support": "supports",
+        "evidence": [
+          {
+            "memoryId": "m",
+            "contributorId": "maya",
+            "subjectNodeId": "nora",
+            "source": "human",
+            "supportedFacts": [
+              "Nora bakes lemon cake on Sundays."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "similarity-0.4",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          },
+          "subjectLabel": "Nora",
+          "memories": [
+            {
+              "id": "m",
+              "family_id": "670f5075-c286-4b29-8074-86401c18d0c0",
+              "contributor_id": "maya",
+              "kind": "story",
+              "media_path": null,
+              "transcript": "Nora bakes lemon cake on Sundays.",
+              "caption": null,
+              "summary": "model summary",
+              "source_question_id": null,
+              "created_at": "2026-01-01",
+              "source": {
+                "type": "human"
+              },
+              "similarity": 0.4,
+              "verified_facts": [
+                {
+                  "id": "m-fact",
+                  "subjectNodeId": "nora",
+                  "text": "Nora bakes lemon cake on Sundays.",
+                  "contributorId": "maya",
+                  "memoryId": "m",
+                  "sourceSpan": {
+                    "start": 0,
+                    "end": 33
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": {
+          "subjectNodeId": "nora",
+          "label": "Nora"
+        },
+        "memoryIds": [
+          "m"
+        ],
+        "v": 1,
+        "r": 0.5,
+        "reason": "Contributor's human story supports the matched subject",
+        "support": "supports",
+        "evidence": [
+          {
+            "memoryId": "m",
+            "contributorId": "maya",
+            "subjectNodeId": "nora",
+            "source": "human",
+            "supportedFacts": [
+              "Nora bakes lemon cake on Sundays."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "similarity-0.6",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          },
+          "subjectLabel": "Nora",
+          "memories": [
+            {
+              "id": "m",
+              "family_id": "670f5075-c286-4b29-8074-86401c18d0c0",
+              "contributor_id": "maya",
+              "kind": "story",
+              "media_path": null,
+              "transcript": "Nora bakes lemon cake on Sundays.",
+              "caption": null,
+              "summary": "model summary",
+              "source_question_id": null,
+              "created_at": "2026-01-01",
+              "source": {
+                "type": "human"
+              },
+              "similarity": 0.6,
+              "verified_facts": [
+                {
+                  "id": "m-fact",
+                  "subjectNodeId": "nora",
+                  "text": "Nora bakes lemon cake on Sundays.",
+                  "contributorId": "maya",
+                  "memoryId": "m",
+                  "sourceSpan": {
+                    "start": 0,
+                    "end": 33
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": {
+          "subjectNodeId": "nora",
+          "label": "Nora"
+        },
+        "memoryIds": [
+          "m"
+        ],
+        "v": 1,
+        "r": 0.9999999999999999,
+        "reason": "Contributor's human story supports the matched subject",
+        "support": "supports",
+        "evidence": [
+          {
+            "memoryId": "m",
+            "contributorId": "maya",
+            "subjectNodeId": "nora",
+            "source": "human",
+            "supportedFacts": [
+              "Nora bakes lemon cake on Sundays."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "similarity-0.8",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          },
+          "subjectLabel": "Nora",
+          "memories": [
+            {
+              "id": "m",
+              "family_id": "670f5075-c286-4b29-8074-86401c18d0c0",
+              "contributor_id": "maya",
+              "kind": "story",
+              "media_path": null,
+              "transcript": "Nora bakes lemon cake on Sundays.",
+              "caption": null,
+              "summary": "model summary",
+              "source_question_id": null,
+              "created_at": "2026-01-01",
+              "source": {
+                "type": "human"
+              },
+              "similarity": 0.8,
+              "verified_facts": [
+                {
+                  "id": "m-fact",
+                  "subjectNodeId": "nora",
+                  "text": "Nora bakes lemon cake on Sundays.",
+                  "contributorId": "maya",
+                  "memoryId": "m",
+                  "sourceSpan": {
+                    "start": 0,
+                    "end": 33
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": {
+          "subjectNodeId": "nora",
+          "label": "Nora"
+        },
+        "memoryIds": [
+          "m"
+        ],
+        "v": 1,
+        "r": 1,
+        "reason": "Contributor's human story supports the matched subject",
+        "support": "supports",
+        "evidence": [
+          {
+            "memoryId": "m",
+            "contributorId": "maya",
+            "subjectNodeId": "nora",
+            "source": "human",
+            "supportedFacts": [
+              "Nora bakes lemon cake on Sundays."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "similarity-1",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          },
+          "subjectLabel": "Nora",
+          "memories": [
+            {
+              "id": "m",
+              "family_id": "670f5075-c286-4b29-8074-86401c18d0c0",
+              "contributor_id": "maya",
+              "kind": "story",
+              "media_path": null,
+              "transcript": "Nora bakes lemon cake on Sundays.",
+              "caption": null,
+              "summary": "model summary",
+              "source_question_id": null,
+              "created_at": "2026-01-01",
+              "source": {
+                "type": "human"
+              },
+              "similarity": 1,
+              "verified_facts": [
+                {
+                  "id": "m-fact",
+                  "subjectNodeId": "nora",
+                  "text": "Nora bakes lemon cake on Sundays.",
+                  "contributorId": "maya",
+                  "memoryId": "m",
+                  "sourceSpan": {
+                    "start": 0,
+                    "end": 33
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": {
+          "subjectNodeId": "nora",
+          "label": "Nora"
+        },
+        "memoryIds": [
+          "m"
+        ],
+        "v": 1,
+        "r": 1,
+        "reason": "Contributor's human story supports the matched subject",
+        "support": "supports",
+        "evidence": [
+          {
+            "memoryId": "m",
+            "contributorId": "maya",
+            "subjectNodeId": "nora",
+            "source": "human",
+            "supportedFacts": [
+              "Nora bakes lemon cake on Sundays."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "This is Nora in the kitchen.",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          },
+          "subjectLabel": "Nora",
+          "memories": [
+            {
+              "id": "m",
+              "family_id": "670f5075-c286-4b29-8074-86401c18d0c0",
+              "contributor_id": "maya",
+              "kind": "story",
+              "media_path": null,
+              "transcript": "This is Nora in the kitchen.",
+              "caption": null,
+              "summary": "model summary",
+              "source_question_id": null,
+              "created_at": "2026-01-01",
+              "source": {
+                "type": "human"
+              },
+              "similarity": 0.6,
+              "verified_facts": [
+                {
+                  "id": "m-fact",
+                  "subjectNodeId": "nora",
+                  "text": "This is Nora in the kitchen.",
+                  "contributorId": "maya",
+                  "memoryId": "m",
+                  "sourceSpan": {
+                    "start": 0,
+                    "end": 28
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": null,
+        "memoryIds": [],
+        "v": 0,
+        "r": 0,
+        "reason": "No meaningful human story linked to this subject",
+        "support": "abstains",
+        "evidence": []
+      }
+    },
+    {
+      "name": "A photo of Nora baking.",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          },
+          "subjectLabel": "Nora",
+          "memories": [
+            {
+              "id": "m",
+              "family_id": "670f5075-c286-4b29-8074-86401c18d0c0",
+              "contributor_id": "maya",
+              "kind": "story",
+              "media_path": null,
+              "transcript": "A photo of Nora baking.",
+              "caption": null,
+              "summary": "model summary",
+              "source_question_id": null,
+              "created_at": "2026-01-01",
+              "source": {
+                "type": "human"
+              },
+              "similarity": 0.6,
+              "verified_facts": [
+                {
+                  "id": "m-fact",
+                  "subjectNodeId": "nora",
+                  "text": "A photo of Nora baking.",
+                  "contributorId": "maya",
+                  "memoryId": "m",
+                  "sourceSpan": {
+                    "start": 0,
+                    "end": 23
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": null,
+        "memoryIds": [],
+        "v": 0,
+        "r": 0,
+        "reason": "No meaningful human story linked to this subject",
+        "support": "abstains",
+        "evidence": []
+      }
+    },
+    {
+      "name": "Nora never baked lemon cake.",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          },
+          "subjectLabel": "Nora",
+          "memories": [
+            {
+              "id": "m",
+              "family_id": "670f5075-c286-4b29-8074-86401c18d0c0",
+              "contributor_id": "maya",
+              "kind": "story",
+              "media_path": null,
+              "transcript": "Nora never baked lemon cake.",
+              "caption": null,
+              "summary": "model summary",
+              "source_question_id": null,
+              "created_at": "2026-01-01",
+              "source": {
+                "type": "human"
+              },
+              "similarity": 0.6,
+              "verified_facts": [
+                {
+                  "id": "m-fact",
+                  "subjectNodeId": "nora",
+                  "text": "Nora never baked lemon cake.",
+                  "contributorId": "maya",
+                  "memoryId": "m",
+                  "sourceSpan": {
+                    "start": 0,
+                    "end": 28
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": {
+          "subjectNodeId": "nora",
+          "label": "Nora"
+        },
+        "memoryIds": [
+          "m"
+        ],
+        "v": 1,
+        "r": 0.9999999999999999,
+        "reason": "Human evidence contains an explicit denial; review before recall",
+        "support": "contradicts",
+        "evidence": [
+          {
+            "memoryId": "m",
+            "contributorId": "maya",
+            "subjectNodeId": "nora",
+            "source": "human",
+            "supportedFacts": [
+              "Nora never baked lemon cake."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "Nora didn't bake lemon cake.",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          },
+          "subjectLabel": "Nora",
+          "memories": [
+            {
+              "id": "m",
+              "family_id": "670f5075-c286-4b29-8074-86401c18d0c0",
+              "contributor_id": "maya",
+              "kind": "story",
+              "media_path": null,
+              "transcript": "Nora didn't bake lemon cake.",
+              "caption": null,
+              "summary": "model summary",
+              "source_question_id": null,
+              "created_at": "2026-01-01",
+              "source": {
+                "type": "human"
+              },
+              "similarity": 0.6,
+              "verified_facts": [
+                {
+                  "id": "m-fact",
+                  "subjectNodeId": "nora",
+                  "text": "Nora didn't bake lemon cake.",
+                  "contributorId": "maya",
+                  "memoryId": "m",
+                  "sourceSpan": {
+                    "start": 0,
+                    "end": 28
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": {
+          "subjectNodeId": "nora",
+          "label": "Nora"
+        },
+        "memoryIds": [
+          "m"
+        ],
+        "v": 1,
+        "r": 0.9999999999999999,
+        "reason": "Human evidence contains an explicit denial; review before recall",
+        "support": "contradicts",
+        "evidence": [
+          {
+            "memoryId": "m",
+            "contributorId": "maya",
+            "subjectNodeId": "nora",
+            "source": "human",
+            "supportedFacts": [
+              "Nora didn't bake lemon cake."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "Nora was not in Italy.",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          },
+          "subjectLabel": "Nora",
+          "memories": [
+            {
+              "id": "m",
+              "family_id": "670f5075-c286-4b29-8074-86401c18d0c0",
+              "contributor_id": "maya",
+              "kind": "story",
+              "media_path": null,
+              "transcript": "Nora was not in Italy.",
+              "caption": null,
+              "summary": "model summary",
+              "source_question_id": null,
+              "created_at": "2026-01-01",
+              "source": {
+                "type": "human"
+              },
+              "similarity": 0.6,
+              "verified_facts": [
+                {
+                  "id": "m-fact",
+                  "subjectNodeId": "nora",
+                  "text": "Nora was not in Italy.",
+                  "contributorId": "maya",
+                  "memoryId": "m",
+                  "sourceSpan": {
+                    "start": 0,
+                    "end": 22
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": {
+          "subjectNodeId": "nora",
+          "label": "Nora"
+        },
+        "memoryIds": [
+          "m"
+        ],
+        "v": 1,
+        "r": 0.9999999999999999,
+        "reason": "Human evidence contains an explicit denial; review before recall",
+        "support": "contradicts",
+        "evidence": [
+          {
+            "memoryId": "m",
+            "contributorId": "maya",
+            "subjectNodeId": "nora",
+            "source": "human",
+            "supportedFacts": [
+              "Nora was not in Italy."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "Nora likes the northern evergreen trees.",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          },
+          "subjectLabel": "Nora",
+          "memories": [
+            {
+              "id": "m",
+              "family_id": "670f5075-c286-4b29-8074-86401c18d0c0",
+              "contributor_id": "maya",
+              "kind": "story",
+              "media_path": null,
+              "transcript": "Nora likes the northern evergreen trees.",
+              "caption": null,
+              "summary": "model summary",
+              "source_question_id": null,
+              "created_at": "2026-01-01",
+              "source": {
+                "type": "human"
+              },
+              "similarity": 0.6,
+              "verified_facts": [
+                {
+                  "id": "m-fact",
+                  "subjectNodeId": "nora",
+                  "text": "Nora likes the northern evergreen trees.",
+                  "contributorId": "maya",
+                  "memoryId": "m",
+                  "sourceSpan": {
+                    "start": 0,
+                    "end": 40
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": {
+          "subjectNodeId": "nora",
+          "label": "Nora"
+        },
+        "memoryIds": [
+          "m"
+        ],
+        "v": 1,
+        "r": 0.9999999999999999,
+        "reason": "Contributor's human story supports the matched subject",
+        "support": "supports",
+        "evidence": [
+          {
+            "memoryId": "m",
+            "contributorId": "maya",
+            "subjectNodeId": "nora",
+            "source": "human",
+            "supportedFacts": [
+              "Nora likes the northern evergreen trees."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "😀 Nora bakes lemon cake.",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          },
+          "subjectLabel": "Nora",
+          "memories": [
+            {
+              "id": "m",
+              "family_id": "670f5075-c286-4b29-8074-86401c18d0c0",
+              "contributor_id": "maya",
+              "kind": "story",
+              "media_path": null,
+              "transcript": "😀 Nora bakes lemon cake.",
+              "caption": null,
+              "summary": "model summary",
+              "source_question_id": null,
+              "created_at": "2026-01-01",
+              "source": {
+                "type": "human"
+              },
+              "similarity": 0.6,
+              "verified_facts": [
+                {
+                  "id": "m-fact",
+                  "subjectNodeId": "nora",
+                  "text": "😀 Nora bakes lemon cake.",
+                  "contributorId": "maya",
+                  "memoryId": "m",
+                  "sourceSpan": {
+                    "start": 0,
+                    "end": 25
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": {
+          "subjectNodeId": "nora",
+          "label": "Nora"
+        },
+        "memoryIds": [
+          "m"
+        ],
+        "v": 1,
+        "r": 0.9999999999999999,
+        "reason": "Contributor's human story supports the matched subject",
+        "support": "supports",
+        "evidence": [
+          {
+            "memoryId": "m",
+            "contributorId": "maya",
+            "subjectNodeId": "nora",
+            "source": "human",
+            "supportedFacts": [
+              "😀 Nora bakes lemon cake."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "altered-span",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          },
+          "subjectLabel": "Nora",
+          "memories": [
+            {
+              "id": "m",
+              "family_id": "670f5075-c286-4b29-8074-86401c18d0c0",
+              "contributor_id": "maya",
+              "kind": "story",
+              "media_path": null,
+              "transcript": "Nora bakes lemon cake on Sundays.",
+              "caption": null,
+              "summary": "model summary",
+              "source_question_id": null,
+              "created_at": "2026-01-01",
+              "source": {
+                "type": "human"
+              },
+              "similarity": 0.6,
+              "verified_facts": [
+                {
+                  "id": "m-fact",
+                  "subjectNodeId": "nora",
+                  "text": "Nora bakes lemon cake on Sundays.",
+                  "contributorId": "maya",
+                  "memoryId": "m",
+                  "sourceSpan": {
+                    "start": 1,
+                    "end": 33
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": null,
+        "memoryIds": [],
+        "v": 0,
+        "r": 0,
+        "reason": "No meaningful human story linked to this subject",
+        "support": "abstains",
+        "evidence": []
+      }
+    },
+    {
+      "name": "vision-is-not-human",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          },
+          "subjectLabel": "Nora",
+          "memories": [
+            {
+              "id": "m",
+              "family_id": "670f5075-c286-4b29-8074-86401c18d0c0",
+              "contributor_id": "maya",
+              "kind": "story",
+              "media_path": null,
+              "transcript": null,
+              "caption": "Nora bakes lemon cake on Sundays.",
+              "summary": "model summary",
+              "source_question_id": null,
+              "created_at": "2026-01-01",
+              "source": {
+                "type": "human"
+              },
+              "similarity": 0.6,
+              "verified_facts": [
+                {
+                  "id": "m-fact",
+                  "subjectNodeId": "nora",
+                  "text": "Nora bakes lemon cake on Sundays.",
+                  "contributorId": "maya",
+                  "memoryId": "m",
+                  "sourceSpan": {
+                    "start": 0,
+                    "end": 33
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": null,
+        "memoryIds": [],
+        "v": 0,
+        "r": 0,
+        "reason": "No meaningful human story linked to this subject",
+        "support": "abstains",
+        "evidence": []
+      }
+    },
+    {
+      "name": "missing-human-source",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          },
+          "subjectLabel": "Nora",
+          "memories": [
+            {
+              "id": "m",
+              "family_id": "670f5075-c286-4b29-8074-86401c18d0c0",
+              "contributor_id": "maya",
+              "kind": "story",
+              "media_path": null,
+              "transcript": "Nora bakes lemon cake on Sundays.",
+              "caption": null,
+              "summary": "model summary",
+              "source_question_id": null,
+              "created_at": "2026-01-01",
+              "similarity": 0.6,
+              "verified_facts": [
+                {
+                  "id": "m-fact",
+                  "subjectNodeId": "nora",
+                  "text": "Nora bakes lemon cake on Sundays.",
+                  "contributorId": "maya",
+                  "memoryId": "m",
+                  "sourceSpan": {
+                    "start": 0,
+                    "end": 33
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": null,
+        "memoryIds": [],
+        "v": 0,
+        "r": 0,
+        "reason": "No meaningful human story linked to this subject",
+        "support": "abstains",
+        "evidence": []
+      }
+    },
+    {
+      "name": "borrowed-fact",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          },
+          "subjectLabel": "Nora",
+          "memories": [
+            {
+              "id": "m",
+              "family_id": "670f5075-c286-4b29-8074-86401c18d0c0",
+              "contributor_id": "maya",
+              "kind": "story",
+              "media_path": null,
+              "transcript": "Nora bakes lemon cake on Sundays.",
+              "caption": null,
+              "summary": "model summary",
+              "source_question_id": null,
+              "created_at": "2026-01-01",
+              "source": {
+                "type": "human"
+              },
+              "similarity": 0.6,
+              "verified_facts": [
+                {
+                  "id": "m-fact",
+                  "subjectNodeId": "nora",
+                  "text": "Nora bakes lemon cake on Sundays.",
+                  "contributorId": "david",
+                  "memoryId": "m",
+                  "sourceSpan": {
+                    "start": 0,
+                    "end": 33
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": null,
+        "memoryIds": [],
+        "v": 0,
+        "r": 0,
+        "reason": "No meaningful human story linked to this subject",
+        "support": "abstains",
+        "evidence": []
       }
     }
   ]

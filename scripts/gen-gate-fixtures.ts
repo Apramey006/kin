@@ -1,143 +1,39 @@
-/**
- * Freezes the current TypeScript gate behavior into language-neutral JSON.
- *
- * Any port of the gate must reproduce conformance/gate-fixtures.json exactly.
- * The sweep is deterministic and covers the honest cases (agreeing keepers,
- * strong evidence) alongside the adversarial ones the gate exists to catch:
- * disagreement, borrowed memories, missing provenance, text-only evidence.
- */
+/** P0 wire contract conformance: generate expectations from the actual TS gate. */
 import { writeFileSync } from "node:fs";
 import { evaluateGate, type GateInfo } from "../lib/gate";
-import type { KeeperResult } from "../lib/types";
-
-type Case = { name: string; results: KeeperResult[]; info: GateInfo };
-
-const k = (
-  id: string,
-  subject: string | null,
-  v: number,
-  r: number,
-  memoryIds: string[] = []
-): KeeperResult => ({
-  keeperId: id,
-  claim: subject ? { subjectNodeId: subject, label: subject } : null,
-  memoryIds,
-  v,
-  r,
-  reason: "",
+import type { FaceOutcome, KeeperResult } from "../lib/types";
+const face: FaceOutcome = { status: "matched", subjectNodeId: "nora", model: "fixture-only", enrollmentIds: ["enrollment"], distance: .3, v: 1 };
+const k = (id: string, r = 1): KeeperResult => ({
+  keeperId: id, claim: { subjectNodeId: "nora", label: "Nora" }, memoryIds: [id + "-memory"], v: 1, r,
+  reason: "", support: "supports", evidence: [{ memoryId: id + "-memory", contributorId: id,
+    subjectNodeId: "nora", source: "human", supportedFacts: ["Nora bakes lemon cake on Sundays."] }],
 });
-
-const info = (
-  owners: Record<string, string>,
-  kinds: Record<string, string> = {},
-  subjects: string[] = ["nora"]
-): GateInfo => ({
-  memoryOwners: owners,
-  memoryKinds: kinds,
-  subjectProvenance: Object.fromEntries(subjects.map((s) => [s, true])),
-});
-
-const cases: Case[] = [];
-
-// --- honest positives -------------------------------------------------
-cases.push({
-  name: "worked-example-two-strong-agreeing",
-  results: [
-    k("maya", "nora", 0.93, 0.91, ["m1"]),
-    k("david", "nora", 0.89, 0.88, ["m2"]),
-    k("elena", null, 0, 0.1),
-  ],
-  info: info({ m1: "maya", m2: "david" }, { m1: "photo", m2: "photo" }),
-});
-
-// --- adversarial: disagreement ---------------------------------------
-cases.push({
-  name: "two-keepers-different-subjects",
-  results: [k("maya", "nora", 0.9, 0.9, ["m1"]), k("david", "sam", 0.9, 0.9, ["m2"])],
-  info: info({ m1: "maya", m2: "david" }, { m1: "photo", m2: "photo" }, ["nora", "sam"]),
-});
-cases.push({
-  name: "strong-majority-with-one-dissenter",
-  results: [
-    k("maya", "nora", 0.95, 0.95, ["m1"]),
-    k("david", "nora", 0.94, 0.93, ["m2"]),
-    k("elena", "sam", 0.4, 0.5, ["m3"]),
-  ],
-  info: info(
-    { m1: "maya", m2: "david", m3: "elena" },
-    { m1: "photo", m2: "photo", m3: "photo" },
-    ["nora", "sam"]
-  ),
-});
-
-// --- adversarial: provenance / ownership ------------------------------
-cases.push({
-  name: "keeper-cites-memory-it-does-not-own",
-  results: [k("maya", "nora", 0.95, 0.95, ["m2"]), k("david", "nora", 0.93, 0.92, ["m2"])],
-  info: info({ m2: "david" }, { m2: "photo" }),
-});
-cases.push({
-  name: "subject-has-no-provenance",
-  results: [k("maya", "nora", 0.95, 0.95, ["m1"]), k("david", "nora", 0.94, 0.93, ["m2"])],
-  info: {
-    memoryOwners: { m1: "maya", m2: "david" },
-    memoryKinds: { m1: "photo", m2: "photo" },
-    subjectProvenance: {},
-  },
-});
-cases.push({
-  name: "agreeing-keeper-cites-nothing",
-  results: [k("maya", "nora", 0.95, 0.95, ["m1"]), k("david", "nora", 0.94, 0.93, [])],
-  info: info({ m1: "maya" }, { m1: "photo" }),
-});
-
-// --- adversarial: text-only evidence (S drops to 0.5) -----------------
-cases.push({
-  name: "text-only-evidence-no-visual",
-  results: [k("maya", "nora", 0, 0.95, ["m1"]), k("david", "nora", 0, 0.93, ["m2"])],
-  info: info({ m1: "maya", m2: "david" }, { m1: "story", m2: "story" }),
-});
-
-// --- adversarial: the stranger ---------------------------------------
-cases.push({
-  name: "stranger-no-keeper-claims",
-  results: [k("maya", null, 0, 0.1), k("david", null, 0, 0.05)],
-  info: info({}),
-});
-
-// --- single claimant sweep (A = 0.75 path) ---------------------------
-for (const v of [0.6, 0.8, 0.95]) {
-  for (const r of [0.5, 0.75, 0.95]) {
-    cases.push({
-      name: `single-claimant-v${v}-r${r}`,
-      results: [k("maya", "nora", v, r, ["m1"]), k("david", null, 0, 0.1)],
-      info: info({ m1: "maya" }, { m1: "photo" }),
-    });
-  }
+const cases: { name: string; input: { results: KeeperResult[]; info: GateInfo } }[] = [];
+const add = (name: string, results: KeeperResult[], info: GateInfo = { face }) => cases.push({ name, input: { results, info } });
+add("empty", []);
+add("single-strongest", [k("maya")]);
+add("duplicate-contributor", [k("maya"), k("maya")]);
+add("two-human-sources", [k("maya"), k("elena")]);
+for (const status of ["no_face", "unknown", "ambiguous", "unavailable"] as const)
+  add(status, [k("maya"), k("elena")], { face: { status, model: "fixture-only" } });
+add("provider-failure", [k("maya"), k("elena")], { face, providerFailure: true });
+for (const v of [.5, .65, .8, .9, 1]) for (const r of [0, .4, .6, .8, 1])
+  add("scores-" + v + "-" + r, [k("maya", r), k("elena", r)], { face: { ...face, v } });
+for (const variant of ["no-evidence", "wrong-owner", "wrong-subject", "uncited", "blank-fact", "no-facts", "contradicts", "other-claim"] as const) {
+  const a = k("maya");
+  if (variant === "no-evidence") a.evidence = [];
+  if (variant === "wrong-owner") a.evidence[0].contributorId = "elena";
+  if (variant === "wrong-subject") a.evidence[0].subjectNodeId = "sam";
+  if (variant === "uncited") a.memoryIds = ["another"];
+  if (variant === "blank-fact") a.evidence[0].supportedFacts = [" "];
+  if (variant === "no-facts") a.evidence[0].supportedFacts = [];
+  if (variant === "contradicts") a.support = "contradicts";
+  if (variant === "other-claim") a.claim!.subjectNodeId = "sam";
+  add(variant, [a, k("elena")]);
 }
-
-// --- threshold boundary sweep: two agreeing keepers -------------------
-for (const v of [0.5, 0.65, 0.8, 0.9, 1.0]) {
-  for (const r of [0.4, 0.6, 0.8, 1.0]) {
-    cases.push({
-      name: `two-agreeing-v${v}-r${r}`,
-      results: [k("maya", "nora", v, r, ["m1"]), k("david", "nora", v - 0.05, r - 0.05, ["m2"])],
-      info: info({ m1: "maya", m2: "david" }, { m1: "photo", m2: "photo" }),
-    });
-  }
-}
-
-const fixtures = cases.map((c) => ({
-  name: c.name,
-  input: { results: c.results, info: c.info },
-  expected: evaluateGate(c.results, c.info),
-}));
-
-const speak = fixtures.filter((f) => f.expected.decision === "speak").length;
-writeFileSync(
-  "conformance/gate-fixtures.json",
-  JSON.stringify({ config: "gate weights from lib/config.ts", cases: fixtures }, null, 2) + "\n"
-);
-console.log(
-  `${fixtures.length} fixtures written: ${speak} speak, ${fixtures.length - speak} silent`
-);
+add("duplicate-last-value", [k("maya"), k("elena"), k("maya", .2)]);
+add("invalid-negative-score", [k("maya", -1), k("elena")]);
+add("invalid-large-score", [k("maya", 2), k("elena")]);
+const fixtures = cases.map(c => ({ ...c, expected: evaluateGate(c.input.results, c.input.info) }));
+writeFileSync("conformance/gate-fixtures.json", JSON.stringify({ config: "P0: two human contributors, threshold 0.85", cases: fixtures }, null, 2) + "\n");
+console.log(fixtures.length + " P0 gate fixtures written");

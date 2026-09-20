@@ -32,14 +32,14 @@ export async function POST(req: Request) {
     if (stored.error || !stored.data) throw new Error("Source photo unavailable");
     const image = { bytes: Buffer.from(await stored.data.arrayBuffer()), mime: stored.data.type };
     const descriptor = extractFaceDescriptor(image, body.temporaryFaceId, identity);
-    const id = stableId(identity.familyId, identity.contributorId, body.memory_id, "face", digest(JSON.stringify(descriptor)));
-    const requestHash = digest(JSON.stringify({ memory: body.memory_id, person: body.person_node_id, descriptor, consent: true }));
+    const id = stableId(identity.familyId, identity.contributorId, body.memory_id, "face", FACE_MODEL, digest(JSON.stringify(descriptor)));
+    const requestHash = digest(JSON.stringify({ memory: body.memory_id, person: body.person_node_id, descriptor, consent: true, model: FACE_MODEL }));
     const prior = await existingReceipt(sb, identity, id, requestHash);
     if (prior) return NextResponse.json(prior);
     const result = await commitIngestion(sb, {
       id, request_hash: requestHash, family_id: identity.familyId, contributor_id: identity.contributorId,
       face: { id, family_id: identity.familyId, person_node_id: body.person_node_id, contributor_id: identity.contributorId,
-        memory_id: body.memory_id, descriptor },
+        memory_id: body.memory_id, descriptor, model: FACE_MODEL },
       source: { type: "human", user_id: identity.userId, consent: true, model: FACE_MODEL },
       response: { ok: true, face_id: id, model: FACE_MODEL },
     });

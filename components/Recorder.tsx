@@ -22,6 +22,11 @@ export function Recorder({
   label?: string;
   disabled?: boolean;
 }) {
+  const [error, setError] = useState<string | null>(null);
+  const [starting, setStarting] = useState(false);
+  const [lastRecording, setLastRecording] = useState<Blob | null>(null);
+  const active = useRef(true);
+  const streamRef = useRef<MediaStream | null>(null);
   const [recording, setRecording] = useState(false);
   const [remaining, setRemaining] = useState(maxSeconds);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -29,19 +34,30 @@ export function Recorder({
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
+    active.current = true;
     return () => {
+      active.current = false;
+      const recorder = recorderRef.current;
+      if (recorder) { recorder.onstop = null; if (recorder.state !== "inactive") recorder.stop(); }
+      streamRef.current?.getTracks().forEach((track) => track.stop());
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, []);
 
   const stop = () => {
-    recorderRef.current?.stop();
+    if (recorderRef.current && recorderRef.current.state !== "inactive") recorderRef.current.stop();
     setRecording(false);
     if (timerRef.current) clearInterval(timerRef.current);
   };
 
   const start = async () => {
+    if (starting || disabled) return;
+    setStarting(true); setError(null);
+    try {
+    if (!navigator.mediaDevices || typeof MediaRecorder === "undefined") throw new Error("Recording is unavailable. Use a supported browser over HTTPS.");
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    if (!active.current) { stream.getTracks().forEach((track) => track.stop()); return; }
+    streamRef.current = stream;
     const mime = pickMime();
     const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
     chunksRef.current = [];
@@ -53,7 +69,7 @@ export function Recorder({
       const blob = new Blob(chunksRef.current, {
         type: rec.mimeType || mime || "audio/webm",
       });
-      onRecorded(blob, blob.type);
+      if (active.current && blob.size) { setLastRecording(blob); onRecorded(blob, blob.type); }
     };
     recorderRef.current = rec;
     rec.start();
@@ -68,6 +84,10 @@ export function Recorder({
         return r - 1;
       });
     }, 1000);
+    } catch (failure) {
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      if (active.current) setError(failure instanceof Error ? failure.message : "Microphone is unavailable.");
+    } finally { if (active.current) setStarting(false); }
   };
 
   const pct = Math.max(0, Math.min(1, remaining / maxSeconds));
@@ -87,10 +107,12 @@ export function Recorder({
           Stop ({remaining}s)
         </Button>
       ) : (
-        <Button onClick={start} size="lg" disabled={disabled}>
-          <Mic className="h-5 w-5" /> {label}
+        <Button onClick={start} size="lg" disabled={disabled || starting}>
+          <Mic className="h-5 w-5" /> {starting ? "Opening microphone…" : label}
         </Button>
       )}
+      {!recording && lastRecording && <Button variant="outline" disabled={disabled || starting} onClick={() => onRecorded(lastRecording, lastRecording.type)}>Send recording again</Button>}
+      {error && <p role="alert" className="w-full text-sm text-amber-700">{error}</p>}
       {recording && (
         <div className="flex min-w-[8rem] flex-1 items-center gap-2">
           <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-ink/10">

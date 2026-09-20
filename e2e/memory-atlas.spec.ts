@@ -1,4 +1,20 @@
 import { test, expect } from "@playwright/test";
+import { signInDemo } from "./auth-fixture";
+
+test("live Atlas uses signed-in family scope and clears on sign out", async ({ page }) => {
+  const families: string[] = [];
+  await page.route("**/rest/v1/**", route => {
+    families.push(new URL(route.request().url()).searchParams.get("family_id") ?? "");
+    return route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
+  });
+  await signInDemo(page, "/graph", false, "another-family");
+  await expect(page.getByText("Connected to your family", { exact: true })).toBeVisible();
+  expect(families.length).toBeGreaterThanOrEqual(4);
+  expect(families.every(f => f === "eq.another-family")).toBe(true);
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await expect(page.getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Interactive family graph" })).toHaveCount(0);
+});
 
 test("explores entities, relationship evidence, and memory trails", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 1040 });
@@ -64,7 +80,7 @@ test("fits a phone viewport without horizontal overflow", async ({ page }, testI
 
 test("does not silently replace a failed family connection with sample data", async ({ page }) => {
   await page.route("**/rest/v1/**", (route) => route.fulfill({ status: 503, body: "unavailable" }));
-  await page.goto("/graph");
+  await signInDemo(page, "/graph");
   await expect(page.getByText("We couldn’t connect to your family’s memories.", { exact: false })).toBeVisible();
   await expect(page.locator(".react-flow__node")).toHaveCount(0);
   await page.getByRole("button", { name: "Explore the sample", exact: true }).click();

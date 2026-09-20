@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { signInDemo } from "./auth-fixture";
 
 const json = (body: unknown, status = 200) => ({
   status,
@@ -9,6 +10,7 @@ const json = (body: unknown, status = 200) => ({
 test.beforeEach(async ({ page }) => {
   await page.route("**/api/**", (route) => route.abort());
   await page.route("**/rest/v1/**", (route) => route.fulfill(json([])));
+  await signInDemo(page);
 });
 
 const alertMsg = (page: Page) => page.locator('p[role="alert"]');

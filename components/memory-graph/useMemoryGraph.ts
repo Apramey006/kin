@@ -1,11 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { FAMILY_ID, getAnonClient } from "@/lib/supabase";
+import { getAnonClient } from "@/lib/supabase";
 import { EMPTY_MEMORY_GRAPH, type MemoryGraphData } from "@/lib/memory-graph";
 import type { GraphEdgeRow, GraphNodeRow, MemoryRow, ProvenanceRow, Relative } from "@/lib/types";
 
-export function useMemoryGraph(enabled: boolean) {
+export function useMemoryGraph(enabled: boolean, familyId: string) {
   const [data, setData] = useState<MemoryGraphData>(EMPTY_MEMORY_GRAPH);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const generation = useRef(0);
@@ -21,8 +21,8 @@ export function useMemoryGraph(enabled: boolean) {
       async function familyRows<Row>(table: string, columns = "*") {
         const result: Row[] = [];
         for (let start = 0; ; start += 1000) {
-          const { data: rows, error } = await sb!.from(table).select(columns).eq("family_id", FAMILY_ID)
-            .order("id", { ascending: true }).range(start, start + 999);
+          const { data: rows, error } = await sb!.from(table).select(columns).eq("family_id", familyId)
+            .order("id", { ascending: true }).range(start, start + 999).retry(false).abortSignal(AbortSignal.timeout(10000));
           if (error) throw error;
           result.push(...(rows as Row[]));
           if (rows.length < 1000) return result;
@@ -38,7 +38,7 @@ export function useMemoryGraph(enabled: boolean) {
         for (let start = 0; ; start += 1000) {
           const result = await sb.from("provenance").select("*")
             .in("memory_id", memories.slice(offset, offset + 100).map((memory) => memory.id))
-            .order("id", { ascending: true }).range(start, start + 999);
+            .order("id", { ascending: true }).range(start, start + 999).retry(false).abortSignal(AbortSignal.timeout(10000));
           if (result.error) throw result.error;
           provenance.push(...result.data as ProvenanceRow[]);
           if (result.data.length < 1000) break;
@@ -53,7 +53,7 @@ export function useMemoryGraph(enabled: boolean) {
     } finally {
       if (generation.current === current) loading.current = false;
     }
-  }, []);
+  }, [familyId]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -64,9 +64,9 @@ export function useMemoryGraph(enabled: boolean) {
     let debounce: ReturnType<typeof setTimeout>;
     const changed = () => { clearTimeout(debounce); debounce = setTimeout(refresh, 300); };
     const channel = sb?.channel("memory-atlas")
-      .on("postgres_changes", { event: "*", schema: "public", table: "graph_nodes", filter: `family_id=eq.${FAMILY_ID}` }, changed)
-      .on("postgres_changes", { event: "*", schema: "public", table: "graph_edges", filter: `family_id=eq.${FAMILY_ID}` }, changed)
-      .on("postgres_changes", { event: "*", schema: "public", table: "weaver_questions", filter: `family_id=eq.${FAMILY_ID}` }, changed)
+      .on("postgres_changes", { event: "*", schema: "public", table: "graph_nodes", filter: `family_id=eq.${familyId}` }, changed)
+      .on("postgres_changes", { event: "*", schema: "public", table: "graph_edges", filter: `family_id=eq.${familyId}` }, changed)
+      .on("postgres_changes", { event: "*", schema: "public", table: "weaver_questions", filter: `family_id=eq.${familyId}` }, changed)
       .subscribe();
     return () => {
       generation.current = currentGeneration + 1;
@@ -75,7 +75,7 @@ export function useMemoryGraph(enabled: boolean) {
       clearTimeout(debounce);
       if (channel) sb?.removeChannel(channel);
     };
-  }, [enabled, refresh]);
+  }, [enabled, refresh, familyId]);
 
   return { data, status, refresh };
 }

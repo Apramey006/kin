@@ -4,18 +4,20 @@
  * exercise each gap type and each routing branch.
  */
 import { writeFileSync } from "node:fs";
+import { demoDataset } from "../lib/seed";
+import { DEMO_FAMILY_ID } from "../lib/demo";
 import { findGaps, pickTopGap, routeQuestion, type WeaverData } from "../lib/weaver";
 import type { GraphEdgeRow, GraphNodeRow, ProvenanceRow, Relative } from "../lib/types";
 
 const relatives: Relative[] = [
-  { id: "maya", family_id: "demo", name: "Maya", relation_to_wearer: "granddaughter", color: "#E0A458" },
-  { id: "david", family_id: "demo", name: "David", relation_to_wearer: "son", color: "#5B8DEF" },
-  { id: "elena", family_id: "demo", name: "Elena", relation_to_wearer: "daughter", color: "#B07CC6" },
+  { id: "maya", family_id: "670f5075-c286-4b29-8074-86401c18d0c0", name: "Maya", relation_to_wearer: "granddaughter", color: "#E0A458" },
+  { id: "david", family_id: "670f5075-c286-4b29-8074-86401c18d0c0", name: "David", relation_to_wearer: "son", color: "#5B8DEF" },
+  { id: "elena", family_id: "670f5075-c286-4b29-8074-86401c18d0c0", name: "Elena", relation_to_wearer: "daughter", color: "#B07CC6" },
 ];
 const node = (id: string, type: GraphNodeRow["type"], label: string, rel: string | null = null): GraphNodeRow =>
-  ({ id, family_id: "demo", type, label, aliases: [], relation_to_wearer: rel });
+  ({ id, family_id: "670f5075-c286-4b29-8074-86401c18d0c0", type, label, aliases: [], relation_to_wearer: rel });
 const edge = (id: string, from: string, rel: string, to: string): GraphEdgeRow =>
-  ({ id, family_id: "demo", from_node: from, rel, to_node: to });
+  ({ id, family_id: "670f5075-c286-4b29-8074-86401c18d0c0", from_node: from, rel, to_node: to });
 const prov = (id: string, memory: string, contributor: string, node_id?: string, edge_id?: string): ProvenanceRow =>
   ({ id, memory_id: memory, contributor_id: contributor, node_id: node_id ?? null, edge_id: edge_id ?? null });
 
@@ -106,6 +108,17 @@ const cases: { name: string; data: WeaverData }[] = [
       facePersonIds: [], wearerNodeId: null, relatives, openQuestionRelativeIds: [] } },
 ];
 
+cases.push({ name: "equal-scores-use-stable-ids", data: {
+  ...seeded, nodes: [node("b", "object", "Book"), node("a", "object", "Apron")], edges: [],
+  provenance: [prov("tie1", "m-maya", "maya", "b"), prov("tie2", "m-maya", "maya", "a")],
+  relatives: [...relatives].reverse(),
+} });
+
+const shared = demoDataset(DEMO_FAMILY_ID);
+cases.push({ name: "canonical-shared-family-keeps-david-answer-loop", data: {
+  ...shared, facePersonIds: [], openQuestionRelativeIds: [],
+  wearerNodeId: shared.nodes.find(n => n.relation_to_wearer === "self")!.id,
+} });
 const fixtures = cases.map((c) => {
   const top = pickTopGap(c.data);
   return {

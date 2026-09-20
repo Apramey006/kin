@@ -3,7 +3,7 @@ import { descriptorSchema, detectFaces, extractFaceDescriptor, FACE_MODEL, sealF
 
 const image = { bytes: Buffer.from("server image bytes"), mime: "image/jpeg" };
 const face = { box: { x: 0, y: 0, width: 20, height: 20 }, descriptor: Array(128).fill(0.1) };
-const scope = { familyId: "demo", contributorId: "contributor" };
+const scope = { familyId: "670f5075-c286-4b29-8074-86401c18d0c0", contributorId: "contributor" };
 
 beforeEach(() => {
   vi.stubEnv("KIN_FACE_TOKEN_KEY", "ab".repeat(32));

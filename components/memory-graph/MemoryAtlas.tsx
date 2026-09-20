@@ -9,6 +9,7 @@ import { chronologicalMemories, ENTITY_STYLE, graphAtMoment, layoutMemoryGraph, 
 import { DEMO_MEMORY_GRAPH } from "@/lib/memory-graph-demo";
 import type { MemoryRow, NodeType } from "@/lib/types";
 import { useMemoryGraph } from "./useMemoryGraph";
+import { AuthBoundary, SignOutButton, useKinAuth } from "@/lib/client-auth";
 import styles from "./memory-atlas.module.css";
 
 const TYPE_ICONS = { person: Users, tradition: Sprout, object: BookOpen, place: MapPin, event: Sparkles };
@@ -264,7 +265,7 @@ function AtlasView({ data, demo, onDemoChange, status, refresh }: { data: Memory
     <div className={styles.atlas} ref={container}>
       <header className={styles.header}>
         <Link href="/" className={styles.brand} aria-label="Kin home"><span><Leaf size={24} strokeWidth={1.5} /></span>kin<span className={styles.brandSeparator} /> <small>MEMORY ATLAS</small></Link>
-        <div className={styles.headerRight}><span className={styles.privateBadge}><span />{demo ? "Illustrative family" : status === "ready" ? "Connected to your family" : status === "loading" ? "Connecting…" : "Connection unavailable"}</span><Link href="/stage" className={styles.stageLink}>Open stage <ArrowUpRight size={14} /></Link></div>
+        <div className={styles.headerRight}><span className={styles.privateBadge}><span />{demo ? "Illustrative family" : status === "ready" ? "Connected to your family" : status === "loading" ? "Connecting…" : "Connection unavailable"}</span>{!demo && <SignOutButton />}<Link href="/stage" className={styles.stageLink}>Open stage <ArrowUpRight size={14} /></Link></div>
       </header>
       <main className={styles.main}>
         <section className={styles.introduction}>
@@ -305,6 +306,12 @@ function AtlasView({ data, demo, onDemoChange, status, refresh }: { data: Memory
 
 export function MemoryAtlas({ initialDemo = false }: { initialDemo?: boolean }) {
   const [demo, setDemo] = useState(initialDemo);
-  const live = useMemoryGraph(!demo);
-  return <AtlasView key={demo ? "demo" : "live"} data={demo ? DEMO_MEMORY_GRAPH : live.data} demo={demo} onDemoChange={setDemo} status={live.status} refresh={live.refresh} />;
+  if (demo) return <AtlasView data={DEMO_MEMORY_GRAPH} demo onDemoChange={setDemo} status="ready" refresh={() => {}} />;
+  return <AuthBoundary><LiveMemoryAtlas onDemoChange={setDemo} /></AuthBoundary>;
+}
+
+function LiveMemoryAtlas({ onDemoChange }: { onDemoChange: (value: boolean) => void }) {
+  const { familyId } = useKinAuth();
+  const live = useMemoryGraph(true, familyId);
+  return <AtlasView data={live.data} demo={false} onDemoChange={onDemoChange} status={live.status} refresh={live.refresh} />;
 }

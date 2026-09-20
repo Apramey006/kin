@@ -44,6 +44,8 @@ export interface MemoryRow {
   summary: string;
   source_question_id: string | null;
   created_at: string;
+  source?: { type: "human"; caption?: string; [key: string]: unknown };
+  verified_facts?: VerifiedFact[];
 }
 
 export interface ProvenanceRow {
@@ -62,7 +64,7 @@ export interface WeaverQuestionRow {
   gap_type: string;
   question_text: string;
   evidence: { memory_id: string; contributor_id: string; summary: string }[];
-  status: "open" | "answered";
+  status: "open" | "answered" | "superseded";
   answer_memory_id: string | null;
   created_at: string;
 }
@@ -86,7 +88,32 @@ export interface KeeperResult {
   v: number;
   r: number;
   reason: string;
+  support: "supports" | "contradicts" | "abstains";
+  evidence: Evidence[];
 }
+
+export type FaceOutcome =
+  | { status: "matched"; subjectNodeId: string; model: string; enrollmentIds: string[]; distance: number; v: number }
+  | { status: "no_face" | "unknown" | "ambiguous" | "unavailable"; model: string };
+
+export interface Evidence {
+  memoryId: string;
+  contributorId: string;
+  subjectNodeId: string;
+  source: "human";
+  supportedFacts: string[];
+}
+
+export interface VerifiedFact {
+  id: string;
+  subjectNodeId: string;
+  text: string;
+  contributorId: string;
+  memoryId: string;
+  sourceSpan?: { start: number; end: number };
+}
+
+export type SilenceReasonCode = "no_face" | "unknown_face" | "ambiguous_face" | "insufficient_evidence" | "contradiction" | "no_provenance" | "below_threshold" | "provider_failure" | "grounding_failure";
 
 export interface GateResult {
   V: number;
@@ -101,6 +128,7 @@ export interface GateResult {
   subjectNodeId: string | null;
   agreeingKeeperIds: string[];
   citedMemoryIds: string[];
+  reasonCode?: SilenceReasonCode;
 }
 
 export interface RecallEventRow {

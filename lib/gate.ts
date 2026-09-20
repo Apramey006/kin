@@ -1,108 +1,54 @@
-import { CONFIG, SILENCE_REASONS } from "./config";
-import type { GateResult, KeeperResult } from "./types";
+import { CONFIG } from "./config";
+import type { FaceOutcome, GateResult, KeeperResult, SilenceReasonCode } from "./types";
 
-/**
- * Extra evidence the pure gate needs that is not on KeeperResult itself.
- * All three are plain lookups so the gate stays fully unit-testable.
- */
 export interface GateInfo {
-  /** nodeId -> whether the node has at least one provenance row */
-  subjectProvenance: Record<string, boolean>;
-  /** memoryId -> kind */
-  memoryKinds: Record<string, string>;
-  /** memoryId -> contributor_id (who owns the memory) */
-  memoryOwners: Record<string, string>;
+  face: FaceOutcome;
+  providerFailure?: boolean;
 }
 
-// Threshold 0.80 comes from the build spec's weighted formula and worked
-// example (C = 0.899); the older narrative doc's 0.85 used a different,
-// unweighted formula. C is a heuristic score, not a calibrated probability.
-export function evaluateGate(
-  results: KeeperResult[],
-  info: GateInfo
-): GateResult {
-  const { gate } = CONFIG;
-  const threshold = gate.threshold;
-
-  const claiming = results.filter((r) => r.claim !== null);
-  const base: Omit<GateResult, "decision" | "reason"> = {
-    V: 0,
-    R: 0,
-    A: 0,
-    S: 0,
-    X: 0,
-    C: 0,
-    threshold,
-    subjectNodeId: null,
-    agreeingKeeperIds: [],
-    citedMemoryIds: [],
+/** Pure policy. C is a heuristic, never an identity probability. */
+export function evaluateGate(results: KeeperResult[], info: GateInfo): GateResult {
+  const gate: GateResult = {
+    V: 0, R: 0, A: 0, S: 0, X: 0, C: 0, threshold: CONFIG.gate.threshold,
+    decision: "silent", reason: "", subjectNodeId: null,
+    agreeingKeeperIds: [], citedMemoryIds: [],
   };
-
-  const silent = (
-    reason: string,
-    over: Partial<GateResult> = {}
-  ): GateResult => ({ ...base, ...over, decision: "silent", reason });
-
-  if (claiming.length === 0) {
-    return silent(SILENCE_REASONS.noClaims);
+  const silent = (reasonCode: SilenceReasonCode, reason: string): GateResult =>
+    ({ ...gate, decision: "silent", reasonCode, reason });
+  if (info.providerFailure || info.face.status === "unavailable") return silent("provider_failure", "Required service unavailable");
+  if (info.face.status === "no_face") return silent("no_face", "No face detected");
+  if (info.face.status === "unknown") return silent("unknown_face", "No eligible enrolled face matched");
+  if (info.face.status === "ambiguous") return silent("ambiguous_face", "Face match is ambiguous");
+  if (info.face.status !== "matched") return silent("provider_failure", "Invalid face result");
+  const subject = info.face.subjectNodeId;
+  gate.subjectNodeId = subject;
+  gate.V = info.face.v;
+  const contradicting = results.filter(r => r.support === "contradicts" ||
+    (r.support === "supports" && r.claim?.subjectNodeId !== subject));
+  const supporting = results.filter(r => r.support === "supports" && r.claim?.subjectNodeId === subject);
+  gate.X = contradicting.length / Math.max(1, contradicting.length + supporting.length);
+  if (contradicting.length) return silent("contradiction", "Keepers disagree");
+  // Fail closed if any claimed supporting record lacks scoped, literal human facts.
+  if (supporting.some(r => !r.evidence.length || !r.memoryIds.length ||
+      r.memoryIds.some(id => !r.evidence.some(e => e.memoryId === id)) ||
+      r.evidence.some(e => e.source !== "human" || e.contributorId !== r.keeperId ||
+        e.subjectNodeId !== subject || !r.memoryIds.includes(e.memoryId) ||
+        !e.supportedFacts.length || e.supportedFacts.some(f => !f.trim())))) {
+    return silent("no_provenance", "Supporting claim has no valid human provenance");
   }
-
-  // Group claims by subject; top subject = most claims, tie -> highest summed v+r.
-  const bySubject = new Map<string, KeeperResult[]>();
-  for (const r of claiming) {
-    const key = r.claim!.subjectNodeId;
-    bySubject.set(key, [...(bySubject.get(key) ?? []), r]);
+  // Count contributors, not enrollments, memories, or duplicated Keeper results.
+  const unique = [...new Map(supporting.map(r => [r.keeperId, r])).values()];
+  gate.agreeingKeeperIds = unique.map(r => r.keeperId);
+  gate.citedMemoryIds = [...new Set(unique.flatMap(r => r.memoryIds))];
+  gate.R = unique.length ? unique.reduce((sum, r) => sum + r.r, 0) / unique.length : 0;
+  gate.A = unique.length >= 2 ? 1 : 0;
+  gate.S = unique.length ? 1 : 0;
+  gate.C = .35 * gate.V + .25 * gate.R + .20 * gate.A + .15 * gate.S - .25 * gate.X;
+  if (unique.length < 2) return silent("insufficient_evidence", "Two distinct contributors with human stories are required");
+  if (![gate.V, gate.R, gate.A, gate.S, gate.X, gate.C].every(Number.isFinite) ||
+      unique.some(r => r.r < 0 || r.r > 1) || gate.V < 0 || gate.V > 1) {
+    return silent("provider_failure", "Invalid evidence scores");
   }
-  const groups = [...bySubject.entries()].sort((a, b) => {
-    if (b[1].length !== a[1].length) return b[1].length - a[1].length;
-    const sum = (rs: KeeperResult[]) => rs.reduce((s, r) => s + r.v + r.r, 0);
-    return sum(b[1]) - sum(a[1]);
-  });
-  const [topSubject, agreeing] = groups[0];
-  const disagreeing = groups.slice(1).flatMap(([, rs]) => rs);
-
-  const agree = agreeing.length;
-  const disagree = disagreeing.length;
-
-  const V = Math.max(...agreeing.map((r) => r.v));
-  const R = agreeing.reduce((s, r) => s + r.r, 0) / agree;
-  const A =
-    agree === 1 && disagree === 0
-      ? gate.singleClaimantAgreement
-      : agree / (agree + disagree);
-  const X = disagree / (agree + disagree);
-
-  const citedMemoryIds = agreeing.flatMap((r) => r.memoryIds);
-  const everyCitesOwn = agreeing.every(
-    (r) =>
-      r.memoryIds.length > 0 &&
-      r.memoryIds.every((id) => info.memoryOwners[id] === r.keeperId)
-  );
-  const subjectHasProvenance = info.subjectProvenance[topSubject] === true;
-  const hasVisual =
-    agreeing.some((r) => r.v > 0) ||
-    citedMemoryIds.some((id) => info.memoryKinds[id] === "photo");
-  const S = everyCitesOwn && subjectHasProvenance ? (hasVisual ? 1 : 0.5) : 0;
-
-  const C =
-    gate.wV * V + gate.wR * R + gate.wA * A + gate.wS * S - gate.wX * X;
-
-  const over = {
-    V,
-    R,
-    A,
-    S,
-    X,
-    C,
-    subjectNodeId: topSubject,
-    agreeingKeeperIds: agreeing.map((r) => r.keeperId),
-    citedMemoryIds,
-  };
-
-  if (X > 0) return silent(SILENCE_REASONS.disagree, over);
-  if (S === 0) return silent(SILENCE_REASONS.noProvenance, over);
-  if (C >= threshold) {
-    return { ...base, ...over, decision: "speak", reason: "speak" };
-  }
-  return silent(SILENCE_REASONS.belowThreshold, over);
+  if (gate.C < gate.threshold) return silent("below_threshold", "Evidence is below the recall threshold");
+  return { ...gate, decision: "speak", reason: "Verified independent human evidence" };
 }

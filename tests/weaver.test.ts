@@ -4,13 +4,13 @@ import type { GraphEdgeRow, GraphNodeRow, ProvenanceRow, Relative } from "../lib
 
 // Mirror of scripts/seed.ts graph, expressed as plain data.
 const relatives: Relative[] = [
-  { id: "maya", family_id: "demo", name: "Maya", relation_to_wearer: "granddaughter", color: "#E0A458" },
-  { id: "david", family_id: "demo", name: "David", relation_to_wearer: "son", color: "#5B8DEF" },
-  { id: "elena", family_id: "demo", name: "Elena", relation_to_wearer: "daughter", color: "#B07CC6" },
+  { id: "maya", family_id: "670f5075-c286-4b29-8074-86401c18d0c0", name: "Maya", relation_to_wearer: "granddaughter", color: "#E0A458" },
+  { id: "david", family_id: "670f5075-c286-4b29-8074-86401c18d0c0", name: "David", relation_to_wearer: "son", color: "#5B8DEF" },
+  { id: "elena", family_id: "670f5075-c286-4b29-8074-86401c18d0c0", name: "Elena", relation_to_wearer: "daughter", color: "#B07CC6" },
 ];
 
 const node = (id: string, type: GraphNodeRow["type"], label: string, rel: string | null = null): GraphNodeRow => ({
-  id, family_id: "demo", type, label, aliases: [], relation_to_wearer: rel,
+  id, family_id: "670f5075-c286-4b29-8074-86401c18d0c0", type, label, aliases: [], relation_to_wearer: rel,
 });
 
 const nodes = [
@@ -22,7 +22,7 @@ const nodes = [
 ];
 
 const edge = (id: string, from: string, rel: string, to: string): GraphEdgeRow => ({
-  id, family_id: "demo", from_node: from, rel, to_node: to,
+  id, family_id: "670f5075-c286-4b29-8074-86401c18d0c0", from_node: from, rel, to_node: to,
 });
 
 const edges = [

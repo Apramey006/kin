@@ -50,7 +50,7 @@ export function KeeperBar({
           style={{ width: `${Math.round(score * 100)}%`, background: color }}
         />
       </div>
-
+      {result && <p className="mt-2 text-sm font-semibold uppercase">{result.support ?? "abstains"}</p>}
       {result && (
         <div className="mt-2 flex items-baseline justify-between gap-3 text-xs text-white/45">
           <span className="min-w-0 truncate">
@@ -63,7 +63,7 @@ export function KeeperBar({
           <span className="shrink-0">{result.memoryIds.length} memories</span>
         </div>
       )}
-
+      {result?.evidence?.map((evidence) => <div key={evidence.memoryId} className="mt-2 text-sm text-white/70"><p className="font-mono text-xs">Human memory {evidence.memoryId.slice(0, 8)}</p><ul>{evidence.supportedFacts.map((fact, index) => <li key={index}>{fact}</li>)}</ul></div>)}
       {result && result.memoryIds.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1">
           {result.memoryIds.slice(0, 4).map((id) => (

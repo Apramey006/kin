@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { getAnonClient, FAMILY_ID } from "@/lib/supabase";
+import { getAnonClient } from "@/lib/supabase";
+import { AuthBoundary, useKinAuth, authenticatedFetch, SignOutButton } from "@/lib/client-auth";
 import { KeeperBar } from "@/components/KeeperBar";
 import { GateMeter } from "@/components/GateMeter";
 import { FamilyGraph } from "@/components/FamilyGraph";
@@ -13,6 +14,7 @@ import type {
   ProvenanceRow,
   RecallEventRow,
   Relative,
+  WeaverQuestionRow,
 } from "@/lib/types";
 
 async function requireOk(response: Response): Promise<Response> {
@@ -27,7 +29,11 @@ async function requireOk(response: Response): Promise<Response> {
   return response;
 }
 
-export default function StagePage() {
+export default function StagePage() { return <AuthBoundary contributorOnly><StageContent /></AuthBoundary>; }
+
+function StageContent() {
+  const { familyId, admin } = useKinAuth();
+  const [question, setQuestion] = useState<WeaverQuestionRow | null>(null);
   const [relatives, setRelatives] = useState<Relative[]>([]);
   const [event, setEvent] = useState<RecallEventRow | null>(null);
   const [nodes, setNodes] = useState<GraphNodeRow[]>([]);
@@ -44,43 +50,54 @@ export default function StagePage() {
   const loadGraph = useCallback(async () => {
     const sb = getAnonClient();
     if (!sb) return;
-    const [{ data: n }, { data: e }, { data: p }] = await Promise.all([
-      sb.from("graph_nodes").select("*").eq("family_id", FAMILY_ID),
-      sb.from("graph_edges").select("*").eq("family_id", FAMILY_ID),
+    const [{ data: n, error: ne }, { data: e, error: ee }, { data: p, error: pe }] = await Promise.all([
+      sb.from("graph_nodes").select("*").eq("family_id", familyId),
+      sb.from("graph_edges").select("*").eq("family_id", familyId),
       sb.from("provenance").select("*"),
     ]);
+    if (ne || ee || pe) { setActionError("Could not refresh the family graph."); return; }
     setNodes((n ?? []) as GraphNodeRow[]);
     setEdges((e ?? []) as GraphEdgeRow[]);
     setProvenance((p ?? []) as ProvenanceRow[]);
     setWearerNodeId(
       (n ?? []).find((x: GraphNodeRow) => x.relation_to_wearer === "self")?.id ?? null
     );
-  }, []);
+  }, [familyId]);
 
   const loadLatestEvent = useCallback(async () => {
     const sb = getAnonClient();
     if (!sb) return;
-    const { data } = await sb
+    const { data, error } = await sb
       .from("recall_events")
       .select("*")
-      .eq("family_id", FAMILY_ID)
+      .eq("family_id", familyId)
       .order("created_at", { ascending: false })
       .limit(1);
-    if (data?.[0]) setEvent(data[0] as RecallEventRow);
-  }, []);
+    if (error) { setActionError("Could not refresh recall status."); return; }
+    setEvent((data?.[0] as RecallEventRow) ?? null);
+  }, [familyId]);
 
   const loadGaps = useCallback(async () => {
     const sb = getAnonClient();
     if (!sb) return;
-    const { data } = await sb
+    const { data, error } = await sb
       .from("weaver_questions")
-      .select("gap_node_id")
-      .eq("family_id", FAMILY_ID)
-      .eq("status", "open")
+      .select("*")
+      .eq("family_id", familyId)
       .order("created_at", { ascending: false })
       .limit(1);
-    setGapNodeId(data?.[0]?.gap_node_id ?? null);
-  }, []);
+    if (error) { setActionError("Could not refresh Weaver questions."); return; }
+    const latest = (data?.[0] as WeaverQuestionRow) ?? null;
+    setQuestion(latest);
+    setGapNodeId(latest?.status === "open" ? latest.gap_node_id : null);
+  }, [familyId]);
+
+  const loadRelatives = useCallback(async () => {
+    const sb = getAnonClient(); if (!sb) return;
+    const { data, error } = await sb.from("relatives").select("*").eq("family_id", familyId);
+    if (error) { setActionError("Could not refresh family members."); return; }
+    setRelatives((data ?? []) as Relative[]);
+  }, [familyId]);
 
   useEffect(() => {
     const sb = getAnonClient();
@@ -88,25 +105,24 @@ export default function StagePage() {
       setOffline(true);
       return;
     }
-    sb.from("relatives")
-      .select("*")
-      .eq("family_id", FAMILY_ID)
-      .then(({ data }) => setRelatives((data ?? []) as Relative[]));
+    loadRelatives();
     loadGraph();
     loadLatestEvent();
     loadGaps();
 
     const channel = sb
       .channel("stage")
-      .on("postgres_changes", { event: "*", schema: "public", table: "recall_events", filter: `family_id=eq.${FAMILY_ID}` }, loadLatestEvent)
-      .on("postgres_changes", { event: "*", schema: "public", table: "graph_nodes", filter: `family_id=eq.${FAMILY_ID}` }, loadGraph)
-      .on("postgres_changes", { event: "*", schema: "public", table: "graph_edges", filter: `family_id=eq.${FAMILY_ID}` }, loadGraph)
-      .on("postgres_changes", { event: "*", schema: "public", table: "weaver_questions", filter: `family_id=eq.${FAMILY_ID}` }, loadGaps)
+      .on("postgres_changes", { event: "*", schema: "public", table: "recall_events", filter: `family_id=eq.${familyId}` }, loadLatestEvent)
+      .on("postgres_changes", { event: "*", schema: "public", table: "graph_nodes", filter: `family_id=eq.${familyId}` }, loadGraph)
+      .on("postgres_changes", { event: "*", schema: "public", table: "graph_edges", filter: `family_id=eq.${familyId}` }, loadGraph)
+      .on("postgres_changes", { event: "*", schema: "public", table: "weaver_questions", filter: `family_id=eq.${familyId}` }, loadGaps)
       .subscribe();
+    const refresh = setInterval(() => { loadGraph(); loadGaps(); loadLatestEvent(); }, 3000);
     return () => {
+      clearInterval(refresh);
       sb.removeChannel(channel);
     };
-  }, [loadGraph, loadLatestEvent, loadGaps]);
+  }, [loadGraph, loadLatestEvent, loadGaps, loadRelatives, familyId]);
 
   const call = async (label: string, fn: () => Promise<Response>) => {
     if (actionPending.current) return;
@@ -115,8 +131,11 @@ export default function StagePage() {
     setActionError(null);
     setActionStatus(null);
     try {
-      await requireOk(await fn());
-      setActionStatus("Action completed.");
+      const response = await requireOk(await fn());
+      const result = await response.json().catch(() => null);
+      if (label === "reset") { setEvent(null); setNodes([]); setEdges([]); setProvenance([]); setGapNodeId(null); setQuestion(null); }
+      await Promise.all([loadGraph(), loadLatestEvent(), loadGaps(), loadRelatives()]);
+      setActionStatus(label === "weaver" ? ({ created: "Question created.", existing_open: "Showing the existing open question.", no_gap: "No unanswered gap found.", no_target: "No available relative can answer this gap." }[String(result?.reason)] ?? "Weaver completed.") : "Action completed.");
     } catch (e) {
       setActionError(e instanceof Error ? e.message : "Action failed. Please try again.");
     } finally {
@@ -125,19 +144,19 @@ export default function StagePage() {
     }
   };
 
-  const seed = () => call("seed", () => fetch("/api/admin/seed", { method: "POST" }));
+  const seed = () => call("seed", () => authenticatedFetch("/api/admin/seed", { method: "POST" }));
   const reset = () => {
     if (actionPending.current) return;
     if (!window.confirm("Reset this family's demo data? This deletes its memories and cannot be undone.")) return;
-    return call("reset", () => fetch("/api/admin/reset", { method: "POST" }));
+    return call("reset", () => authenticatedFetch("/api/admin/reset", { method: "POST" }));
   };
-  const runWeaver = () => call("weaver", () => fetch("/api/weaver/run", { method: "POST" }));
+  const runWeaver = () => call("weaver", () => authenticatedFetch("/api/weaver/run", { method: "POST" }));
   const replay = () =>
     call("replay", async () => {
-      const r = await requireOk(await fetch("/api/recall"));
+      const r = await requireOk(await authenticatedFetch("/api/recall"));
       const { lastEventId } = await r.json();
       if (!lastEventId) throw new Error("No recall to replay yet. Try a recall from the wearer screen first.");
-      return fetch("/api/recall", {
+      return authenticatedFetch("/api/recall", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ replayEventId: lastEventId }),
@@ -168,9 +187,10 @@ export default function StagePage() {
               }`}
               aria-hidden
             />
-            <span className="font-mono">demo family · {FAMILY_ID}</span>
+            <span className="font-mono">family · {familyId}</span>
           </div>
         </div>
+        <div className="flex items-center gap-3 text-white/60">family · {familyId} <SignOutButton /></div>
       </header>
 
       {offline ? (
@@ -204,6 +224,7 @@ export default function StagePage() {
           <section className="stage-panel min-h-[320px] overflow-y-auto p-5">
             <GateMeter
               gate={event?.gate ?? null}
+              status={event?.status}
               running={event?.status === "running"}
               cueText={event?.cue_text}
               latencyMs={event?.latency_ms}
@@ -222,7 +243,13 @@ export default function StagePage() {
                 {busy === "weaver" ? "Weaving…" : "Run Weaver"}
               </button>
             </div>
-            <div className="min-h-0 flex-1">
+            {question && <div className="mx-5 mb-3 rounded-xl bg-white/5 p-3 text-sm max-h-52 overflow-y-auto">
+              <p className="text-amber-300">{question.status === "answered" ? "Gap closed · answer recorded" : `Gap: ${question.gap_type}`} · {nodes.find((node) => node.id === question.gap_node_id)?.label ?? "Family memory"}</p>
+              <p className="mt-1">Asked {relatives.find((relative) => relative.id === question.target_relative_id)?.name ?? "family member"}: {question.question_text}</p>
+              <ul className="mt-2 space-y-1 text-white/60">{question.evidence.map((item) => <li key={item.memory_id}>{relatives.find((relative) => relative.id === item.contributor_id)?.name ?? "Relative"}: {item.summary} <span className="font-mono">[{item.memory_id.slice(0, 8)}]</span></li>)}</ul>
+              {question.answer_memory_id && <p className="mt-2 text-emerald-300">Human answer memory: {question.answer_memory_id}</p>}
+            </div>}
+            <div className="flex-1 min-h-0">
               <FamilyGraph
                 nodes={nodes}
                 edges={edges}
@@ -257,11 +284,11 @@ export default function StagePage() {
         </div>
       )}
 
-      <footer className="flex flex-wrap items-center gap-2 border-t border-white/10 bg-white/[0.02] px-6 py-3 text-sm">
-        <button onClick={seed} disabled={busy !== null} className="stage-button">
+      <footer className="flex flex-wrap items-center gap-3 px-6 py-3 border-t border-white/10 text-sm">
+        <button onClick={seed} disabled={busy !== null || !admin} className="rounded-lg bg-white/10 px-4 py-2 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed">
           {busy === "seed" ? "Seeding…" : "Seed"}
         </button>
-        <button onClick={reset} disabled={busy !== null} className="stage-button">
+        <button onClick={reset} disabled={busy !== null || !admin} className="rounded-lg bg-white/10 px-4 py-2 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed">
           {busy === "reset" ? "Resetting…" : "Reset"}
         </button>
         <button onClick={replay} disabled={busy !== null} className="stage-button">

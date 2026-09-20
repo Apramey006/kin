@@ -1,16 +1,18 @@
 import type { MemoryGraphData } from "./memory-graph";
 import type { GraphNodeRow, NodeType } from "./types";
 
-const familyId = "illustrative-family";
+import { DEMO_FAMILY_ID, DEMO_CONTRIBUTOR_IDS } from "./demo";
+
+const familyId = DEMO_FAMILY_ID;
 const node = (id: string, type: NodeType, label: string, relation: string | null = null): GraphNodeRow => ({
   id, family_id: familyId, type, label, aliases: [], relation_to_wearer: relation,
 });
 
 export const DEMO_MEMORY_GRAPH: MemoryGraphData = {
   relatives: [
-    { id: "maya", family_id: familyId, name: "Maya", relation_to_wearer: "granddaughter", color: "#eac38a" },
-    { id: "elena", family_id: familyId, name: "Elena", relation_to_wearer: "daughter", color: "#b7a4e6" },
-    { id: "david", family_id: familyId, name: "David", relation_to_wearer: "son", color: "#8abdd4" },
+    { id: DEMO_CONTRIBUTOR_IDS.maya, family_id: familyId, name: "Maya", relation_to_wearer: "granddaughter", color: "#eac38a" },
+    { id: DEMO_CONTRIBUTOR_IDS.elena, family_id: familyId, name: "Elena", relation_to_wearer: "daughter", color: "#b7a4e6" },
+    { id: DEMO_CONTRIBUTOR_IDS.david, family_id: familyId, name: "David", relation_to_wearer: "son", color: "#8abdd4" },
   ],
   nodes: [
     node("rosa", "person", "Rosa", "self"), node("nora", "person", "Nora", "sister"),
@@ -38,7 +40,7 @@ export const DEMO_MEMORY_GRAPH: MemoryGraphData = {
     { id: "third", contributor_id: "david", kind: "photo" as const, summary: "Rosa kept Nana’s recipe book in her kitchen, where they baked the Sunday cake.", transcript: null, caption: "Nana’s recipe book, kept in Rosa’s kitchen." },
     { id: "fourth", contributor_id: "david", kind: "answer" as const, summary: "Their mother Lucia taught Nora the recipe. It came from Italy.", transcript: "It was their mother, Lucia. She brought the recipe from Italy, and taught it to Nora.", caption: null },
     { id: "fifth", contributor_id: "maya", kind: "story" as const, summary: "Rosa spent the summer of 1968 in Italy. She remembered it for the rest of her life.", transcript: "Grandma spent the summer of 1968 in Italy. She always said she could still remember how the lemons smelled.", caption: null },
-  ].map((memory, index) => ({ ...memory, family_id: familyId, media_path: null, source_question_id: null, created_at: `2026-09-${String(10 + index).padStart(2, "0")}T12:00:00Z` })),
+  ].map((memory, index) => ({ ...memory, contributor_id: DEMO_CONTRIBUTOR_IDS[memory.contributor_id as keyof typeof DEMO_CONTRIBUTOR_IDS], family_id: familyId, media_path: null, source_question_id: null, created_at: `2026-09-${String(10 + index).padStart(2, "0")}T12:00:00Z` })),
   provenance: [
     { memory: "first", owner: "maya", nodes: ["rosa", "nora", "cake", "apron"], edges: ["rosa-cake", "nora-cake", "nora-apron"] },
     { memory: "second", owner: "elena", nodes: ["rosa", "nora"], edges: ["nora-rosa", "rosa-nora"] },
@@ -46,7 +48,7 @@ export const DEMO_MEMORY_GRAPH: MemoryGraphData = {
     { memory: "fourth", owner: "david", nodes: ["nora", "mother", "cake", "italy"], edges: ["nora-mother", "cake-italy"] },
     { memory: "fifth", owner: "maya", nodes: ["rosa", "summer", "italy"], edges: ["rosa-summer", "summer-italy"] },
   ].flatMap((source) => [
-    ...source.nodes.map((nodeId) => ({ id: `${source.memory}-${nodeId}`, memory_id: source.memory, contributor_id: source.owner, node_id: nodeId, edge_id: null })),
-    ...source.edges.map((edgeId) => ({ id: `${source.memory}-${edgeId}`, memory_id: source.memory, contributor_id: source.owner, node_id: null, edge_id: edgeId })),
+    ...source.nodes.map((nodeId) => ({ id: `${source.memory}-${nodeId}`, memory_id: source.memory, contributor_id: DEMO_CONTRIBUTOR_IDS[source.owner as keyof typeof DEMO_CONTRIBUTOR_IDS], node_id: nodeId, edge_id: null })),
+    ...source.edges.map((edgeId) => ({ id: `${source.memory}-${edgeId}`, memory_id: source.memory, contributor_id: DEMO_CONTRIBUTOR_IDS[source.owner as keyof typeof DEMO_CONTRIBUTOR_IDS], node_id: null, edge_id: edgeId })),
   ]),
 };

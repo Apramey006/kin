@@ -1,9 +1,8 @@
 //! HTTP front for the Kin brain.
 //!
-//! Exposes the scoring decisions the Next.js app delegates: the app still
-//! owns its Supabase queries and assembles the evidence, this service scores
-//! it. Same boundary as face-service, so a failure here degrades to the
-//! TypeScript path rather than taking down a recall.
+//! Exposes standalone gate and Weaver scoring endpoints. The Next.js app
+//! currently runs its TypeScript implementation directly; conformance
+//! fixtures keep this service aligned for future integration.
 
 use std::net::SocketAddr;
 

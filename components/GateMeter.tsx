@@ -14,19 +14,23 @@ const SIGNALS: { key: "V" | "R" | "A" | "S" | "X"; label: string }[] = [
 export function GateMeter({
   gate,
   running,
+  status,
   cueText,
   latencyMs,
   silenceReason,
 }: {
   gate?: GateResult | null;
   running: boolean;
+  status?: "running" | "speak" | "silent";
   cueText?: string | null;
   latencyMs?: number | null;
   silenceReason?: string | null;
 }) {
   const g = CONFIG.gate;
   const confidence = gate?.C ?? 0;
-  const passes = confidence >= g.threshold;
+  const decision = status === "speak" || status === "silent" ? status : gate?.decision;
+  const threshold = gate?.threshold ?? g.threshold;
+  const passes = decision === "speak" && confidence >= threshold;
   return (
     <div>
       <h2 className="panel-label mb-4">Gatekeeper</h2>
@@ -70,7 +74,7 @@ export function GateMeter({
             {confidence.toFixed(3)}
           </span>
           <span className="font-mono text-sm text-white/40">
-            / threshold {g.threshold}
+            / threshold {threshold}
           </span>
         </div>
         {/* Confidence against the threshold, marked at the gate. */}
@@ -84,7 +88,7 @@ export function GateMeter({
           <span
             aria-hidden
             className="absolute top-0 h-full w-px bg-white/70"
-            style={{ left: `${g.threshold * 100}%` }}
+            style={{ left: `${threshold * 100}%` }}
           />
         </div>
       </div>
@@ -94,11 +98,11 @@ export function GateMeter({
           <span className="kin-pulse inline-block text-2xl font-bold tracking-wide text-white/60">
             LISTENING
           </span>
-        ) : gate?.decision === "speak" ? (
+        ) : decision === "speak" ? (
           <span className="inline-block rounded-xl border border-emerald-400/40 bg-emerald-400/10 px-4 py-1.5 text-3xl font-bold tracking-wide text-emerald-300">
             SPEAK
           </span>
-        ) : gate ? (
+        ) : decision === "silent" ? (
           <span className="inline-block rounded-xl border border-white/25 px-4 py-1.5 text-3xl font-bold tracking-wide text-white/40">
             SILENT
           </span>
@@ -107,14 +111,14 @@ export function GateMeter({
         )}
       </div>
 
-      {gate?.decision === "silent" && (silenceReason || gate.reason) && (
+      {decision === "silent" && (silenceReason || gate?.reason) && (
         <p className="mt-2 text-base text-white/55">
           <span className="text-white/35">reason: </span>
-          {silenceReason ?? gate.reason}
+          {silenceReason ?? gate?.reason}
         </p>
       )}
 
-      {cueText && (
+      {decision === "speak" && cueText && (
         <blockquote className="animate-fade-up mt-4 rounded-xl border-l-2 border-emerald-400/60 bg-white/[0.07] px-4 py-3 text-xl leading-snug text-white">
           “{cueText}”
         </blockquote>

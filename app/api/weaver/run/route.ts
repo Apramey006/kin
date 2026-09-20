@@ -1,20 +1,18 @@
 import { NextResponse } from "next/server";
-import { jsonError } from "@/lib/api";
-import { getServiceClient, FAMILY_ID } from "@/lib/supabase";
+import { ingestionError } from "@/lib/ingestion/http";
+import { authenticateIngestion } from "@/lib/ingestion/auth";
+import { getServiceClient } from "@/lib/supabase";
 import { runWeaver } from "@/lib/weaver";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
-export async function POST() {
+export async function POST(req: Request) {
   try {
     const sb = getServiceClient();
-    const { question, gap } = await runWeaver(sb, FAMILY_ID);
-    if (!question) {
-      return NextResponse.json({ question: null, gap, message: "no gaps found" });
-    }
-    return NextResponse.json({ question, gap });
+    const identity = await authenticateIngestion(req, sb);
+    return NextResponse.json(await runWeaver(sb, identity.familyId));
   } catch (e) {
-    return jsonError(e, "weaver failed");
+    return ingestionError(e);
   }
 }

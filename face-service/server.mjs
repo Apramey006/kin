@@ -1,7 +1,7 @@
 import http from "node:http";
 import { timingSafeEqual } from "node:crypto";
 import { createRequire } from "node:module";
-import path from "node:path";
+import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 
 const require = createRequire(import.meta.url);
@@ -9,7 +9,7 @@ const faceapi = require("@vladmandic/face-api/dist/face-api.node.js");
 const model = "face-api-1.7.15:ssd-mobilenetv1:landmark68:recognition128:rgb-exif-v1";
 const secret = process.env.KIN_FACE_SERVICE_TOKEN;
 if (!secret) throw new Error("KIN_FACE_SERVICE_TOKEN required");
-const weights = process.env.KIN_FACE_WEIGHTS ?? path.resolve("public/models");
+const weights = process.env.KIN_FACE_WEIGHTS ?? fileURLToPath(new URL("../public/models/", import.meta.url));
 await Promise.all([
   faceapi.nets.ssdMobilenetv1.loadFromDisk(weights),
   faceapi.nets.faceLandmark68Net.loadFromDisk(weights),
@@ -74,4 +74,6 @@ http.createServer(async (request, response) => {
     tensor?.dispose();
     busy = false;
   }
-}).listen(Number(process.env.PORT ?? 8100), process.env.KIN_FACE_BIND ?? "127.0.0.1");
+}).listen(Number(process.env.PORT ?? 8100), process.env.KIN_FACE_BIND ?? "127.0.0.1", () => {
+  console.log("Kin canonical face inference ready");
+});

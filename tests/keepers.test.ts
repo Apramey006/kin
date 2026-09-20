@@ -1,163 +1,61 @@
-import { describe, it, expect } from "vitest";
-import { buildKeeperResult, faceScore, simScore, retrieveKeeper } from "../lib/keepers";
-import type { Keeper } from "../lib/types";
+import { describe, it, expect, vi } from "vitest";
+import { buildKeeperResult, faceScore, simScore, retrieveKeeper, humanFacts } from "../lib/keepers";
+import type { FaceOutcome, MemoryRow } from "../lib/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-const maya: Keeper = { relativeId: "maya", name: "Maya", color: "#E0A458" };
-
-const baseInput = {
-  nodeLabels: { nora: "Nora", book: "recipe book" },
-  nodeTypes: { nora: "person", book: "object" },
-  memoryOwners: {} as Record<string, string>,
-  memoryNodeLinks: {} as Record<string, string[]>,
-  personLinkedMemories: [] as { id: string; summary: string; similarity: number }[],
-};
-
-describe("keepers", () => {
-  it("maps face distance and similarity onto 0..1 scores", () => {
-    expect(faceScore(0.35)).toBe(1);
-    expect(faceScore(0.6)).toBe(0);
-    expect(faceScore(0.475)).toBeCloseTo(0.5);
-    expect(simScore(0.2)).toBe(0);
-    expect(simScore(0.6)).toBeCloseTo(1);
+const face: FaceOutcome = { status: "matched", subjectNodeId: "nora", model: "canonical", enrollmentIds: ["e"], distance: .3, v: 1 };
+const keeper = { relativeId: "maya", name: "Maya", color: "gold" };
+function memory(id = "m1", contributor = "maya", subject = "nora", text = "Nora bakes lemon cake every Sunday."): MemoryRow & { similarity: number } {
+  return { id, family_id: "670f5075-c286-4b29-8074-86401c18d0c0", contributor_id: contributor, kind: "story", media_path: null, transcript: text, caption: null,
+    summary: "generated summary", source_question_id: null, created_at: "2026-01-01", similarity: .6, source: { type: "human" },
+    verified_facts: [{ id: id + "-fact", memoryId: id, contributorId: contributor, subjectNodeId: subject, text, sourceSpan: { start: 0, end: text.length } }] };
+}
+describe("human-scoped keepers", () => {
+  it("maps distance and similarity conservatively", () => {
+    expect(faceScore(.35)).toBe(1); expect(faceScore(.6)).toBe(0);
+    expect(simScore(.2)).toBe(0); expect(simScore(.6)).toBeCloseTo(1);
   });
-
-  it("never returns memory IDs owned by another relative", () => {
-    const result = buildKeeperResult(maya, {
-      ...baseInput,
-      faceMatches: [
-        { person_node_id: "nora", contributor_id: "maya", memory_id: "maya-photo", distance: 0.3 },
-        // an even better match owned by David must be ignored for Maya
-        { person_node_id: "nora", contributor_id: "david", memory_id: "david-photo", distance: 0.1 },
-      ],
-      memoryOwners: {
-        "maya-photo": "maya",
-        "david-photo": "david",
-        "maya-story": "maya",
-        "david-story": "david",
-      },
-      memories: [
-        { id: "david-story", summary: "David's", similarity: 0.9 }, // foreign, must be filtered
-        { id: "maya-story", summary: "Maya's", similarity: 0.5 },
-      ],
-      memoryNodeLinks: {
-        "maya-story": ["nora"],
-        "david-story": ["nora"],
-      },
-      personLinkedMemories: [
-        { id: "maya-story", summary: "Maya's", similarity: 0 },
-        { id: "david-story", summary: "David's", similarity: 0 },
-      ],
-    });
-    expect(result.claim?.subjectNodeId).toBe("nora");
-    // face match uses maya's own enrollment (d=0.3), not david's better one
-    expect(result.v).toBeCloseTo(faceScore(0.3));
-    for (const id of result.memoryIds) {
-      expect(id.startsWith("maya-")).toBe(true);
-    }
-    expect(result.memoryIds).toContain("maya-photo");
-    expect(result.memoryIds).toContain("maya-story");
-    expect(result.memoryIds).not.toContain("david-story");
-    expect(result.memoryIds).not.toContain("david-photo");
+  it("excludes other contributors and other subjects, including their high scores", () => {
+    const own = memory(); own.similarity = .3;
+    const result = buildKeeperResult(keeper, { face, subjectLabel: "Nora", memories: [own, memory("foreign", "david"), memory("unrelated", "maya", "sam")] });
+    expect(result.memoryIds).toEqual(["m1"]); expect(result.r).toBeCloseTo(.25);
+    expect(result.evidence[0].source).toBe("human");
   });
-
-  it("abstains when there is no face and weak retrieval", () => {
-    const result = buildKeeperResult(maya, {
-      ...baseInput,
-      faceMatches: [],
-      memoryOwners: { m1: "maya" },
-      memories: [{ id: "m1", summary: "s", similarity: 0.3 }],
-      memoryNodeLinks: { m1: ["nora"] },
-    });
-    expect(result.claim).toBeNull();
-    expect(result.v).toBe(0);
-    expect(result.r).toBeLessThan(0.5);
+  it("cannot cite a vision caption or generated summary as a human fact", () => {
+    const m = memory(); m.transcript = null; m.caption = m.verified_facts![0].text;
+    expect(humanFacts(m, "nora")).toEqual([]);
+    expect(buildKeeperResult(keeper, { face, subjectLabel: "Nora", memories: [m] }).support).toBe("abstains");
   });
-
-  it("claims an object/person from a strong text memory with no face", () => {
-    const result = buildKeeperResult(maya, {
-      ...baseInput,
-      faceMatches: [],
-      memoryOwners: { m1: "maya" },
-      memories: [{ id: "m1", summary: "the recipe book", similarity: 0.7 }],
-      memoryNodeLinks: { m1: ["book"] },
-    });
-    expect(result.claim?.subjectNodeId).toBe("book");
-    expect(result.r).toBe(1);
+  it("rejects altered spans, mismatched owners, and enrollment-only labels", () => {
+    const m = memory(); m.verified_facts![0].sourceSpan!.start = 1;
+    expect(humanFacts(m, "nora")).toEqual([]);
+    expect(humanFacts(memory("m", "maya", "nora", "This is Nora in the kitchen."), "nora")).toEqual([]);
   });
-});
-
-describe("retrieveKeeper", () => {
-  const fakeSb = (
-    rpcData: Record<string, unknown[]>,
-    fromData: (table: string, cols: string) => unknown[]
-  ): SupabaseClient => {
-    const from = (table: string) => {
-      let cols = "";
-      const c: Record<string, unknown> = {};
-      for (const m of ["eq", "in", "limit", "order"]) c[m] = () => c;
-      c.select = (s: string) => {
-        cols = s;
-        return c;
-      };
-      c.single = () => Promise.resolve({ data: fromData(table, cols)[0] ?? null, error: null });
-      c.then = (res: (v: unknown) => unknown, rej?: (e: unknown) => unknown) =>
-        Promise.resolve({ data: fromData(table, cols), error: null }).then(res, rej);
-      return c;
-    };
-    return {
-      rpc: (name: string) =>
-        Promise.resolve({ data: rpcData[name] ?? [], error: null }),
-      from,
-    } as unknown as SupabaseClient;
-  };
-
-  const fromData = (table: string, cols: string): unknown[] => {
-    if (table === "provenance" && cols === "memory_id")
-      return [{ memory_id: "mem1" }];
-    if (table === "provenance") return [{ memory_id: "mem1", node_id: "nora" }];
-    if (table === "memories") return [{ id: "mem1", summary: "s" }];
-    if (table === "graph_nodes")
-      return [{ id: "nora", label: "Nora", type: "person" }];
-    return [];
-  };
-
-  it("strong face match does not wait on the embedding (fast path)", async () => {
-    const sb = fakeSb(
-      {
-        match_faces: [
-          { person_node_id: "nora", contributor_id: "maya", memory_id: "mem1", distance: 0.2 },
-        ],
-      },
-      fromData
-    );
-    const never = new Promise<number[]>(() => {});
-    const t0 = Date.now();
-    const result = await retrieveKeeper(sb, "fam", maya, {
-      faceDescriptors: [new Array(128).fill(0)],
-      embeddingPromise: never,
-    });
-    const elapsed = Date.now() - t0;
-    expect(result.claim?.subjectNodeId).toBe("nora");
-    expect(result.r).toBe(0);
-    expect(elapsed).toBeLessThan(1500);
+  it("explicit human denial becomes a contradictory keeper", () => {
+    expect(buildKeeperResult(keeper, { face, subjectLabel: "Nora", memories: [memory("m", "maya", "nora", "Nora never baked lemon cake on Sundays.")] }).support).toBe("contradicts");
   });
-
-  it("weak face match awaits the memory step and uses similarity", async () => {
-    const sb = fakeSb(
-      {
-        match_faces: [
-          { person_node_id: "nora", contributor_id: "maya", memory_id: "mem1", distance: 0.55 },
-        ],
-        match_memories: [{ id: "m9", summary: "x", similarity: 0.7 }],
-      },
-      fromData
-    );
-    const result = await retrieveKeeper(sb, "fam", maya, {
-      faceDescriptors: [new Array(128).fill(0)],
-      embeddingPromise: Promise.resolve(new Array(1536).fill(0)),
-    });
-    expect(result.v).toBeCloseTo(faceScore(0.55));
-    expect(result.r).toBe(1);
+  it("unknown face cannot acquire a semantic fallback identity", () => {
+    expect(buildKeeperResult(keeper, { face: { status: "unknown", model: "canonical" }, subjectLabel: "Nora", memories: [memory()] }).claim).toBeNull();
+  });
+  it("waits for semantic evidence beyond the old 700ms shortcut", async () => {
+    vi.useFakeTimers();
+    try {
+      const builder = { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: { label: "Nora" }, error: null }) };
+      const rpc = vi.fn().mockResolvedValue({ data: [], error: null });
+      const sb = { from: () => builder, rpc } as unknown as SupabaseClient;
+      let resolve!: (value: number[]) => void;
+      const embeddingPromise = new Promise<number[]>(r => { resolve = r; });
+      let done = false;
+      const pending = retrieveKeeper(sb, "670f5075-c286-4b29-8074-86401c18d0c0", keeper, { face, embeddingPromise }).then(r => { done = true; return r; });
+      await vi.advanceTimersByTimeAsync(1200);
+      expect(done).toBe(false); expect(rpc).not.toHaveBeenCalled();
+      resolve(new Array(1536).fill(.01)); await pending;
+      expect(rpc).toHaveBeenCalledWith("match_subject_memories", expect.objectContaining({ family: "670f5075-c286-4b29-8074-86401c18d0c0", contributor: "maya", subject: "nora" }));
+    } finally { vi.useRealTimers(); }
+  });
+  it("database error propagates instead of masquerading as abstention", async () => {
+    const builder = { select: () => builder, eq: () => builder, single: async () => ({ data: null, error: { code: "failure" } }) };
+    const sb = { from: () => builder, rpc: async () => ({ data: null, error: {} }) } as unknown as SupabaseClient;
+    await expect(retrieveKeeper(sb, "670f5075-c286-4b29-8074-86401c18d0c0", keeper, { face, embeddingPromise: Promise.resolve(new Array(1536).fill(.1)) })).rejects.toThrow();
   });
 });

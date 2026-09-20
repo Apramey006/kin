@@ -50,13 +50,13 @@ beforeEach(() => {
   storageError = null;
   commitError = null;
   rows = {
-    relatives: [{ id: contributorId, family_id: "demo", name: "David", relation_to_wearer: "son" }],
-    wearer: [{ family_id: "demo", name: "Rosa" }],
-    graph_nodes: [{ id: personId, family_id: "demo", type: "person", label: "Nora", aliases: [], relation_to_wearer: "sister" }],
-    weaver_questions: [{ id: questionId, family_id: "demo", target_relative_id: contributorId, question_text: "Who taught Nora the lemon cake recipe?", status: "open" }],
+    relatives: [{ id: contributorId, family_id: "670f5075-c286-4b29-8074-86401c18d0c0", name: "David", relation_to_wearer: "son" }],
+    wearer: [{ family_id: "670f5075-c286-4b29-8074-86401c18d0c0", name: "Rosa" }],
+    graph_nodes: [{ id: personId, family_id: "670f5075-c286-4b29-8074-86401c18d0c0", type: "person", label: "Nora", aliases: [], relation_to_wearer: "sister" }],
+    weaver_questions: [{ id: questionId, family_id: "670f5075-c286-4b29-8074-86401c18d0c0", target_relative_id: contributorId, question_text: "Who taught Nora the lemon cake recipe?", status: "open" }],
     ingestion_receipts: [], memories: [], face_embeddings: [],
   };
-  getUser = vi.fn().mockResolvedValue({ data: { user: { id: "user", app_metadata: { kin_family_id: "demo", kin_contributor_id: contributorId } } }, error: null });
+  getUser = vi.fn().mockResolvedValue({ data: { user: { id: "user", app_metadata: { kin_family_id: "670f5075-c286-4b29-8074-86401c18d0c0", kin_contributor_id: contributorId } } }, error: null });
   storageUpload = vi.fn(async () => ({ error: storageError }));
   rpc = vi.fn(async (_name: string, args: { payload: Row }) => {
     if (commitError) return { data: null, error: commitError };
@@ -230,7 +230,7 @@ describe("mobile memory routes", () => {
   it("rejects questions belonging to another family or relative", async () => {
     rows.weaver_questions[0].family_id = "other";
     expect((await answer(request("answer"))).status).toBe(404);
-    rows.weaver_questions[0].family_id = "demo";
+    rows.weaver_questions[0].family_id = "670f5075-c286-4b29-8074-86401c18d0c0";
     rows.weaver_questions[0].target_relative_id = otherId;
     expect((await answer(request("answer"))).status).toBe(403);
   });

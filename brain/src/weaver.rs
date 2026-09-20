@@ -217,11 +217,12 @@ pub fn pick_top_gap(d: &WeaverData) -> Option<Gap> {
         return None;
     }
     let order = |t: GapType| GAP_ORDER.iter().position(|g| *g == t).unwrap_or(usize::MAX);
-    // Stable, so equal score and equal type keep detection order.
+    // Stable ID breaks ties independently of database row order.
     gaps.sort_by(|a, b| {
         gap_score(d, b)
             .cmp(&gap_score(d, a))
             .then_with(|| order(a.gap_type).cmp(&order(b.gap_type)))
+            .then_with(|| a.node_id.cmp(&b.node_id))
     });
     gaps.into_iter().next()
 }
@@ -232,7 +233,8 @@ pub fn pick_top_gap(d: &WeaverData) -> Option<Gap> {
 /// relative who uploaded a related photo.
 pub fn route_question(d: &WeaverData, gap: &Gap) -> Option<String> {
     let neighbors = neighbor_ids(&gap.node_id, &d.edges);
-    let describers = contributors_of(d, &gap.node_id);
+    let touching = memory_ids_touching_node(d, &gap.node_id);
+    let describers: HashSet<String> = d.memories.iter().filter(|m| m.kind != "photo" && touching.contains(&m.id)).map(|m| m.contributor_id.clone()).collect();
     let open: HashSet<&str> = d.open_question_relative_ids.iter().map(String::as_str).collect();
 
     let mut candidates: Vec<&Relative> = d
@@ -289,11 +291,12 @@ pub fn route_question(d: &WeaverData, gap: &Gap) -> Option<String> {
         })
         .collect();
 
-    // Stable, so relatives that tie on both keys keep their listed order.
+    // Match the TypeScript stable-ID tie break.
     scored.sort_by(|a, b| {
         b.score
             .cmp(&a.score)
             .then_with(|| b.has_related_photo.cmp(&a.has_related_photo))
+            .then_with(|| a.relative.id.cmp(&b.relative.id))
     });
     scored.first().map(|s| s.relative.id.clone())
 }

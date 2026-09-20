@@ -37,9 +37,9 @@ create function vector_dims(descriptor text) returns integer language sql immuta
 
 \ir ../docs/agent-2-ingestion-migration.sql
 
-insert into relatives values ('10000000-0000-4000-8000-000000000001', 'demo');
+insert into relatives values ('10000000-0000-4000-8000-000000000001', '670f5075-c286-4b29-8074-86401c18d0c0');
 insert into weaver_questions(id, family_id, target_relative_id)
-  values ('30000000-0000-4000-8000-000000000001', 'demo', '10000000-0000-4000-8000-000000000001');
+  values ('30000000-0000-4000-8000-000000000001', '670f5075-c286-4b29-8074-86401c18d0c0', '10000000-0000-4000-8000-000000000001');
 
 do $$
 declare
@@ -52,14 +52,14 @@ declare
   failed boolean := false;
 begin
   payload := jsonb_build_object(
-    'id', memory_id, 'family_id', 'demo', 'contributor_id', contributor, 'request_hash', 'original',
+    'id', memory_id, 'family_id', '670f5075-c286-4b29-8074-86401c18d0c0', 'contributor_id', contributor, 'request_hash', 'original',
     'source', jsonb_build_object('type', 'human', 'consent', true),
     'response', jsonb_build_object('memory_id', memory_id),
-    'memory', jsonb_build_object('id', memory_id, 'family_id', 'demo', 'contributor_id', contributor,
+    'memory', jsonb_build_object('id', memory_id, 'family_id', '670f5075-c286-4b29-8074-86401c18d0c0', 'contributor_id', contributor,
       'kind', 'answer', 'summary', 'Nora learned from her mother.',
       'source_question_id', '30000000-0000-4000-8000-000000000001',
       'embedding', to_jsonb(array_fill(0.01, array[1536]))),
-    'nodes', jsonb_build_array(jsonb_build_object('id', node_id, 'family_id', 'demo', 'type', 'person', 'label', 'Nora')),
+    'nodes', jsonb_build_array(jsonb_build_object('id', node_id, 'family_id', '670f5075-c286-4b29-8074-86401c18d0c0', 'type', 'person', 'label', 'Nora')),
     'edges', '[]'::jsonb,
     'provenance', jsonb_build_array(jsonb_build_object('id', '50000000-0000-4000-8000-000000000001',
       'memory_id', memory_id, 'contributor_id', contributor, 'node_id', node_id))
@@ -95,15 +95,15 @@ begin
   if not failed then raise exception 'Changed retry was accepted'; end if;
 
   insert into memories(id, family_id, contributor_id, kind, summary, embedding)
-    values ('40000000-0000-4000-8000-000000000002', 'demo', contributor, 'photo', 'Nora',
+    values ('40000000-0000-4000-8000-000000000002', '670f5075-c286-4b29-8074-86401c18d0c0', contributor, 'photo', 'Nora',
       to_jsonb(array_fill(0.01, array[1536]))::text);
   payload := jsonb_build_object('id', '60000000-0000-4000-8000-000000000001',
-    'family_id', 'demo', 'contributor_id', contributor, 'request_hash', 'face',
+    'family_id', '670f5075-c286-4b29-8074-86401c18d0c0', 'contributor_id', contributor, 'request_hash', 'face',
     'source', jsonb_build_object('type', 'human', 'consent', true,
       'model', 'face-api-1.7.15:ssd-mobilenetv1:landmark68:recognition128:rgb-exif-v1'),
     'response', jsonb_build_object('ok', true),
     'face', jsonb_build_object('id', '60000000-0000-4000-8000-000000000001',
-      'family_id', 'demo', 'contributor_id', contributor, 'person_node_id', node_id,
+      'family_id', '670f5075-c286-4b29-8074-86401c18d0c0', 'contributor_id', contributor, 'person_node_id', node_id,
       'memory_id', '40000000-0000-4000-8000-000000000002', 'descriptor', to_jsonb(array_fill(0.1, array[128]))));
   failed := false;
   begin

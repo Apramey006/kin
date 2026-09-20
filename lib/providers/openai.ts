@@ -1,7 +1,6 @@
 import OpenAI from "openai";
 import { z } from "zod";
 import type { ZodType } from "zod";
-import { withTimeout } from "../util";
 import { CONFIG } from "../config";
 
 let client: OpenAI | null = null;
@@ -9,7 +8,7 @@ let client: OpenAI | null = null;
 function getClient(): OpenAI {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error("OPENAI_API_KEY not configured");
-  if (!client) client = new OpenAI({ apiKey });
+  if (!client) client = new OpenAI({ apiKey, maxRetries: 0, timeout: CONFIG.timeouts.extractionMs });
   return client;
 }
 
@@ -21,8 +20,12 @@ export async function embedText(text: string): Promise<number[]> {
   const res = await getClient().embeddings.create({
     model: embedModel(),
     input: text,
-  });
-  return res.data[0].embedding;
+  }, { timeout: CONFIG.timeouts.extractionMs, signal: AbortSignal.timeout(CONFIG.timeouts.extractionMs) });
+  const vector = res.data[0]?.embedding;
+  if (!vector || vector.length !== 1536 || vector.some(n => !Number.isFinite(n)) || !vector.some(n => n !== 0)) {
+    throw new Error("Embedding provider returned an invalid vector");
+  }
+  return vector;
 }
 
 interface ChatJSONOptions<T> {
@@ -55,8 +58,7 @@ export async function chatJSON<T>(opts: ChatJSONOptions<T>): Promise<T> {
           },
         });
       }
-      const res = await withTimeout(
-        getClient().chat.completions.create({
+      const res = await getClient().chat.completions.create({
           model: chatModel(),
           temperature: 0.2,
           messages: [
@@ -71,17 +73,16 @@ export async function chatJSON<T>(opts: ChatJSONOptions<T>): Promise<T> {
               strict: true,
             },
           },
-        }),
-        timeout,
-        opts.name
-      );
+        }, { timeout, signal: AbortSignal.timeout(timeout) });
       const content = res.choices[0]?.message?.content ?? "";
       return opts.zodSchema.parse(JSON.parse(content));
     } catch (e) {
       lastError = e;
     }
   }
-  throw lastError instanceof Error ? lastError : new Error(String(lastError));
+  // Provider response bodies may contain supplied private data.
+  void lastError;
+  throw new Error("Structured generation unavailable");
 }
 
 const captionSchema = {

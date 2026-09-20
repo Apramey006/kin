@@ -15,6 +15,7 @@ export async function synthesizeSpeech(text: string): Promise<Buffer> {
       `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`,
       {
         method: "POST",
+        signal: AbortSignal.timeout(TTS_TIMEOUT_MS),
         headers: {
           "xi-api-key": apiKey,
           "Content-Type": "application/json",
@@ -30,7 +31,7 @@ export async function synthesizeSpeech(text: string): Promise<Buffer> {
     "elevenlabs"
   );
   if (!res.ok) {
-    throw new Error(`ElevenLabs error ${res.status}: ${await res.text()}`);
+    throw new Error(`ElevenLabs request failed (${res.status})`);
   }
   return Buffer.from(await res.arrayBuffer());
 }

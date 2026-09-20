@@ -36,6 +36,9 @@ fn matches_typescript_keeper() {
         let got = build_keeper_result(&case.input.keeper, &case.input.input);
         let got = serde_json::to_value(&got).expect("serialize");
         let want = &case.expected;
+        for key in ["keeperId", "support", "evidence"] {
+            assert_eq!(got[key], want[key], "{}: {} differs", case.name, key);
+        }
 
         if !want["claim"].is_null() {
             claims += 1;

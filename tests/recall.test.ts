@@ -1,326 +1,173 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { KeeperResult } from "../lib/types";
-
-const mocks = vi.hoisted(() => ({
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { FaceOutcome, KeeperResult, MemoryRow } from "../lib/types";
+const h = vi.hoisted(() => ({
   sb: null as unknown,
-  keeperResults: [] as KeeperResult[],
-  keepersError: null as Error | null,
-  descriptorResult: null as {
-    descriptors: number[][];
-    model: string;
-    source: "server" | "browser" | "none";
-  } | null,
+  face: { status: "matched", subjectNodeId: "nora", model: "canonical", enrollmentIds: ["e"], distance: .3, v: 1 } as FaceOutcome,
+  keepers: [] as KeeperResult[],
+  caption: vi.fn(), embed: vi.fn(), rewrite: vi.fn(), tts: vi.fn(), recognize: vi.fn(),
+  keeperError: false,
 }));
+vi.mock("@/lib/supabase", () => ({ getServiceClient: () => h.sb }));
+vi.mock("@/lib/faces-server", () => ({ recognizeFace: (...args: unknown[]) => h.recognize(...args) }));
+vi.mock("@/lib/providers/openai", () => ({ captionImage: (...args: unknown[]) => h.caption(...args), embedText: (...args: unknown[]) => h.embed(...args), chatJSON: (...args: unknown[]) => h.rewrite(...args) }));
+vi.mock("@/lib/providers/elevenlabs", () => ({ synthesizeSpeech: (...args: unknown[]) => h.tts(...args) }));
+vi.mock("@/lib/keepers", async importOriginal => {
+  const original = await importOriginal<typeof import("../lib/keepers")>();
+  return { ...original, runKeepers: async () => { if (h.keeperError) throw new Error("database down"); return h.keepers; } };
+});
+import { POST, GET } from "../app/api/recall/route";
 
-vi.mock("@/lib/supabase", () => ({
-  FAMILY_ID: "fam",
-  getServiceClient: () => mocks.sb,
-}));
-
-vi.mock("@/lib/keepers", () => ({
-  runKeepers: async () => {
-    if (mocks.keepersError) throw mocks.keepersError;
-    return mocks.keeperResults;
-  },
-}));
-
-vi.mock("@/lib/providers/openai", () => ({
-  captionImage: async () => null,
-  embedText: async () => new Array(1536).fill(0),
-  chatJSON: async () => ({ sentence: "a rewritten cue" }),
-}));
-
-vi.mock("@/lib/providers/elevenlabs", () => ({
-  synthesizeSpeech: async () => Buffer.from("mp3"),
-}));
-
-vi.mock("@/lib/faces-server", () => ({
-  BROWSER_FACE_MODEL: "browser-face-api-1.7.15",
-  resolveDescriptors: async (
-    _snapshot: Buffer | null,
-    _mime: string,
-    client: number[][]
-  ) =>
-    mocks.descriptorResult ?? {
-      descriptors: client,
-      model: "browser-face-api-1.7.15",
-      source: "browser",
-    },
-}));
-
-import { POST } from "../app/api/recall/route";
-
-type PlanEntry =
-  | { data?: unknown; error?: unknown }
-  | ((calls: { m: string; args: unknown[] }[]) => { data?: unknown; error?: unknown });
-
-interface FakeSb {
-  from: (table: string) => unknown;
-  updates: { table: string; payload: Record<string, unknown> }[];
-  inserts: { table: string; rows: unknown }[];
-  storage: { from: () => unknown };
-  rpc: () => Promise<{ data: unknown[]; error: null }>;
+const MAYA = "11111111-1111-4111-8111-111111111111";
+const ELENA = "22222222-2222-4222-8222-222222222222";
+const EVENT = "33333333-3333-4333-8333-333333333333";
+const PREVIOUS = "44444444-4444-4444-8444-444444444444";
+const PNG = Buffer.from("89504e470d0a1a0a", "hex"); // Header stub is only for mocked media boundary tests.
+const mem = (id: string, owner: string): MemoryRow => ({
+  id, family_id: "670f5075-c286-4b29-8074-86401c18d0c0", contributor_id: owner, kind: "story", media_path: null,
+  transcript: "Nora bakes lemon cake every Sunday.", caption: null, summary: "not source truth",
+  source_question_id: null, created_at: "2026-01-01", source: { type: "human" },
+  verified_facts: [{ id: id + "-fact", subjectNodeId: "nora", contributorId: owner, memoryId: id, text: "Nora bakes lemon cake every Sunday." }],
+});
+function support(owner: string, id: string): KeeperResult {
+  return { keeperId: owner, claim: { subjectNodeId: "nora", label: "Nora" }, memoryIds: [id], v: 1, r: 1, support: "supports", reason: "",
+    evidence: [{ memoryId: id, contributorId: owner, subjectNodeId: "nora", source: "human", supportedFacts: ["Nora bakes lemon cake every Sunday."] }] };
 }
-
-function makeSb(plan: Record<string, PlanEntry[]>): FakeSb {
-  const updates: FakeSb["updates"] = [];
-  const inserts: FakeSb["inserts"] = [];
-  const counters: Record<string, number> = {};
-  const from = (table: string) => {
-    const calls: { m: string; args: unknown[] }[] = [];
-    const idx = counters[table] ?? 0;
-    counters[table] = idx + 1;
-    const entries = plan[table] ?? [];
-    const resolve = () => {
-      const entry = entries[Math.min(idx, entries.length - 1)];
-      return typeof entry === "function" ? entry(calls) : entry ?? { data: [] };
-    };
-    const b: Record<string, unknown> = {};
-    for (const m of ["select", "eq", "in", "order", "limit", "neq", "is"]) {
-      b[m] = (...args: unknown[]) => {
-        calls.push({ m, args });
-        return b;
+function database() {
+  const state = {
+    updates: [] as Record<string, unknown>[], inserts: 0,
+    errorTable: "", failSpeak: false, failEveryUpdate: false, storageError: false,
+    authError: false, replayFamily: "670f5075-c286-4b29-8074-86401c18d0c0", memories: [mem("m1", MAYA), mem("m2", ELENA)],
+  };
+  const sb = {
+    auth: { getUser: async (token: string) => ({ data: { user: state.authError || token !== "session" ? null : { id: "user", app_metadata: { kin_family_id: "670f5075-c286-4b29-8074-86401c18d0c0", kin_contributor_id: MAYA } } }, error: null }) },
+    from(table: string) {
+      let operation = "read";
+      let payload: Record<string, unknown> = {};
+      const filters: Record<string, unknown> = {};
+      const resolve = () => {
+        if (table === state.errorTable) return { data: null, error: { code: "DB_ERROR" } };
+        if (table === "relatives") return { data: [{ id: MAYA, family_id: "670f5075-c286-4b29-8074-86401c18d0c0", name: "Maya", color: "gold" }, { id: ELENA, family_id: "670f5075-c286-4b29-8074-86401c18d0c0", name: "Elena", color: "pink" }], error: null };
+        if (table === "memories") return { data: state.memories, error: null };
+        if (table === "recall_events") {
+          if (operation === "insert") { state.inserts++; return { data: [{ id: EVENT }], error: null }; }
+          if (operation === "update") {
+            state.updates.push(payload);
+            if (state.failEveryUpdate || (state.failSpeak && payload.status === "speak")) return { data: null, error: { code: "WRITE_FAILED" } };
+            return { data: [{ id: EVENT }], error: null };
+          }
+          if (filters.id === PREVIOUS) return { data: state.replayFamily === filters.family_id ? [{ id: PREVIOUS, snapshot_path: "670f5075-c286-4b29-8074-86401c18d0c0/previous.png" }] : [], error: null };
+          return { data: [{ id: EVENT }], error: null };
+        }
+        return { data: [], error: null };
       };
-    }
-    b.insert = (rows: unknown) => {
-      calls.push({ m: "insert", args: [rows] });
-      inserts.push({ table, rows });
+      const b: Record<string, unknown> = {};
+      for (const method of ["select", "in", "order", "limit"]) b[method] = () => b;
+      b.eq = (name: string, value: unknown) => { filters[name] = value; return b; };
+      b.insert = (row: Record<string, unknown>) => { operation = "insert"; payload = row; return b; };
+      b.update = (row: Record<string, unknown>) => { operation = "update"; payload = row; return b; };
+      b.single = b.maybeSingle = async () => { const r = resolve(); return { ...r, data: r.data?.[0] ?? null }; };
+      b.then = (resolvePromise: (value: unknown) => void) => Promise.resolve(resolve()).then(resolvePromise);
       return b;
-    };
-    b.update = (payload: Record<string, unknown>) => {
-      calls.push({ m: "update", args: [payload] });
-      updates.push({ table, payload });
-      return b;
-    };
-    b.single = () => {
-      const r = resolve();
-      const data = Array.isArray(r.data) ? (r.data[0] ?? null) : (r.data ?? null);
-      return Promise.resolve({ data, error: r.error ?? null });
-    };
-    b.then = (res: (v: unknown) => unknown, rej?: (e: unknown) => unknown) => {
-      const r = resolve();
-      return Promise.resolve({ data: r.data ?? [], error: r.error ?? null }).then(res, rej);
-    };
-    return b;
-  };
-  return {
-    from,
-    updates,
-    inserts,
-    storage: {
-      from: () => ({
-        upload: async () => ({ error: null }),
-        download: async () => ({ data: null }),
-      }),
     },
-    rpc: async () => ({ data: [], error: null }),
+    storage: { from: () => ({
+      upload: async () => ({ data: {}, error: state.storageError ? {} : null }),
+      download: async () => ({ data: new Blob([PNG], { type: "image/png" }), error: null }),
+    }) },
   };
+  h.sb = sb;
+  return state;
 }
-
-const keeper = (
-  keeperId: string,
-  subjectNodeId: string | null,
-  v = 0,
-  r = 0,
-  memoryIds: string[] = []
-): KeeperResult => ({
-  keeperId,
-  claim: subjectNodeId ? { subjectNodeId, label: "Nora" } : null,
-  memoryIds,
-  v,
-  r,
-  reason: "",
-});
-
-const noraNode = {
-  id: "nora",
-  family_id: "fam",
-  type: "person",
-  label: "Nora",
-  aliases: [],
-  relation_to_wearer: "sister",
-};
-
-const relatives = [
-  { id: "a", name: "A", color: "#111" },
-  { id: "b", name: "B", color: "#222" },
-];
-
-function recallRequest(descriptors: number[][] = [new Array(128).fill(0.1)]) {
+function request(extra?: [string, string], auth = true) {
   const form = new FormData();
-  form.append("faceDescriptors", JSON.stringify(descriptors));
-  return new Request("http://localhost/api/recall", {
-    method: "POST",
-    body: form,
-  });
+  form.set("snapshot", new Blob([PNG], { type: "image/png" }), "snapshot.png");
+  if (extra) form.set(...extra);
+  return new Request("http://localhost/api/recall", { method: "POST", body: form, headers: auth ? { authorization: "Bearer session" } : {} });
 }
-
-function basePlan(extra: Record<string, PlanEntry[]> = {}) {
-  return {
-    recall_events: [{ data: [{ id: "evt-1" }] }, ...new Array(8).fill({ data: [] })],
-    relatives: [{ data: relatives }],
-    memories: [{ data: [] }],
-    provenance: [{ data: [] }, { data: [] }],
-    graph_nodes: [{ data: [noraNode] }],
-    graph_edges: [{ data: [] }],
-    wearer: [{ data: [{ name: "Rosa" }] }],
-    ...extra,
-  };
-}
-
-let sb: FakeSb;
-
 beforeEach(() => {
-  mocks.keeperResults = [];
-  mocks.keepersError = null;
-  mocks.descriptorResult = null;
+  vi.clearAllMocks();
+  h.face = { status: "matched", subjectNodeId: "nora", model: "canonical", enrollmentIds: ["e"], distance: .3, v: 1 };
+  h.keepers = [support(MAYA, "m1"), support(ELENA, "m2")]; h.keeperError = false;
+  h.caption.mockResolvedValue({ caption: "a kitchen", objects: ["cake"], setting: "indoors" });
+  h.embed.mockResolvedValue(new Array(1536).fill(.01));
+  h.rewrite.mockResolvedValue({ factIds: ["invented"], cue: "You two visited Rome." });
+  h.tts.mockResolvedValue(Buffer.from("mock-audio"));
+  h.recognize.mockImplementation(async () => h.face);
 });
-
-describe("POST /api/recall", () => {
-  it("two agreeing strong keepers speak and close the event", async () => {
-    sb = makeSb(
-      basePlan({
-        memories: [
-          {
-            data: [
-              { id: "m1", kind: "photo", contributor_id: "a" },
-              { id: "m2", kind: "photo", contributor_id: "b" },
-            ],
-          },
-        ],
-        provenance: [{ data: [{ node_id: "nora" }] }, { data: [] }],
-      })
-    );
-    mocks.sb = sb;
-    mocks.keeperResults = [
-      keeper("a", "nora", 0.95, 0.9, ["m1"]),
-      keeper("b", "nora", 0.9, 0.85, ["m2"]),
-    ];
-    const res = await POST(recallRequest());
-    const json = await res.json();
-    expect(res.status).toBe(200);
-    expect(json.decision).toBe("speak");
-    const last = sb.updates.at(-1)!.payload;
-    expect(last.status).toBe("speak");
-    expect(typeof last.cue_text).toBe("string");
-    expect((last.cue_text as string).length).toBeGreaterThan(0);
+describe("authenticated image-first recall", () => {
+  it("speaks only a literal grounded cue and persists matching terminal gate", async () => {
+    const db = database(); const res = await POST(request()); const body = await res.json();
+    expect(res.status).toBe(200); expect(body.decision).toBe("speak");
+    expect(body.cueText).toBe("A relative said: “Nora bakes lemon cake every Sunday.”");
+    expect(body.evidence[0].source).toBe("human"); expect(body.scores.C).toBeCloseTo(.95);
+    expect(db.updates.at(-1)).toMatchObject({ status: "speak", gate: { decision: "speak" }, cue_text: body.cueText });
+    expect(h.rewrite.mock.calls[0][0].user).not.toContain("not source truth");
   });
-
-  it("all abstain ends silent with no reliable memory", async () => {
-    sb = makeSb(basePlan());
-    mocks.sb = sb;
-    mocks.keeperResults = [keeper("a", null), keeper("b", null)];
-    const res = await POST(recallRequest());
-    const json = await res.json();
-    expect(res.status).toBe(200);
-    expect(json.decision).toBe("silent");
-    expect(json.reason).toBe("no reliable memory");
-    expect(sb.updates.at(-1)!.payload.status).toBe("silent");
+  it.each(["no_face", "unknown", "ambiguous", "unavailable"] as const)("silences %s without synthesis/TTS", async status => {
+    database(); h.face = { status, model: "canonical" };
+    const body = await (await POST(request())).json();
+    expect(body.decision).toBe("silent"); expect(body.reasonCode).toBeTruthy();
+    expect(h.caption).not.toHaveBeenCalled(); expect(h.rewrite).not.toHaveBeenCalled(); expect(h.tts).not.toHaveBeenCalled();
   });
-
-  it("disagreeing keepers end silent with keepers disagree", async () => {
-    sb = makeSb(basePlan());
-    mocks.sb = sb;
-    mocks.keeperResults = [
-      keeper("a", "nora", 0.9, 0.8, ["m1"]),
-      keeper("b", "rosa", 0.9, 0.8, ["m2"]),
-    ];
-    const res = await POST(recallRequest());
-    const json = await res.json();
-    expect(json.decision).toBe("silent");
-    expect(json.reason).toBe("keepers disagree");
+  it("single-supporter silence never invokes the cue model or TTS", async () => {
+    database(); h.keepers = h.keepers.slice(0, 1);
+    expect((await (await POST(request())).json()).reasonCode).toBe("insufficient_evidence");
+    expect(h.rewrite).not.toHaveBeenCalled(); expect(h.tts).not.toHaveBeenCalled();
   });
-
-  it("a keeper failure returns 500 and the event ends silent with an error reason", async () => {
-    sb = makeSb(basePlan());
-    mocks.sb = sb;
-    mocks.keepersError = new Error("keepers exploded");
-    const res = await POST(recallRequest());
-    expect(res.status).toBe(500);
-    const last = sb.updates.at(-1)!.payload;
-    expect(last.status).toBe("silent");
-    expect(String(last.silence_reason)).toMatch(/^error/);
+  it("rejects raw descriptors before creating any event", async () => {
+    const db = database();
+    expect((await POST(request(["faceDescriptors", "[]"]))).status).toBe(400);
+    expect(db.inserts).toBe(0);
   });
-
-  it("rejects descriptors that are not 128 numbers, before inserting", async () => {
-    sb = makeSb(basePlan());
-    mocks.sb = sb;
-    const res = await POST(recallRequest([new Array(127).fill(0.1)]));
-    expect(res.status).toBe(400);
-    expect(sb.inserts).toHaveLength(0);
+  it("requires bearer authentication on POST and GET", async () => {
+    const db = database();
+    expect((await POST(request(undefined, false))).status).toBe(401);
+    expect((await GET(new Request("http://localhost/api/recall"))).status).toBe(401);
+    expect(db.inserts).toBe(0);
   });
-
-  it("source none with abstaining keepers reports descriptorSource and ends silent", async () => {
-    sb = makeSb(basePlan());
-    mocks.sb = sb;
-    mocks.descriptorResult = {
-      descriptors: [],
-      model: "face-api-1.7.15:test",
-      source: "none",
-    };
-    mocks.keeperResults = [keeper("a", null), keeper("b", null)];
-    const res = await POST(recallRequest());
-    const json = await res.json();
-    expect(res.status).toBe(200);
-    expect(json.decision).toBe("silent");
-    expect(json.descriptorSource).toBe("none");
-    expect(json.faceModel).toBe("face-api-1.7.15:test");
-    expect(sb.updates.at(-1)!.payload.status).toBe("silent");
+  it("replay is family scoped and re-runs canonical recognition", async () => {
+    const db = database();
+    const replay = () => new Request("http://localhost/api/recall", { method: "POST", headers: { authorization: "Bearer session", "content-type": "application/json" }, body: JSON.stringify({ replayEventId: PREVIOUS }) });
+    db.replayFamily = "other"; expect((await POST(replay())).status).toBe(404);
+    expect(db.inserts).toBe(0);
+    db.replayFamily = "670f5075-c286-4b29-8074-86401c18d0c0"; expect((await POST(replay())).status).toBe(200);
+    expect(h.recognize).toHaveBeenCalledTimes(1);
   });
-
-  it("replay accepts legacy array-shaped face_descriptors", async () => {
-    sb = makeSb(
-      basePlan({
-        recall_events: [
-          {
-            data: [
-              {
-                id: "evt-legacy",
-                snapshot_path: null,
-                face_descriptors: [new Array(128).fill(0.2)],
-              },
-            ],
-          },
-          { data: [{ id: "evt-legacy" }] },
-          ...new Array(7).fill({ data: [] }),
-        ],
-      })
-    );
-    mocks.sb = sb;
-    mocks.keeperResults = [keeper("a", null), keeper("b", null)];
-    const res = await POST(
-      new Request("http://localhost/api/recall", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ replayEventId: "evt-legacy" }),
-      })
-    );
-    expect(res.status).toBe(200);
-    const json = await res.json();
-    expect(json.decision).toBe("silent");
+  it("provider rejection and resolved database errors finalize silently", async () => {
+    let db = database(); h.caption.mockRejectedValueOnce(new Error("secret body must never escape"));
+    let body = await (await POST(request())).json();
+    expect(body.reasonCode).toBe("provider_failure"); expect(JSON.stringify(body)).not.toContain("secret body");
+    expect(db.updates.at(-1)?.status).toBe("silent");
+    db = database(); db.errorTable = "memories";
+    body = await (await POST(request())).json();
+    expect(body.reasonCode).toBe("provider_failure");
+    expect(db.updates.at(-1)).toMatchObject({ status: "silent", gate: { decision: "silent" } });
   });
-
-  it("replay with an event from another family returns 404", async () => {
-    sb = makeSb(
-      basePlan({
-        recall_events: [
-          (calls) =>
-            calls.some(
-              (c) => c.m === "eq" && c.args[0] === "family_id" && c.args[1] === "fam"
-            )
-              ? { data: null }
-              : { data: [{ id: "evt-x" }] },
-        ],
-      })
-    );
-    mocks.sb = sb;
-    const res = await POST(
-      new Request("http://localhost/api/recall", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ replayEventId: "evt-x" }),
-      })
-    );
-    expect(res.status).toBe(404);
+  it("storage failure terminates the created event", async () => {
+    const db = database(); db.storageError = true;
+    expect((await (await POST(request())).json()).reasonCode).toBe("provider_failure");
+    expect(db.updates.at(-1)?.status).toBe("silent");
+  });
+  it("failed speak persistence cannot return a spoken cue or contradictory gate", async () => {
+    const db = database(); db.failSpeak = true;
+    const body = await (await POST(request())).json();
+    expect(body.decision).toBe("silent");
+    expect(db.updates.at(-1)).toMatchObject({ status: "silent", cue_text: null, gate: { decision: "silent" } });
+  });
+  it("database outage reports unavailable terminal persistence honestly", async () => {
+    const db = database(); db.failEveryUpdate = true;
+    const response = await POST(request());
+    expect(response.status).toBe(503);
+    expect((await response.json()).eventId).toBe(EVENT);
+  });
+  it("grounding failure is terminal SILENT and skips TTS", async () => {
+    const db = database(); db.memories = [];
+    expect((await (await POST(request())).json()).reasonCode).toBe("grounding_failure");
+    expect(h.tts).not.toHaveBeenCalled();
+    expect(db.updates.at(-1)).toMatchObject({ status: "silent", gate: { decision: "silent" } });
+  });
+  it("TTS-only failure preserves verified text with null audio", async () => {
+    database(); h.tts.mockRejectedValueOnce(new Error("timeout"));
+    const body = await (await POST(request())).json();
+    expect(body.decision).toBe("speak"); expect(body.audio).toBeNull();
   });
 });

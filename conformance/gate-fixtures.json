@@ -1,508 +1,338 @@
 {
-  "config": "gate weights from lib/config.ts",
+  "config": "P0: two human contributors, threshold 0.85",
   "cases": [
     {
-      "name": "worked-example-two-strong-agreeing",
+      "name": "empty",
       "input": {
-        "results": [
-          {
-            "keeperId": "maya",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m1"
-            ],
-            "v": 0.93,
-            "r": 0.91,
-            "reason": ""
-          },
-          {
-            "keeperId": "david",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m2"
-            ],
-            "v": 0.89,
-            "r": 0.88,
-            "reason": ""
-          },
-          {
-            "keeperId": "elena",
-            "claim": null,
-            "memoryIds": [],
-            "v": 0,
-            "r": 0.1,
-            "reason": ""
-          }
-        ],
+        "results": [],
         "info": {
-          "memoryOwners": {
-            "m1": "maya",
-            "m2": "david"
-          },
-          "memoryKinds": {
-            "m1": "photo",
-            "m2": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
           }
         }
       },
       "expected": {
-        "V": 0.93,
-        "R": 0.895,
-        "A": 1,
-        "S": 1,
+        "V": 1,
+        "R": 0,
+        "A": 0,
+        "S": 0,
         "X": 0,
-        "C": 0.89925,
-        "threshold": 0.8,
+        "C": 0.35,
+        "threshold": 0.85,
+        "decision": "silent",
+        "reason": "Two distinct contributors with human stories are required",
         "subjectNodeId": "nora",
-        "agreeingKeeperIds": [
-          "maya",
-          "david"
-        ],
-        "citedMemoryIds": [
-          "m1",
-          "m2"
-        ],
-        "decision": "speak",
-        "reason": "speak"
+        "agreeingKeeperIds": [],
+        "citedMemoryIds": [],
+        "reasonCode": "insufficient_evidence"
       }
     },
     {
-      "name": "two-keepers-different-subjects",
+      "name": "single-strongest",
       "input": {
         "results": [
           {
             "keeperId": "maya",
             "claim": {
               "subjectNodeId": "nora",
-              "label": "nora"
+              "label": "Nora"
             },
             "memoryIds": [
-              "m1"
+              "maya-memory"
             ],
-            "v": 0.9,
-            "r": 0.9,
-            "reason": ""
-          },
-          {
-            "keeperId": "david",
-            "claim": {
-              "subjectNodeId": "sam",
-              "label": "sam"
-            },
-            "memoryIds": [
-              "m2"
-            ],
-            "v": 0.9,
-            "r": 0.9,
-            "reason": ""
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           }
         ],
         "info": {
-          "memoryOwners": {
-            "m1": "maya",
-            "m2": "david"
-          },
-          "memoryKinds": {
-            "m1": "photo",
-            "m2": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true,
-            "sam": true
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
           }
         }
       },
       "expected": {
-        "V": 0.9,
-        "R": 0.9,
-        "A": 0.5,
+        "V": 1,
+        "R": 1,
+        "A": 0,
         "S": 1,
-        "X": 0.5,
-        "C": 0.665,
-        "threshold": 0.8,
+        "X": 0,
+        "C": 0.75,
+        "threshold": 0.85,
+        "decision": "silent",
+        "reason": "Two distinct contributors with human stories are required",
         "subjectNodeId": "nora",
         "agreeingKeeperIds": [
           "maya"
         ],
         "citedMemoryIds": [
-          "m1"
+          "maya-memory"
         ],
-        "decision": "silent",
-        "reason": "keepers disagree"
+        "reasonCode": "insufficient_evidence"
       }
     },
     {
-      "name": "strong-majority-with-one-dissenter",
+      "name": "duplicate-contributor",
       "input": {
         "results": [
           {
             "keeperId": "maya",
             "claim": {
               "subjectNodeId": "nora",
-              "label": "nora"
+              "label": "Nora"
             },
             "memoryIds": [
-              "m1"
+              "maya-memory"
             ],
-            "v": 0.95,
-            "r": 0.95,
-            "reason": ""
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           },
           {
-            "keeperId": "david",
+            "keeperId": "maya",
             "claim": {
               "subjectNodeId": "nora",
-              "label": "nora"
+              "label": "Nora"
             },
             "memoryIds": [
-              "m2"
+              "maya-memory"
             ],
-            "v": 0.94,
-            "r": 0.93,
-            "reason": ""
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          }
+        ],
+        "info": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          }
+        }
+      },
+      "expected": {
+        "V": 1,
+        "R": 1,
+        "A": 0,
+        "S": 1,
+        "X": 0,
+        "C": 0.75,
+        "threshold": 0.85,
+        "decision": "silent",
+        "reason": "Two distinct contributors with human stories are required",
+        "subjectNodeId": "nora",
+        "agreeingKeeperIds": [
+          "maya"
+        ],
+        "citedMemoryIds": [
+          "maya-memory"
+        ],
+        "reasonCode": "insufficient_evidence"
+      }
+    },
+    {
+      "name": "two-human-sources",
+      "input": {
+        "results": [
+          {
+            "keeperId": "maya",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "maya-memory"
+            ],
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           },
           {
             "keeperId": "elena",
             "claim": {
-              "subjectNodeId": "sam",
-              "label": "sam"
+              "subjectNodeId": "nora",
+              "label": "Nora"
             },
             "memoryIds": [
-              "m3"
+              "elena-memory"
             ],
-            "v": 0.4,
-            "r": 0.5,
-            "reason": ""
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           }
         ],
         "info": {
-          "memoryOwners": {
-            "m1": "maya",
-            "m2": "david",
-            "m3": "elena"
-          },
-          "memoryKinds": {
-            "m1": "photo",
-            "m2": "photo",
-            "m3": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true,
-            "sam": true
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
           }
         }
       },
       "expected": {
-        "V": 0.95,
-        "R": 0.94,
-        "A": 0.6666666666666666,
+        "V": 1,
+        "R": 1,
+        "A": 1,
         "S": 1,
-        "X": 0.3333333333333333,
-        "C": 0.7674999999999998,
-        "threshold": 0.8,
-        "subjectNodeId": "nora",
-        "agreeingKeeperIds": [
-          "maya",
-          "david"
-        ],
-        "citedMemoryIds": [
-          "m1",
-          "m2"
-        ],
-        "decision": "silent",
-        "reason": "keepers disagree"
-      }
-    },
-    {
-      "name": "keeper-cites-memory-it-does-not-own",
-      "input": {
-        "results": [
-          {
-            "keeperId": "maya",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m2"
-            ],
-            "v": 0.95,
-            "r": 0.95,
-            "reason": ""
-          },
-          {
-            "keeperId": "david",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m2"
-            ],
-            "v": 0.93,
-            "r": 0.92,
-            "reason": ""
-          }
-        ],
-        "info": {
-          "memoryOwners": {
-            "m2": "david"
-          },
-          "memoryKinds": {
-            "m2": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true
-          }
-        }
-      },
-      "expected": {
-        "V": 0.95,
-        "R": 0.935,
-        "A": 1,
-        "S": 0,
         "X": 0,
-        "C": 0.7662499999999999,
-        "threshold": 0.8,
+        "C": 0.9500000000000001,
+        "threshold": 0.85,
+        "decision": "speak",
+        "reason": "Verified independent human evidence",
         "subjectNodeId": "nora",
         "agreeingKeeperIds": [
           "maya",
-          "david"
+          "elena"
         ],
         "citedMemoryIds": [
-          "m2",
-          "m2"
-        ],
-        "decision": "silent",
-        "reason": "no provenance"
+          "maya-memory",
+          "elena-memory"
+        ]
       }
     },
     {
-      "name": "subject-has-no-provenance",
+      "name": "no_face",
       "input": {
         "results": [
           {
             "keeperId": "maya",
             "claim": {
               "subjectNodeId": "nora",
-              "label": "nora"
+              "label": "Nora"
             },
             "memoryIds": [
-              "m1"
+              "maya-memory"
             ],
-            "v": 0.95,
-            "r": 0.95,
-            "reason": ""
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           },
           {
-            "keeperId": "david",
+            "keeperId": "elena",
             "claim": {
               "subjectNodeId": "nora",
-              "label": "nora"
+              "label": "Nora"
             },
             "memoryIds": [
-              "m2"
+              "elena-memory"
             ],
-            "v": 0.94,
-            "r": 0.93,
-            "reason": ""
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           }
         ],
         "info": {
-          "memoryOwners": {
-            "m1": "maya",
-            "m2": "david"
-          },
-          "memoryKinds": {
-            "m1": "photo",
-            "m2": "photo"
-          },
-          "subjectProvenance": {}
-        }
-      },
-      "expected": {
-        "V": 0.95,
-        "R": 0.94,
-        "A": 1,
-        "S": 0,
-        "X": 0,
-        "C": 0.7674999999999998,
-        "threshold": 0.8,
-        "subjectNodeId": "nora",
-        "agreeingKeeperIds": [
-          "maya",
-          "david"
-        ],
-        "citedMemoryIds": [
-          "m1",
-          "m2"
-        ],
-        "decision": "silent",
-        "reason": "no provenance"
-      }
-    },
-    {
-      "name": "agreeing-keeper-cites-nothing",
-      "input": {
-        "results": [
-          {
-            "keeperId": "maya",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m1"
-            ],
-            "v": 0.95,
-            "r": 0.95,
-            "reason": ""
-          },
-          {
-            "keeperId": "david",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [],
-            "v": 0.94,
-            "r": 0.93,
-            "reason": ""
-          }
-        ],
-        "info": {
-          "memoryOwners": {
-            "m1": "maya"
-          },
-          "memoryKinds": {
-            "m1": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true
-          }
-        }
-      },
-      "expected": {
-        "V": 0.95,
-        "R": 0.94,
-        "A": 1,
-        "S": 0,
-        "X": 0,
-        "C": 0.7674999999999998,
-        "threshold": 0.8,
-        "subjectNodeId": "nora",
-        "agreeingKeeperIds": [
-          "maya",
-          "david"
-        ],
-        "citedMemoryIds": [
-          "m1"
-        ],
-        "decision": "silent",
-        "reason": "no provenance"
-      }
-    },
-    {
-      "name": "text-only-evidence-no-visual",
-      "input": {
-        "results": [
-          {
-            "keeperId": "maya",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m1"
-            ],
-            "v": 0,
-            "r": 0.95,
-            "reason": ""
-          },
-          {
-            "keeperId": "david",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m2"
-            ],
-            "v": 0,
-            "r": 0.93,
-            "reason": ""
-          }
-        ],
-        "info": {
-          "memoryOwners": {
-            "m1": "maya",
-            "m2": "david"
-          },
-          "memoryKinds": {
-            "m1": "story",
-            "m2": "story"
-          },
-          "subjectProvenance": {
-            "nora": true
-          }
-        }
-      },
-      "expected": {
-        "V": 0,
-        "R": 0.94,
-        "A": 1,
-        "S": 0.5,
-        "X": 0,
-        "C": 0.51,
-        "threshold": 0.8,
-        "subjectNodeId": "nora",
-        "agreeingKeeperIds": [
-          "maya",
-          "david"
-        ],
-        "citedMemoryIds": [
-          "m1",
-          "m2"
-        ],
-        "decision": "silent",
-        "reason": "below threshold"
-      }
-    },
-    {
-      "name": "stranger-no-keeper-claims",
-      "input": {
-        "results": [
-          {
-            "keeperId": "maya",
-            "claim": null,
-            "memoryIds": [],
-            "v": 0,
-            "r": 0.1,
-            "reason": ""
-          },
-          {
-            "keeperId": "david",
-            "claim": null,
-            "memoryIds": [],
-            "v": 0,
-            "r": 0.05,
-            "reason": ""
-          }
-        ],
-        "info": {
-          "memoryOwners": {},
-          "memoryKinds": {},
-          "subjectProvenance": {
-            "nora": true
+          "face": {
+            "status": "no_face",
+            "model": "fixture-only"
           }
         }
       },
@@ -513,1845 +343,3530 @@
         "S": 0,
         "X": 0,
         "C": 0,
-        "threshold": 0.8,
+        "threshold": 0.85,
+        "decision": "silent",
+        "reason": "No face detected",
         "subjectNodeId": null,
         "agreeingKeeperIds": [],
         "citedMemoryIds": [],
+        "reasonCode": "no_face"
+      }
+    },
+    {
+      "name": "unknown",
+      "input": {
+        "results": [
+          {
+            "keeperId": "maya",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "maya-memory"
+            ],
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          },
+          {
+            "keeperId": "elena",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "elena-memory"
+            ],
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          }
+        ],
+        "info": {
+          "face": {
+            "status": "unknown",
+            "model": "fixture-only"
+          }
+        }
+      },
+      "expected": {
+        "V": 0,
+        "R": 0,
+        "A": 0,
+        "S": 0,
+        "X": 0,
+        "C": 0,
+        "threshold": 0.85,
         "decision": "silent",
-        "reason": "no reliable memory"
+        "reason": "No eligible enrolled face matched",
+        "subjectNodeId": null,
+        "agreeingKeeperIds": [],
+        "citedMemoryIds": [],
+        "reasonCode": "unknown_face"
       }
     },
     {
-      "name": "single-claimant-v0.6-r0.5",
+      "name": "ambiguous",
       "input": {
         "results": [
           {
             "keeperId": "maya",
             "claim": {
               "subjectNodeId": "nora",
-              "label": "nora"
+              "label": "Nora"
             },
             "memoryIds": [
-              "m1"
+              "maya-memory"
             ],
-            "v": 0.6,
-            "r": 0.5,
-            "reason": ""
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           },
           {
-            "keeperId": "david",
-            "claim": null,
-            "memoryIds": [],
-            "v": 0,
-            "r": 0.1,
-            "reason": ""
+            "keeperId": "elena",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "elena-memory"
+            ],
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           }
         ],
         "info": {
-          "memoryOwners": {
-            "m1": "maya"
-          },
-          "memoryKinds": {
-            "m1": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true
+          "face": {
+            "status": "ambiguous",
+            "model": "fixture-only"
           }
         }
       },
       "expected": {
-        "V": 0.6,
-        "R": 0.5,
-        "A": 0.75,
-        "S": 1,
+        "V": 0,
+        "R": 0,
+        "A": 0,
+        "S": 0,
         "X": 0,
-        "C": 0.635,
-        "threshold": 0.8,
-        "subjectNodeId": "nora",
-        "agreeingKeeperIds": [
-          "maya"
-        ],
-        "citedMemoryIds": [
-          "m1"
-        ],
+        "C": 0,
+        "threshold": 0.85,
         "decision": "silent",
-        "reason": "below threshold"
+        "reason": "Face match is ambiguous",
+        "subjectNodeId": null,
+        "agreeingKeeperIds": [],
+        "citedMemoryIds": [],
+        "reasonCode": "ambiguous_face"
       }
     },
     {
-      "name": "single-claimant-v0.6-r0.75",
+      "name": "unavailable",
       "input": {
         "results": [
           {
             "keeperId": "maya",
             "claim": {
               "subjectNodeId": "nora",
-              "label": "nora"
+              "label": "Nora"
             },
             "memoryIds": [
-              "m1"
+              "maya-memory"
             ],
-            "v": 0.6,
-            "r": 0.75,
-            "reason": ""
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           },
           {
-            "keeperId": "david",
-            "claim": null,
-            "memoryIds": [],
-            "v": 0,
-            "r": 0.1,
-            "reason": ""
+            "keeperId": "elena",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "elena-memory"
+            ],
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           }
         ],
         "info": {
-          "memoryOwners": {
-            "m1": "maya"
-          },
-          "memoryKinds": {
-            "m1": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true
+          "face": {
+            "status": "unavailable",
+            "model": "fixture-only"
           }
         }
       },
       "expected": {
-        "V": 0.6,
-        "R": 0.75,
-        "A": 0.75,
-        "S": 1,
+        "V": 0,
+        "R": 0,
+        "A": 0,
+        "S": 0,
         "X": 0,
-        "C": 0.6975,
-        "threshold": 0.8,
-        "subjectNodeId": "nora",
-        "agreeingKeeperIds": [
-          "maya"
-        ],
-        "citedMemoryIds": [
-          "m1"
-        ],
+        "C": 0,
+        "threshold": 0.85,
         "decision": "silent",
-        "reason": "below threshold"
+        "reason": "Required service unavailable",
+        "subjectNodeId": null,
+        "agreeingKeeperIds": [],
+        "citedMemoryIds": [],
+        "reasonCode": "provider_failure"
       }
     },
     {
-      "name": "single-claimant-v0.6-r0.95",
+      "name": "provider-failure",
       "input": {
         "results": [
           {
             "keeperId": "maya",
             "claim": {
               "subjectNodeId": "nora",
-              "label": "nora"
+              "label": "Nora"
             },
             "memoryIds": [
-              "m1"
+              "maya-memory"
             ],
-            "v": 0.6,
-            "r": 0.95,
-            "reason": ""
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           },
           {
-            "keeperId": "david",
-            "claim": null,
-            "memoryIds": [],
-            "v": 0,
-            "r": 0.1,
-            "reason": ""
+            "keeperId": "elena",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "elena-memory"
+            ],
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           }
         ],
         "info": {
-          "memoryOwners": {
-            "m1": "maya"
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
           },
-          "memoryKinds": {
-            "m1": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true
-          }
+          "providerFailure": true
         }
       },
       "expected": {
-        "V": 0.6,
-        "R": 0.95,
-        "A": 0.75,
-        "S": 1,
+        "V": 0,
+        "R": 0,
+        "A": 0,
+        "S": 0,
         "X": 0,
-        "C": 0.7475,
-        "threshold": 0.8,
-        "subjectNodeId": "nora",
-        "agreeingKeeperIds": [
-          "maya"
-        ],
-        "citedMemoryIds": [
-          "m1"
-        ],
+        "C": 0,
+        "threshold": 0.85,
         "decision": "silent",
-        "reason": "below threshold"
+        "reason": "Required service unavailable",
+        "subjectNodeId": null,
+        "agreeingKeeperIds": [],
+        "citedMemoryIds": [],
+        "reasonCode": "provider_failure"
       }
     },
     {
-      "name": "single-claimant-v0.8-r0.5",
+      "name": "scores-0.5-0",
       "input": {
         "results": [
           {
             "keeperId": "maya",
             "claim": {
               "subjectNodeId": "nora",
-              "label": "nora"
+              "label": "Nora"
             },
             "memoryIds": [
-              "m1"
+              "maya-memory"
             ],
-            "v": 0.8,
-            "r": 0.5,
-            "reason": ""
+            "v": 1,
+            "r": 0,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           },
           {
-            "keeperId": "david",
-            "claim": null,
-            "memoryIds": [],
-            "v": 0,
-            "r": 0.1,
-            "reason": ""
+            "keeperId": "elena",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "elena-memory"
+            ],
+            "v": 1,
+            "r": 0,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           }
         ],
         "info": {
-          "memoryOwners": {
-            "m1": "maya"
-          },
-          "memoryKinds": {
-            "m1": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true
-          }
-        }
-      },
-      "expected": {
-        "V": 0.8,
-        "R": 0.5,
-        "A": 0.75,
-        "S": 1,
-        "X": 0,
-        "C": 0.705,
-        "threshold": 0.8,
-        "subjectNodeId": "nora",
-        "agreeingKeeperIds": [
-          "maya"
-        ],
-        "citedMemoryIds": [
-          "m1"
-        ],
-        "decision": "silent",
-        "reason": "below threshold"
-      }
-    },
-    {
-      "name": "single-claimant-v0.8-r0.75",
-      "input": {
-        "results": [
-          {
-            "keeperId": "maya",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m1"
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
             ],
-            "v": 0.8,
-            "r": 0.75,
-            "reason": ""
-          },
-          {
-            "keeperId": "david",
-            "claim": null,
-            "memoryIds": [],
-            "v": 0,
-            "r": 0.1,
-            "reason": ""
-          }
-        ],
-        "info": {
-          "memoryOwners": {
-            "m1": "maya"
-          },
-          "memoryKinds": {
-            "m1": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true
-          }
-        }
-      },
-      "expected": {
-        "V": 0.8,
-        "R": 0.75,
-        "A": 0.75,
-        "S": 1,
-        "X": 0,
-        "C": 0.7675,
-        "threshold": 0.8,
-        "subjectNodeId": "nora",
-        "agreeingKeeperIds": [
-          "maya"
-        ],
-        "citedMemoryIds": [
-          "m1"
-        ],
-        "decision": "silent",
-        "reason": "below threshold"
-      }
-    },
-    {
-      "name": "single-claimant-v0.8-r0.95",
-      "input": {
-        "results": [
-          {
-            "keeperId": "maya",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m1"
-            ],
-            "v": 0.8,
-            "r": 0.95,
-            "reason": ""
-          },
-          {
-            "keeperId": "david",
-            "claim": null,
-            "memoryIds": [],
-            "v": 0,
-            "r": 0.1,
-            "reason": ""
-          }
-        ],
-        "info": {
-          "memoryOwners": {
-            "m1": "maya"
-          },
-          "memoryKinds": {
-            "m1": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true
-          }
-        }
-      },
-      "expected": {
-        "V": 0.8,
-        "R": 0.95,
-        "A": 0.75,
-        "S": 1,
-        "X": 0,
-        "C": 0.8175,
-        "threshold": 0.8,
-        "subjectNodeId": "nora",
-        "agreeingKeeperIds": [
-          "maya"
-        ],
-        "citedMemoryIds": [
-          "m1"
-        ],
-        "decision": "speak",
-        "reason": "speak"
-      }
-    },
-    {
-      "name": "single-claimant-v0.95-r0.5",
-      "input": {
-        "results": [
-          {
-            "keeperId": "maya",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m1"
-            ],
-            "v": 0.95,
-            "r": 0.5,
-            "reason": ""
-          },
-          {
-            "keeperId": "david",
-            "claim": null,
-            "memoryIds": [],
-            "v": 0,
-            "r": 0.1,
-            "reason": ""
-          }
-        ],
-        "info": {
-          "memoryOwners": {
-            "m1": "maya"
-          },
-          "memoryKinds": {
-            "m1": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true
-          }
-        }
-      },
-      "expected": {
-        "V": 0.95,
-        "R": 0.5,
-        "A": 0.75,
-        "S": 1,
-        "X": 0,
-        "C": 0.7575,
-        "threshold": 0.8,
-        "subjectNodeId": "nora",
-        "agreeingKeeperIds": [
-          "maya"
-        ],
-        "citedMemoryIds": [
-          "m1"
-        ],
-        "decision": "silent",
-        "reason": "below threshold"
-      }
-    },
-    {
-      "name": "single-claimant-v0.95-r0.75",
-      "input": {
-        "results": [
-          {
-            "keeperId": "maya",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m1"
-            ],
-            "v": 0.95,
-            "r": 0.75,
-            "reason": ""
-          },
-          {
-            "keeperId": "david",
-            "claim": null,
-            "memoryIds": [],
-            "v": 0,
-            "r": 0.1,
-            "reason": ""
-          }
-        ],
-        "info": {
-          "memoryOwners": {
-            "m1": "maya"
-          },
-          "memoryKinds": {
-            "m1": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true
-          }
-        }
-      },
-      "expected": {
-        "V": 0.95,
-        "R": 0.75,
-        "A": 0.75,
-        "S": 1,
-        "X": 0,
-        "C": 0.8200000000000001,
-        "threshold": 0.8,
-        "subjectNodeId": "nora",
-        "agreeingKeeperIds": [
-          "maya"
-        ],
-        "citedMemoryIds": [
-          "m1"
-        ],
-        "decision": "speak",
-        "reason": "speak"
-      }
-    },
-    {
-      "name": "single-claimant-v0.95-r0.95",
-      "input": {
-        "results": [
-          {
-            "keeperId": "maya",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m1"
-            ],
-            "v": 0.95,
-            "r": 0.95,
-            "reason": ""
-          },
-          {
-            "keeperId": "david",
-            "claim": null,
-            "memoryIds": [],
-            "v": 0,
-            "r": 0.1,
-            "reason": ""
-          }
-        ],
-        "info": {
-          "memoryOwners": {
-            "m1": "maya"
-          },
-          "memoryKinds": {
-            "m1": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true
-          }
-        }
-      },
-      "expected": {
-        "V": 0.95,
-        "R": 0.95,
-        "A": 0.75,
-        "S": 1,
-        "X": 0,
-        "C": 0.87,
-        "threshold": 0.8,
-        "subjectNodeId": "nora",
-        "agreeingKeeperIds": [
-          "maya"
-        ],
-        "citedMemoryIds": [
-          "m1"
-        ],
-        "decision": "speak",
-        "reason": "speak"
-      }
-    },
-    {
-      "name": "two-agreeing-v0.5-r0.4",
-      "input": {
-        "results": [
-          {
-            "keeperId": "maya",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m1"
-            ],
-            "v": 0.5,
-            "r": 0.4,
-            "reason": ""
-          },
-          {
-            "keeperId": "david",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m2"
-            ],
-            "v": 0.45,
-            "r": 0.35000000000000003,
-            "reason": ""
-          }
-        ],
-        "info": {
-          "memoryOwners": {
-            "m1": "maya",
-            "m2": "david"
-          },
-          "memoryKinds": {
-            "m1": "photo",
-            "m2": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true
+            "distance": 0.3,
+            "v": 0.5
           }
         }
       },
       "expected": {
         "V": 0.5,
-        "R": 0.375,
+        "R": 0,
         "A": 1,
         "S": 1,
         "X": 0,
-        "C": 0.61875,
-        "threshold": 0.8,
+        "C": 0.525,
+        "threshold": 0.85,
+        "decision": "silent",
+        "reason": "Evidence is below the recall threshold",
         "subjectNodeId": "nora",
         "agreeingKeeperIds": [
           "maya",
-          "david"
+          "elena"
         ],
         "citedMemoryIds": [
-          "m1",
-          "m2"
+          "maya-memory",
+          "elena-memory"
         ],
-        "decision": "silent",
-        "reason": "below threshold"
+        "reasonCode": "below_threshold"
       }
     },
     {
-      "name": "two-agreeing-v0.5-r0.6",
+      "name": "scores-0.5-0.4",
       "input": {
         "results": [
           {
             "keeperId": "maya",
             "claim": {
               "subjectNodeId": "nora",
-              "label": "nora"
+              "label": "Nora"
             },
             "memoryIds": [
-              "m1"
+              "maya-memory"
             ],
-            "v": 0.5,
-            "r": 0.6,
-            "reason": ""
+            "v": 1,
+            "r": 0.4,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           },
           {
-            "keeperId": "david",
+            "keeperId": "elena",
             "claim": {
               "subjectNodeId": "nora",
-              "label": "nora"
+              "label": "Nora"
             },
             "memoryIds": [
-              "m2"
+              "elena-memory"
             ],
-            "v": 0.45,
-            "r": 0.5499999999999999,
-            "reason": ""
+            "v": 1,
+            "r": 0.4,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           }
         ],
         "info": {
-          "memoryOwners": {
-            "m1": "maya",
-            "m2": "david"
-          },
-          "memoryKinds": {
-            "m1": "photo",
-            "m2": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 0.5
           }
         }
       },
       "expected": {
         "V": 0.5,
-        "R": 0.575,
+        "R": 0.4,
         "A": 1,
         "S": 1,
         "X": 0,
-        "C": 0.6687500000000001,
-        "threshold": 0.8,
+        "C": 0.625,
+        "threshold": 0.85,
+        "decision": "silent",
+        "reason": "Evidence is below the recall threshold",
         "subjectNodeId": "nora",
         "agreeingKeeperIds": [
           "maya",
-          "david"
+          "elena"
         ],
         "citedMemoryIds": [
-          "m1",
-          "m2"
+          "maya-memory",
+          "elena-memory"
         ],
-        "decision": "silent",
-        "reason": "below threshold"
+        "reasonCode": "below_threshold"
       }
     },
     {
-      "name": "two-agreeing-v0.5-r0.8",
+      "name": "scores-0.5-0.6",
       "input": {
         "results": [
           {
             "keeperId": "maya",
             "claim": {
               "subjectNodeId": "nora",
-              "label": "nora"
+              "label": "Nora"
             },
             "memoryIds": [
-              "m1"
+              "maya-memory"
             ],
-            "v": 0.5,
-            "r": 0.8,
-            "reason": ""
+            "v": 1,
+            "r": 0.6,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           },
           {
-            "keeperId": "david",
+            "keeperId": "elena",
             "claim": {
               "subjectNodeId": "nora",
-              "label": "nora"
+              "label": "Nora"
             },
             "memoryIds": [
-              "m2"
+              "elena-memory"
             ],
-            "v": 0.45,
-            "r": 0.75,
-            "reason": ""
+            "v": 1,
+            "r": 0.6,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           }
         ],
         "info": {
-          "memoryOwners": {
-            "m1": "maya",
-            "m2": "david"
-          },
-          "memoryKinds": {
-            "m1": "photo",
-            "m2": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 0.5
           }
         }
       },
       "expected": {
         "V": 0.5,
-        "R": 0.775,
+        "R": 0.6,
         "A": 1,
         "S": 1,
         "X": 0,
-        "C": 0.7187500000000001,
-        "threshold": 0.8,
+        "C": 0.6749999999999999,
+        "threshold": 0.85,
+        "decision": "silent",
+        "reason": "Evidence is below the recall threshold",
         "subjectNodeId": "nora",
         "agreeingKeeperIds": [
           "maya",
-          "david"
+          "elena"
         ],
         "citedMemoryIds": [
-          "m1",
-          "m2"
+          "maya-memory",
+          "elena-memory"
         ],
-        "decision": "silent",
-        "reason": "below threshold"
+        "reasonCode": "below_threshold"
       }
     },
     {
-      "name": "two-agreeing-v0.5-r1",
+      "name": "scores-0.5-0.8",
       "input": {
         "results": [
           {
             "keeperId": "maya",
             "claim": {
               "subjectNodeId": "nora",
-              "label": "nora"
+              "label": "Nora"
             },
             "memoryIds": [
-              "m1"
+              "maya-memory"
             ],
-            "v": 0.5,
-            "r": 1,
-            "reason": ""
+            "v": 1,
+            "r": 0.8,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           },
           {
-            "keeperId": "david",
+            "keeperId": "elena",
             "claim": {
               "subjectNodeId": "nora",
-              "label": "nora"
+              "label": "Nora"
             },
             "memoryIds": [
-              "m2"
+              "elena-memory"
             ],
-            "v": 0.45,
-            "r": 0.95,
-            "reason": ""
+            "v": 1,
+            "r": 0.8,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           }
         ],
         "info": {
-          "memoryOwners": {
-            "m1": "maya",
-            "m2": "david"
-          },
-          "memoryKinds": {
-            "m1": "photo",
-            "m2": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 0.5
           }
         }
       },
       "expected": {
         "V": 0.5,
-        "R": 0.975,
+        "R": 0.8,
         "A": 1,
         "S": 1,
         "X": 0,
-        "C": 0.7687499999999999,
-        "threshold": 0.8,
+        "C": 0.725,
+        "threshold": 0.85,
+        "decision": "silent",
+        "reason": "Evidence is below the recall threshold",
         "subjectNodeId": "nora",
         "agreeingKeeperIds": [
           "maya",
-          "david"
+          "elena"
         ],
         "citedMemoryIds": [
-          "m1",
-          "m2"
+          "maya-memory",
+          "elena-memory"
         ],
-        "decision": "silent",
-        "reason": "below threshold"
+        "reasonCode": "below_threshold"
       }
     },
     {
-      "name": "two-agreeing-v0.65-r0.4",
+      "name": "scores-0.5-1",
       "input": {
         "results": [
           {
             "keeperId": "maya",
             "claim": {
               "subjectNodeId": "nora",
-              "label": "nora"
+              "label": "Nora"
             },
             "memoryIds": [
-              "m1"
+              "maya-memory"
             ],
-            "v": 0.65,
-            "r": 0.4,
-            "reason": ""
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           },
           {
-            "keeperId": "david",
+            "keeperId": "elena",
             "claim": {
               "subjectNodeId": "nora",
-              "label": "nora"
+              "label": "Nora"
             },
             "memoryIds": [
-              "m2"
+              "elena-memory"
             ],
-            "v": 0.6,
-            "r": 0.35000000000000003,
-            "reason": ""
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           }
         ],
         "info": {
-          "memoryOwners": {
-            "m1": "maya",
-            "m2": "david"
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 0.5
+          }
+        }
+      },
+      "expected": {
+        "V": 0.5,
+        "R": 1,
+        "A": 1,
+        "S": 1,
+        "X": 0,
+        "C": 0.775,
+        "threshold": 0.85,
+        "decision": "silent",
+        "reason": "Evidence is below the recall threshold",
+        "subjectNodeId": "nora",
+        "agreeingKeeperIds": [
+          "maya",
+          "elena"
+        ],
+        "citedMemoryIds": [
+          "maya-memory",
+          "elena-memory"
+        ],
+        "reasonCode": "below_threshold"
+      }
+    },
+    {
+      "name": "scores-0.65-0",
+      "input": {
+        "results": [
+          {
+            "keeperId": "maya",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "maya-memory"
+            ],
+            "v": 1,
+            "r": 0,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           },
-          "memoryKinds": {
-            "m1": "photo",
-            "m2": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true
+          {
+            "keeperId": "elena",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "elena-memory"
+            ],
+            "v": 1,
+            "r": 0,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          }
+        ],
+        "info": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 0.65
           }
         }
       },
       "expected": {
         "V": 0.65,
-        "R": 0.375,
+        "R": 0,
         "A": 1,
         "S": 1,
         "X": 0,
-        "C": 0.67125,
-        "threshold": 0.8,
+        "C": 0.5775,
+        "threshold": 0.85,
+        "decision": "silent",
+        "reason": "Evidence is below the recall threshold",
         "subjectNodeId": "nora",
         "agreeingKeeperIds": [
           "maya",
-          "david"
+          "elena"
         ],
         "citedMemoryIds": [
-          "m1",
-          "m2"
+          "maya-memory",
+          "elena-memory"
         ],
-        "decision": "silent",
-        "reason": "below threshold"
+        "reasonCode": "below_threshold"
       }
     },
     {
-      "name": "two-agreeing-v0.65-r0.6",
+      "name": "scores-0.65-0.4",
       "input": {
         "results": [
           {
             "keeperId": "maya",
             "claim": {
               "subjectNodeId": "nora",
-              "label": "nora"
+              "label": "Nora"
             },
             "memoryIds": [
-              "m1"
+              "maya-memory"
             ],
-            "v": 0.65,
-            "r": 0.6,
-            "reason": ""
+            "v": 1,
+            "r": 0.4,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           },
           {
-            "keeperId": "david",
+            "keeperId": "elena",
             "claim": {
               "subjectNodeId": "nora",
-              "label": "nora"
+              "label": "Nora"
             },
             "memoryIds": [
-              "m2"
+              "elena-memory"
             ],
-            "v": 0.6,
-            "r": 0.5499999999999999,
-            "reason": ""
+            "v": 1,
+            "r": 0.4,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           }
         ],
         "info": {
-          "memoryOwners": {
-            "m1": "maya",
-            "m2": "david"
-          },
-          "memoryKinds": {
-            "m1": "photo",
-            "m2": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 0.65
           }
         }
       },
       "expected": {
         "V": 0.65,
-        "R": 0.575,
+        "R": 0.4,
         "A": 1,
         "S": 1,
         "X": 0,
-        "C": 0.7212500000000001,
-        "threshold": 0.8,
+        "C": 0.6775000000000001,
+        "threshold": 0.85,
+        "decision": "silent",
+        "reason": "Evidence is below the recall threshold",
         "subjectNodeId": "nora",
         "agreeingKeeperIds": [
           "maya",
-          "david"
+          "elena"
         ],
         "citedMemoryIds": [
-          "m1",
-          "m2"
+          "maya-memory",
+          "elena-memory"
         ],
-        "decision": "silent",
-        "reason": "below threshold"
+        "reasonCode": "below_threshold"
       }
     },
     {
-      "name": "two-agreeing-v0.65-r0.8",
+      "name": "scores-0.65-0.6",
       "input": {
         "results": [
           {
             "keeperId": "maya",
             "claim": {
               "subjectNodeId": "nora",
-              "label": "nora"
+              "label": "Nora"
             },
             "memoryIds": [
-              "m1"
+              "maya-memory"
             ],
-            "v": 0.65,
-            "r": 0.8,
-            "reason": ""
+            "v": 1,
+            "r": 0.6,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           },
           {
-            "keeperId": "david",
+            "keeperId": "elena",
             "claim": {
               "subjectNodeId": "nora",
-              "label": "nora"
+              "label": "Nora"
             },
             "memoryIds": [
-              "m2"
+              "elena-memory"
             ],
-            "v": 0.6,
-            "r": 0.75,
-            "reason": ""
+            "v": 1,
+            "r": 0.6,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           }
         ],
         "info": {
-          "memoryOwners": {
-            "m1": "maya",
-            "m2": "david"
-          },
-          "memoryKinds": {
-            "m1": "photo",
-            "m2": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 0.65
           }
         }
       },
       "expected": {
         "V": 0.65,
-        "R": 0.775,
+        "R": 0.6,
         "A": 1,
         "S": 1,
         "X": 0,
-        "C": 0.7712500000000001,
-        "threshold": 0.8,
+        "C": 0.7274999999999999,
+        "threshold": 0.85,
+        "decision": "silent",
+        "reason": "Evidence is below the recall threshold",
         "subjectNodeId": "nora",
         "agreeingKeeperIds": [
           "maya",
-          "david"
+          "elena"
         ],
         "citedMemoryIds": [
-          "m1",
-          "m2"
+          "maya-memory",
+          "elena-memory"
         ],
-        "decision": "silent",
-        "reason": "below threshold"
+        "reasonCode": "below_threshold"
       }
     },
     {
-      "name": "two-agreeing-v0.65-r1",
+      "name": "scores-0.65-0.8",
       "input": {
         "results": [
           {
             "keeperId": "maya",
             "claim": {
               "subjectNodeId": "nora",
-              "label": "nora"
+              "label": "Nora"
             },
             "memoryIds": [
-              "m1"
+              "maya-memory"
             ],
-            "v": 0.65,
-            "r": 1,
-            "reason": ""
+            "v": 1,
+            "r": 0.8,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           },
           {
-            "keeperId": "david",
+            "keeperId": "elena",
             "claim": {
               "subjectNodeId": "nora",
-              "label": "nora"
+              "label": "Nora"
             },
             "memoryIds": [
-              "m2"
+              "elena-memory"
             ],
-            "v": 0.6,
-            "r": 0.95,
-            "reason": ""
+            "v": 1,
+            "r": 0.8,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           }
         ],
         "info": {
-          "memoryOwners": {
-            "m1": "maya",
-            "m2": "david"
-          },
-          "memoryKinds": {
-            "m1": "photo",
-            "m2": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 0.65
           }
         }
       },
       "expected": {
         "V": 0.65,
-        "R": 0.975,
+        "R": 0.8,
         "A": 1,
         "S": 1,
         "X": 0,
-        "C": 0.8212499999999999,
-        "threshold": 0.8,
-        "subjectNodeId": "nora",
-        "agreeingKeeperIds": [
-          "maya",
-          "david"
-        ],
-        "citedMemoryIds": [
-          "m1",
-          "m2"
-        ],
-        "decision": "speak",
-        "reason": "speak"
-      }
-    },
-    {
-      "name": "two-agreeing-v0.8-r0.4",
-      "input": {
-        "results": [
-          {
-            "keeperId": "maya",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m1"
-            ],
-            "v": 0.8,
-            "r": 0.4,
-            "reason": ""
-          },
-          {
-            "keeperId": "david",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m2"
-            ],
-            "v": 0.75,
-            "r": 0.35000000000000003,
-            "reason": ""
-          }
-        ],
-        "info": {
-          "memoryOwners": {
-            "m1": "maya",
-            "m2": "david"
-          },
-          "memoryKinds": {
-            "m1": "photo",
-            "m2": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true
-          }
-        }
-      },
-      "expected": {
-        "V": 0.8,
-        "R": 0.375,
-        "A": 1,
-        "S": 1,
-        "X": 0,
-        "C": 0.72375,
-        "threshold": 0.8,
-        "subjectNodeId": "nora",
-        "agreeingKeeperIds": [
-          "maya",
-          "david"
-        ],
-        "citedMemoryIds": [
-          "m1",
-          "m2"
-        ],
+        "C": 0.7775,
+        "threshold": 0.85,
         "decision": "silent",
-        "reason": "below threshold"
-      }
-    },
-    {
-      "name": "two-agreeing-v0.8-r0.6",
-      "input": {
-        "results": [
-          {
-            "keeperId": "maya",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m1"
-            ],
-            "v": 0.8,
-            "r": 0.6,
-            "reason": ""
-          },
-          {
-            "keeperId": "david",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m2"
-            ],
-            "v": 0.75,
-            "r": 0.5499999999999999,
-            "reason": ""
-          }
-        ],
-        "info": {
-          "memoryOwners": {
-            "m1": "maya",
-            "m2": "david"
-          },
-          "memoryKinds": {
-            "m1": "photo",
-            "m2": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true
-          }
-        }
-      },
-      "expected": {
-        "V": 0.8,
-        "R": 0.575,
-        "A": 1,
-        "S": 1,
-        "X": 0,
-        "C": 0.77375,
-        "threshold": 0.8,
+        "reason": "Evidence is below the recall threshold",
         "subjectNodeId": "nora",
         "agreeingKeeperIds": [
           "maya",
-          "david"
+          "elena"
         ],
         "citedMemoryIds": [
-          "m1",
-          "m2"
+          "maya-memory",
+          "elena-memory"
         ],
-        "decision": "silent",
-        "reason": "below threshold"
+        "reasonCode": "below_threshold"
       }
     },
     {
-      "name": "two-agreeing-v0.8-r0.8",
+      "name": "scores-0.65-1",
       "input": {
         "results": [
           {
             "keeperId": "maya",
             "claim": {
               "subjectNodeId": "nora",
-              "label": "nora"
+              "label": "Nora"
             },
             "memoryIds": [
-              "m1"
-            ],
-            "v": 0.8,
-            "r": 0.8,
-            "reason": ""
-          },
-          {
-            "keeperId": "david",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m2"
-            ],
-            "v": 0.75,
-            "r": 0.75,
-            "reason": ""
-          }
-        ],
-        "info": {
-          "memoryOwners": {
-            "m1": "maya",
-            "m2": "david"
-          },
-          "memoryKinds": {
-            "m1": "photo",
-            "m2": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true
-          }
-        }
-      },
-      "expected": {
-        "V": 0.8,
-        "R": 0.775,
-        "A": 1,
-        "S": 1,
-        "X": 0,
-        "C": 0.8237500000000001,
-        "threshold": 0.8,
-        "subjectNodeId": "nora",
-        "agreeingKeeperIds": [
-          "maya",
-          "david"
-        ],
-        "citedMemoryIds": [
-          "m1",
-          "m2"
-        ],
-        "decision": "speak",
-        "reason": "speak"
-      }
-    },
-    {
-      "name": "two-agreeing-v0.8-r1",
-      "input": {
-        "results": [
-          {
-            "keeperId": "maya",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m1"
-            ],
-            "v": 0.8,
-            "r": 1,
-            "reason": ""
-          },
-          {
-            "keeperId": "david",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m2"
-            ],
-            "v": 0.75,
-            "r": 0.95,
-            "reason": ""
-          }
-        ],
-        "info": {
-          "memoryOwners": {
-            "m1": "maya",
-            "m2": "david"
-          },
-          "memoryKinds": {
-            "m1": "photo",
-            "m2": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true
-          }
-        }
-      },
-      "expected": {
-        "V": 0.8,
-        "R": 0.975,
-        "A": 1,
-        "S": 1,
-        "X": 0,
-        "C": 0.8737499999999999,
-        "threshold": 0.8,
-        "subjectNodeId": "nora",
-        "agreeingKeeperIds": [
-          "maya",
-          "david"
-        ],
-        "citedMemoryIds": [
-          "m1",
-          "m2"
-        ],
-        "decision": "speak",
-        "reason": "speak"
-      }
-    },
-    {
-      "name": "two-agreeing-v0.9-r0.4",
-      "input": {
-        "results": [
-          {
-            "keeperId": "maya",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m1"
-            ],
-            "v": 0.9,
-            "r": 0.4,
-            "reason": ""
-          },
-          {
-            "keeperId": "david",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m2"
-            ],
-            "v": 0.85,
-            "r": 0.35000000000000003,
-            "reason": ""
-          }
-        ],
-        "info": {
-          "memoryOwners": {
-            "m1": "maya",
-            "m2": "david"
-          },
-          "memoryKinds": {
-            "m1": "photo",
-            "m2": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true
-          }
-        }
-      },
-      "expected": {
-        "V": 0.9,
-        "R": 0.375,
-        "A": 1,
-        "S": 1,
-        "X": 0,
-        "C": 0.75875,
-        "threshold": 0.8,
-        "subjectNodeId": "nora",
-        "agreeingKeeperIds": [
-          "maya",
-          "david"
-        ],
-        "citedMemoryIds": [
-          "m1",
-          "m2"
-        ],
-        "decision": "silent",
-        "reason": "below threshold"
-      }
-    },
-    {
-      "name": "two-agreeing-v0.9-r0.6",
-      "input": {
-        "results": [
-          {
-            "keeperId": "maya",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m1"
-            ],
-            "v": 0.9,
-            "r": 0.6,
-            "reason": ""
-          },
-          {
-            "keeperId": "david",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m2"
-            ],
-            "v": 0.85,
-            "r": 0.5499999999999999,
-            "reason": ""
-          }
-        ],
-        "info": {
-          "memoryOwners": {
-            "m1": "maya",
-            "m2": "david"
-          },
-          "memoryKinds": {
-            "m1": "photo",
-            "m2": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true
-          }
-        }
-      },
-      "expected": {
-        "V": 0.9,
-        "R": 0.575,
-        "A": 1,
-        "S": 1,
-        "X": 0,
-        "C": 0.80875,
-        "threshold": 0.8,
-        "subjectNodeId": "nora",
-        "agreeingKeeperIds": [
-          "maya",
-          "david"
-        ],
-        "citedMemoryIds": [
-          "m1",
-          "m2"
-        ],
-        "decision": "speak",
-        "reason": "speak"
-      }
-    },
-    {
-      "name": "two-agreeing-v0.9-r0.8",
-      "input": {
-        "results": [
-          {
-            "keeperId": "maya",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m1"
-            ],
-            "v": 0.9,
-            "r": 0.8,
-            "reason": ""
-          },
-          {
-            "keeperId": "david",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m2"
-            ],
-            "v": 0.85,
-            "r": 0.75,
-            "reason": ""
-          }
-        ],
-        "info": {
-          "memoryOwners": {
-            "m1": "maya",
-            "m2": "david"
-          },
-          "memoryKinds": {
-            "m1": "photo",
-            "m2": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true
-          }
-        }
-      },
-      "expected": {
-        "V": 0.9,
-        "R": 0.775,
-        "A": 1,
-        "S": 1,
-        "X": 0,
-        "C": 0.85875,
-        "threshold": 0.8,
-        "subjectNodeId": "nora",
-        "agreeingKeeperIds": [
-          "maya",
-          "david"
-        ],
-        "citedMemoryIds": [
-          "m1",
-          "m2"
-        ],
-        "decision": "speak",
-        "reason": "speak"
-      }
-    },
-    {
-      "name": "two-agreeing-v0.9-r1",
-      "input": {
-        "results": [
-          {
-            "keeperId": "maya",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m1"
-            ],
-            "v": 0.9,
-            "r": 1,
-            "reason": ""
-          },
-          {
-            "keeperId": "david",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m2"
-            ],
-            "v": 0.85,
-            "r": 0.95,
-            "reason": ""
-          }
-        ],
-        "info": {
-          "memoryOwners": {
-            "m1": "maya",
-            "m2": "david"
-          },
-          "memoryKinds": {
-            "m1": "photo",
-            "m2": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true
-          }
-        }
-      },
-      "expected": {
-        "V": 0.9,
-        "R": 0.975,
-        "A": 1,
-        "S": 1,
-        "X": 0,
-        "C": 0.9087500000000001,
-        "threshold": 0.8,
-        "subjectNodeId": "nora",
-        "agreeingKeeperIds": [
-          "maya",
-          "david"
-        ],
-        "citedMemoryIds": [
-          "m1",
-          "m2"
-        ],
-        "decision": "speak",
-        "reason": "speak"
-      }
-    },
-    {
-      "name": "two-agreeing-v1-r0.4",
-      "input": {
-        "results": [
-          {
-            "keeperId": "maya",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m1"
-            ],
-            "v": 1,
-            "r": 0.4,
-            "reason": ""
-          },
-          {
-            "keeperId": "david",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m2"
-            ],
-            "v": 0.95,
-            "r": 0.35000000000000003,
-            "reason": ""
-          }
-        ],
-        "info": {
-          "memoryOwners": {
-            "m1": "maya",
-            "m2": "david"
-          },
-          "memoryKinds": {
-            "m1": "photo",
-            "m2": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true
-          }
-        }
-      },
-      "expected": {
-        "V": 1,
-        "R": 0.375,
-        "A": 1,
-        "S": 1,
-        "X": 0,
-        "C": 0.7937500000000001,
-        "threshold": 0.8,
-        "subjectNodeId": "nora",
-        "agreeingKeeperIds": [
-          "maya",
-          "david"
-        ],
-        "citedMemoryIds": [
-          "m1",
-          "m2"
-        ],
-        "decision": "silent",
-        "reason": "below threshold"
-      }
-    },
-    {
-      "name": "two-agreeing-v1-r0.6",
-      "input": {
-        "results": [
-          {
-            "keeperId": "maya",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m1"
-            ],
-            "v": 1,
-            "r": 0.6,
-            "reason": ""
-          },
-          {
-            "keeperId": "david",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m2"
-            ],
-            "v": 0.95,
-            "r": 0.5499999999999999,
-            "reason": ""
-          }
-        ],
-        "info": {
-          "memoryOwners": {
-            "m1": "maya",
-            "m2": "david"
-          },
-          "memoryKinds": {
-            "m1": "photo",
-            "m2": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true
-          }
-        }
-      },
-      "expected": {
-        "V": 1,
-        "R": 0.575,
-        "A": 1,
-        "S": 1,
-        "X": 0,
-        "C": 0.84375,
-        "threshold": 0.8,
-        "subjectNodeId": "nora",
-        "agreeingKeeperIds": [
-          "maya",
-          "david"
-        ],
-        "citedMemoryIds": [
-          "m1",
-          "m2"
-        ],
-        "decision": "speak",
-        "reason": "speak"
-      }
-    },
-    {
-      "name": "two-agreeing-v1-r0.8",
-      "input": {
-        "results": [
-          {
-            "keeperId": "maya",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m1"
-            ],
-            "v": 1,
-            "r": 0.8,
-            "reason": ""
-          },
-          {
-            "keeperId": "david",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m2"
-            ],
-            "v": 0.95,
-            "r": 0.75,
-            "reason": ""
-          }
-        ],
-        "info": {
-          "memoryOwners": {
-            "m1": "maya",
-            "m2": "david"
-          },
-          "memoryKinds": {
-            "m1": "photo",
-            "m2": "photo"
-          },
-          "subjectProvenance": {
-            "nora": true
-          }
-        }
-      },
-      "expected": {
-        "V": 1,
-        "R": 0.775,
-        "A": 1,
-        "S": 1,
-        "X": 0,
-        "C": 0.8937499999999999,
-        "threshold": 0.8,
-        "subjectNodeId": "nora",
-        "agreeingKeeperIds": [
-          "maya",
-          "david"
-        ],
-        "citedMemoryIds": [
-          "m1",
-          "m2"
-        ],
-        "decision": "speak",
-        "reason": "speak"
-      }
-    },
-    {
-      "name": "two-agreeing-v1-r1",
-      "input": {
-        "results": [
-          {
-            "keeperId": "maya",
-            "claim": {
-              "subjectNodeId": "nora",
-              "label": "nora"
-            },
-            "memoryIds": [
-              "m1"
+              "maya-memory"
             ],
             "v": 1,
             "r": 1,
-            "reason": ""
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           },
           {
-            "keeperId": "david",
+            "keeperId": "elena",
             "claim": {
               "subjectNodeId": "nora",
-              "label": "nora"
+              "label": "Nora"
             },
             "memoryIds": [
-              "m2"
+              "elena-memory"
             ],
-            "v": 0.95,
-            "r": 0.95,
-            "reason": ""
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           }
         ],
         "info": {
-          "memoryOwners": {
-            "m1": "maya",
-            "m2": "david"
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 0.65
+          }
+        }
+      },
+      "expected": {
+        "V": 0.65,
+        "R": 1,
+        "A": 1,
+        "S": 1,
+        "X": 0,
+        "C": 0.8275,
+        "threshold": 0.85,
+        "decision": "silent",
+        "reason": "Evidence is below the recall threshold",
+        "subjectNodeId": "nora",
+        "agreeingKeeperIds": [
+          "maya",
+          "elena"
+        ],
+        "citedMemoryIds": [
+          "maya-memory",
+          "elena-memory"
+        ],
+        "reasonCode": "below_threshold"
+      }
+    },
+    {
+      "name": "scores-0.8-0",
+      "input": {
+        "results": [
+          {
+            "keeperId": "maya",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "maya-memory"
+            ],
+            "v": 1,
+            "r": 0,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           },
-          "memoryKinds": {
-            "m1": "photo",
-            "m2": "photo"
+          {
+            "keeperId": "elena",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "elena-memory"
+            ],
+            "v": 1,
+            "r": 0,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          }
+        ],
+        "info": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 0.8
+          }
+        }
+      },
+      "expected": {
+        "V": 0.8,
+        "R": 0,
+        "A": 1,
+        "S": 1,
+        "X": 0,
+        "C": 0.63,
+        "threshold": 0.85,
+        "decision": "silent",
+        "reason": "Evidence is below the recall threshold",
+        "subjectNodeId": "nora",
+        "agreeingKeeperIds": [
+          "maya",
+          "elena"
+        ],
+        "citedMemoryIds": [
+          "maya-memory",
+          "elena-memory"
+        ],
+        "reasonCode": "below_threshold"
+      }
+    },
+    {
+      "name": "scores-0.8-0.4",
+      "input": {
+        "results": [
+          {
+            "keeperId": "maya",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "maya-memory"
+            ],
+            "v": 1,
+            "r": 0.4,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
           },
-          "subjectProvenance": {
-            "nora": true
+          {
+            "keeperId": "elena",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "elena-memory"
+            ],
+            "v": 1,
+            "r": 0.4,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          }
+        ],
+        "info": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 0.8
+          }
+        }
+      },
+      "expected": {
+        "V": 0.8,
+        "R": 0.4,
+        "A": 1,
+        "S": 1,
+        "X": 0,
+        "C": 0.7300000000000001,
+        "threshold": 0.85,
+        "decision": "silent",
+        "reason": "Evidence is below the recall threshold",
+        "subjectNodeId": "nora",
+        "agreeingKeeperIds": [
+          "maya",
+          "elena"
+        ],
+        "citedMemoryIds": [
+          "maya-memory",
+          "elena-memory"
+        ],
+        "reasonCode": "below_threshold"
+      }
+    },
+    {
+      "name": "scores-0.8-0.6",
+      "input": {
+        "results": [
+          {
+            "keeperId": "maya",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "maya-memory"
+            ],
+            "v": 1,
+            "r": 0.6,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          },
+          {
+            "keeperId": "elena",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "elena-memory"
+            ],
+            "v": 1,
+            "r": 0.6,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          }
+        ],
+        "info": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 0.8
+          }
+        }
+      },
+      "expected": {
+        "V": 0.8,
+        "R": 0.6,
+        "A": 1,
+        "S": 1,
+        "X": 0,
+        "C": 0.7799999999999999,
+        "threshold": 0.85,
+        "decision": "silent",
+        "reason": "Evidence is below the recall threshold",
+        "subjectNodeId": "nora",
+        "agreeingKeeperIds": [
+          "maya",
+          "elena"
+        ],
+        "citedMemoryIds": [
+          "maya-memory",
+          "elena-memory"
+        ],
+        "reasonCode": "below_threshold"
+      }
+    },
+    {
+      "name": "scores-0.8-0.8",
+      "input": {
+        "results": [
+          {
+            "keeperId": "maya",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "maya-memory"
+            ],
+            "v": 1,
+            "r": 0.8,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          },
+          {
+            "keeperId": "elena",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "elena-memory"
+            ],
+            "v": 1,
+            "r": 0.8,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          }
+        ],
+        "info": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 0.8
+          }
+        }
+      },
+      "expected": {
+        "V": 0.8,
+        "R": 0.8,
+        "A": 1,
+        "S": 1,
+        "X": 0,
+        "C": 0.83,
+        "threshold": 0.85,
+        "decision": "silent",
+        "reason": "Evidence is below the recall threshold",
+        "subjectNodeId": "nora",
+        "agreeingKeeperIds": [
+          "maya",
+          "elena"
+        ],
+        "citedMemoryIds": [
+          "maya-memory",
+          "elena-memory"
+        ],
+        "reasonCode": "below_threshold"
+      }
+    },
+    {
+      "name": "scores-0.8-1",
+      "input": {
+        "results": [
+          {
+            "keeperId": "maya",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "maya-memory"
+            ],
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          },
+          {
+            "keeperId": "elena",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "elena-memory"
+            ],
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          }
+        ],
+        "info": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 0.8
+          }
+        }
+      },
+      "expected": {
+        "V": 0.8,
+        "R": 1,
+        "A": 1,
+        "S": 1,
+        "X": 0,
+        "C": 0.88,
+        "threshold": 0.85,
+        "decision": "speak",
+        "reason": "Verified independent human evidence",
+        "subjectNodeId": "nora",
+        "agreeingKeeperIds": [
+          "maya",
+          "elena"
+        ],
+        "citedMemoryIds": [
+          "maya-memory",
+          "elena-memory"
+        ]
+      }
+    },
+    {
+      "name": "scores-0.9-0",
+      "input": {
+        "results": [
+          {
+            "keeperId": "maya",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "maya-memory"
+            ],
+            "v": 1,
+            "r": 0,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          },
+          {
+            "keeperId": "elena",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "elena-memory"
+            ],
+            "v": 1,
+            "r": 0,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          }
+        ],
+        "info": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 0.9
+          }
+        }
+      },
+      "expected": {
+        "V": 0.9,
+        "R": 0,
+        "A": 1,
+        "S": 1,
+        "X": 0,
+        "C": 0.665,
+        "threshold": 0.85,
+        "decision": "silent",
+        "reason": "Evidence is below the recall threshold",
+        "subjectNodeId": "nora",
+        "agreeingKeeperIds": [
+          "maya",
+          "elena"
+        ],
+        "citedMemoryIds": [
+          "maya-memory",
+          "elena-memory"
+        ],
+        "reasonCode": "below_threshold"
+      }
+    },
+    {
+      "name": "scores-0.9-0.4",
+      "input": {
+        "results": [
+          {
+            "keeperId": "maya",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "maya-memory"
+            ],
+            "v": 1,
+            "r": 0.4,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          },
+          {
+            "keeperId": "elena",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "elena-memory"
+            ],
+            "v": 1,
+            "r": 0.4,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          }
+        ],
+        "info": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 0.9
+          }
+        }
+      },
+      "expected": {
+        "V": 0.9,
+        "R": 0.4,
+        "A": 1,
+        "S": 1,
+        "X": 0,
+        "C": 0.765,
+        "threshold": 0.85,
+        "decision": "silent",
+        "reason": "Evidence is below the recall threshold",
+        "subjectNodeId": "nora",
+        "agreeingKeeperIds": [
+          "maya",
+          "elena"
+        ],
+        "citedMemoryIds": [
+          "maya-memory",
+          "elena-memory"
+        ],
+        "reasonCode": "below_threshold"
+      }
+    },
+    {
+      "name": "scores-0.9-0.6",
+      "input": {
+        "results": [
+          {
+            "keeperId": "maya",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "maya-memory"
+            ],
+            "v": 1,
+            "r": 0.6,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          },
+          {
+            "keeperId": "elena",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "elena-memory"
+            ],
+            "v": 1,
+            "r": 0.6,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          }
+        ],
+        "info": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 0.9
+          }
+        }
+      },
+      "expected": {
+        "V": 0.9,
+        "R": 0.6,
+        "A": 1,
+        "S": 1,
+        "X": 0,
+        "C": 0.8150000000000001,
+        "threshold": 0.85,
+        "decision": "silent",
+        "reason": "Evidence is below the recall threshold",
+        "subjectNodeId": "nora",
+        "agreeingKeeperIds": [
+          "maya",
+          "elena"
+        ],
+        "citedMemoryIds": [
+          "maya-memory",
+          "elena-memory"
+        ],
+        "reasonCode": "below_threshold"
+      }
+    },
+    {
+      "name": "scores-0.9-0.8",
+      "input": {
+        "results": [
+          {
+            "keeperId": "maya",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "maya-memory"
+            ],
+            "v": 1,
+            "r": 0.8,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          },
+          {
+            "keeperId": "elena",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "elena-memory"
+            ],
+            "v": 1,
+            "r": 0.8,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          }
+        ],
+        "info": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 0.9
+          }
+        }
+      },
+      "expected": {
+        "V": 0.9,
+        "R": 0.8,
+        "A": 1,
+        "S": 1,
+        "X": 0,
+        "C": 0.8650000000000001,
+        "threshold": 0.85,
+        "decision": "speak",
+        "reason": "Verified independent human evidence",
+        "subjectNodeId": "nora",
+        "agreeingKeeperIds": [
+          "maya",
+          "elena"
+        ],
+        "citedMemoryIds": [
+          "maya-memory",
+          "elena-memory"
+        ]
+      }
+    },
+    {
+      "name": "scores-0.9-1",
+      "input": {
+        "results": [
+          {
+            "keeperId": "maya",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "maya-memory"
+            ],
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          },
+          {
+            "keeperId": "elena",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "elena-memory"
+            ],
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          }
+        ],
+        "info": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 0.9
+          }
+        }
+      },
+      "expected": {
+        "V": 0.9,
+        "R": 1,
+        "A": 1,
+        "S": 1,
+        "X": 0,
+        "C": 0.9149999999999999,
+        "threshold": 0.85,
+        "decision": "speak",
+        "reason": "Verified independent human evidence",
+        "subjectNodeId": "nora",
+        "agreeingKeeperIds": [
+          "maya",
+          "elena"
+        ],
+        "citedMemoryIds": [
+          "maya-memory",
+          "elena-memory"
+        ]
+      }
+    },
+    {
+      "name": "scores-1-0",
+      "input": {
+        "results": [
+          {
+            "keeperId": "maya",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "maya-memory"
+            ],
+            "v": 1,
+            "r": 0,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          },
+          {
+            "keeperId": "elena",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "elena-memory"
+            ],
+            "v": 1,
+            "r": 0,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          }
+        ],
+        "info": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
           }
         }
       },
       "expected": {
         "V": 1,
-        "R": 0.975,
+        "R": 0,
         "A": 1,
         "S": 1,
         "X": 0,
-        "C": 0.94375,
-        "threshold": 0.8,
+        "C": 0.7000000000000001,
+        "threshold": 0.85,
+        "decision": "silent",
+        "reason": "Evidence is below the recall threshold",
         "subjectNodeId": "nora",
         "agreeingKeeperIds": [
           "maya",
-          "david"
+          "elena"
         ],
         "citedMemoryIds": [
-          "m1",
-          "m2"
+          "maya-memory",
+          "elena-memory"
         ],
+        "reasonCode": "below_threshold"
+      }
+    },
+    {
+      "name": "scores-1-0.4",
+      "input": {
+        "results": [
+          {
+            "keeperId": "maya",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "maya-memory"
+            ],
+            "v": 1,
+            "r": 0.4,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          },
+          {
+            "keeperId": "elena",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "elena-memory"
+            ],
+            "v": 1,
+            "r": 0.4,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          }
+        ],
+        "info": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          }
+        }
+      },
+      "expected": {
+        "V": 1,
+        "R": 0.4,
+        "A": 1,
+        "S": 1,
+        "X": 0,
+        "C": 0.7999999999999999,
+        "threshold": 0.85,
+        "decision": "silent",
+        "reason": "Evidence is below the recall threshold",
+        "subjectNodeId": "nora",
+        "agreeingKeeperIds": [
+          "maya",
+          "elena"
+        ],
+        "citedMemoryIds": [
+          "maya-memory",
+          "elena-memory"
+        ],
+        "reasonCode": "below_threshold"
+      }
+    },
+    {
+      "name": "scores-1-0.6",
+      "input": {
+        "results": [
+          {
+            "keeperId": "maya",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "maya-memory"
+            ],
+            "v": 1,
+            "r": 0.6,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          },
+          {
+            "keeperId": "elena",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "elena-memory"
+            ],
+            "v": 1,
+            "r": 0.6,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          }
+        ],
+        "info": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          }
+        }
+      },
+      "expected": {
+        "V": 1,
+        "R": 0.6,
+        "A": 1,
+        "S": 1,
+        "X": 0,
+        "C": 0.85,
+        "threshold": 0.85,
         "decision": "speak",
-        "reason": "speak"
+        "reason": "Verified independent human evidence",
+        "subjectNodeId": "nora",
+        "agreeingKeeperIds": [
+          "maya",
+          "elena"
+        ],
+        "citedMemoryIds": [
+          "maya-memory",
+          "elena-memory"
+        ]
+      }
+    },
+    {
+      "name": "scores-1-0.8",
+      "input": {
+        "results": [
+          {
+            "keeperId": "maya",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "maya-memory"
+            ],
+            "v": 1,
+            "r": 0.8,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          },
+          {
+            "keeperId": "elena",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "elena-memory"
+            ],
+            "v": 1,
+            "r": 0.8,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          }
+        ],
+        "info": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          }
+        }
+      },
+      "expected": {
+        "V": 1,
+        "R": 0.8,
+        "A": 1,
+        "S": 1,
+        "X": 0,
+        "C": 0.9,
+        "threshold": 0.85,
+        "decision": "speak",
+        "reason": "Verified independent human evidence",
+        "subjectNodeId": "nora",
+        "agreeingKeeperIds": [
+          "maya",
+          "elena"
+        ],
+        "citedMemoryIds": [
+          "maya-memory",
+          "elena-memory"
+        ]
+      }
+    },
+    {
+      "name": "scores-1-1",
+      "input": {
+        "results": [
+          {
+            "keeperId": "maya",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "maya-memory"
+            ],
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          },
+          {
+            "keeperId": "elena",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "elena-memory"
+            ],
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          }
+        ],
+        "info": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          }
+        }
+      },
+      "expected": {
+        "V": 1,
+        "R": 1,
+        "A": 1,
+        "S": 1,
+        "X": 0,
+        "C": 0.9500000000000001,
+        "threshold": 0.85,
+        "decision": "speak",
+        "reason": "Verified independent human evidence",
+        "subjectNodeId": "nora",
+        "agreeingKeeperIds": [
+          "maya",
+          "elena"
+        ],
+        "citedMemoryIds": [
+          "maya-memory",
+          "elena-memory"
+        ]
+      }
+    },
+    {
+      "name": "no-evidence",
+      "input": {
+        "results": [
+          {
+            "keeperId": "maya",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "maya-memory"
+            ],
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": []
+          },
+          {
+            "keeperId": "elena",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "elena-memory"
+            ],
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          }
+        ],
+        "info": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          }
+        }
+      },
+      "expected": {
+        "V": 1,
+        "R": 0,
+        "A": 0,
+        "S": 0,
+        "X": 0,
+        "C": 0,
+        "threshold": 0.85,
+        "decision": "silent",
+        "reason": "Supporting claim has no valid human provenance",
+        "subjectNodeId": "nora",
+        "agreeingKeeperIds": [],
+        "citedMemoryIds": [],
+        "reasonCode": "no_provenance"
+      }
+    },
+    {
+      "name": "wrong-owner",
+      "input": {
+        "results": [
+          {
+            "keeperId": "maya",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "maya-memory"
+            ],
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          },
+          {
+            "keeperId": "elena",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "elena-memory"
+            ],
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          }
+        ],
+        "info": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          }
+        }
+      },
+      "expected": {
+        "V": 1,
+        "R": 0,
+        "A": 0,
+        "S": 0,
+        "X": 0,
+        "C": 0,
+        "threshold": 0.85,
+        "decision": "silent",
+        "reason": "Supporting claim has no valid human provenance",
+        "subjectNodeId": "nora",
+        "agreeingKeeperIds": [],
+        "citedMemoryIds": [],
+        "reasonCode": "no_provenance"
+      }
+    },
+    {
+      "name": "wrong-subject",
+      "input": {
+        "results": [
+          {
+            "keeperId": "maya",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "maya-memory"
+            ],
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "sam",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          },
+          {
+            "keeperId": "elena",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "elena-memory"
+            ],
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          }
+        ],
+        "info": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          }
+        }
+      },
+      "expected": {
+        "V": 1,
+        "R": 0,
+        "A": 0,
+        "S": 0,
+        "X": 0,
+        "C": 0,
+        "threshold": 0.85,
+        "decision": "silent",
+        "reason": "Supporting claim has no valid human provenance",
+        "subjectNodeId": "nora",
+        "agreeingKeeperIds": [],
+        "citedMemoryIds": [],
+        "reasonCode": "no_provenance"
+      }
+    },
+    {
+      "name": "uncited",
+      "input": {
+        "results": [
+          {
+            "keeperId": "maya",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "another"
+            ],
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          },
+          {
+            "keeperId": "elena",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "elena-memory"
+            ],
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          }
+        ],
+        "info": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          }
+        }
+      },
+      "expected": {
+        "V": 1,
+        "R": 0,
+        "A": 0,
+        "S": 0,
+        "X": 0,
+        "C": 0,
+        "threshold": 0.85,
+        "decision": "silent",
+        "reason": "Supporting claim has no valid human provenance",
+        "subjectNodeId": "nora",
+        "agreeingKeeperIds": [],
+        "citedMemoryIds": [],
+        "reasonCode": "no_provenance"
+      }
+    },
+    {
+      "name": "blank-fact",
+      "input": {
+        "results": [
+          {
+            "keeperId": "maya",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "maya-memory"
+            ],
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  " "
+                ]
+              }
+            ]
+          },
+          {
+            "keeperId": "elena",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "elena-memory"
+            ],
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          }
+        ],
+        "info": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          }
+        }
+      },
+      "expected": {
+        "V": 1,
+        "R": 0,
+        "A": 0,
+        "S": 0,
+        "X": 0,
+        "C": 0,
+        "threshold": 0.85,
+        "decision": "silent",
+        "reason": "Supporting claim has no valid human provenance",
+        "subjectNodeId": "nora",
+        "agreeingKeeperIds": [],
+        "citedMemoryIds": [],
+        "reasonCode": "no_provenance"
+      }
+    },
+    {
+      "name": "no-facts",
+      "input": {
+        "results": [
+          {
+            "keeperId": "maya",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "maya-memory"
+            ],
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": []
+              }
+            ]
+          },
+          {
+            "keeperId": "elena",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "elena-memory"
+            ],
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          }
+        ],
+        "info": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          }
+        }
+      },
+      "expected": {
+        "V": 1,
+        "R": 0,
+        "A": 0,
+        "S": 0,
+        "X": 0,
+        "C": 0,
+        "threshold": 0.85,
+        "decision": "silent",
+        "reason": "Supporting claim has no valid human provenance",
+        "subjectNodeId": "nora",
+        "agreeingKeeperIds": [],
+        "citedMemoryIds": [],
+        "reasonCode": "no_provenance"
+      }
+    },
+    {
+      "name": "contradicts",
+      "input": {
+        "results": [
+          {
+            "keeperId": "maya",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "maya-memory"
+            ],
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "contradicts",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          },
+          {
+            "keeperId": "elena",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "elena-memory"
+            ],
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          }
+        ],
+        "info": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          }
+        }
+      },
+      "expected": {
+        "V": 1,
+        "R": 0,
+        "A": 0,
+        "S": 0,
+        "X": 0.5,
+        "C": 0,
+        "threshold": 0.85,
+        "decision": "silent",
+        "reason": "Keepers disagree",
+        "subjectNodeId": "nora",
+        "agreeingKeeperIds": [],
+        "citedMemoryIds": [],
+        "reasonCode": "contradiction"
+      }
+    },
+    {
+      "name": "other-claim",
+      "input": {
+        "results": [
+          {
+            "keeperId": "maya",
+            "claim": {
+              "subjectNodeId": "sam",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "maya-memory"
+            ],
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          },
+          {
+            "keeperId": "elena",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "elena-memory"
+            ],
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          }
+        ],
+        "info": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          }
+        }
+      },
+      "expected": {
+        "V": 1,
+        "R": 0,
+        "A": 0,
+        "S": 0,
+        "X": 0.5,
+        "C": 0,
+        "threshold": 0.85,
+        "decision": "silent",
+        "reason": "Keepers disagree",
+        "subjectNodeId": "nora",
+        "agreeingKeeperIds": [],
+        "citedMemoryIds": [],
+        "reasonCode": "contradiction"
+      }
+    },
+    {
+      "name": "duplicate-last-value",
+      "input": {
+        "results": [
+          {
+            "keeperId": "maya",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "maya-memory"
+            ],
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          },
+          {
+            "keeperId": "elena",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "elena-memory"
+            ],
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          },
+          {
+            "keeperId": "maya",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "maya-memory"
+            ],
+            "v": 1,
+            "r": 0.2,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          }
+        ],
+        "info": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          }
+        }
+      },
+      "expected": {
+        "V": 1,
+        "R": 0.6,
+        "A": 1,
+        "S": 1,
+        "X": 0,
+        "C": 0.85,
+        "threshold": 0.85,
+        "decision": "speak",
+        "reason": "Verified independent human evidence",
+        "subjectNodeId": "nora",
+        "agreeingKeeperIds": [
+          "maya",
+          "elena"
+        ],
+        "citedMemoryIds": [
+          "maya-memory",
+          "elena-memory"
+        ]
+      }
+    },
+    {
+      "name": "invalid-negative-score",
+      "input": {
+        "results": [
+          {
+            "keeperId": "maya",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "maya-memory"
+            ],
+            "v": 1,
+            "r": -1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          },
+          {
+            "keeperId": "elena",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "elena-memory"
+            ],
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          }
+        ],
+        "info": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          }
+        }
+      },
+      "expected": {
+        "V": 1,
+        "R": 0,
+        "A": 1,
+        "S": 1,
+        "X": 0,
+        "C": 0.7000000000000001,
+        "threshold": 0.85,
+        "decision": "silent",
+        "reason": "Invalid evidence scores",
+        "subjectNodeId": "nora",
+        "agreeingKeeperIds": [
+          "maya",
+          "elena"
+        ],
+        "citedMemoryIds": [
+          "maya-memory",
+          "elena-memory"
+        ],
+        "reasonCode": "provider_failure"
+      }
+    },
+    {
+      "name": "invalid-large-score",
+      "input": {
+        "results": [
+          {
+            "keeperId": "maya",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "maya-memory"
+            ],
+            "v": 1,
+            "r": 2,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "maya-memory",
+                "contributorId": "maya",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          },
+          {
+            "keeperId": "elena",
+            "claim": {
+              "subjectNodeId": "nora",
+              "label": "Nora"
+            },
+            "memoryIds": [
+              "elena-memory"
+            ],
+            "v": 1,
+            "r": 1,
+            "reason": "",
+            "support": "supports",
+            "evidence": [
+              {
+                "memoryId": "elena-memory",
+                "contributorId": "elena",
+                "subjectNodeId": "nora",
+                "source": "human",
+                "supportedFacts": [
+                  "Nora bakes lemon cake on Sundays."
+                ]
+              }
+            ]
+          }
+        ],
+        "info": {
+          "face": {
+            "status": "matched",
+            "subjectNodeId": "nora",
+            "model": "fixture-only",
+            "enrollmentIds": [
+              "enrollment"
+            ],
+            "distance": 0.3,
+            "v": 1
+          }
+        }
+      },
+      "expected": {
+        "V": 1,
+        "R": 1.5,
+        "A": 1,
+        "S": 1,
+        "X": 0,
+        "C": 1.075,
+        "threshold": 0.85,
+        "decision": "silent",
+        "reason": "Invalid evidence scores",
+        "subjectNodeId": "nora",
+        "agreeingKeeperIds": [
+          "maya",
+          "elena"
+        ],
+        "citedMemoryIds": [
+          "maya-memory",
+          "elena-memory"
+        ],
+        "reasonCode": "provider_failure"
       }
     }
   ]

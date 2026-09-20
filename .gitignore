@@ -26,7 +26,11 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
+.env
 .env*.local
+
+# Consented biometric/audio demo media stays local.
+/demo/fixtures/private/
 
 # vercel
 .vercel

@@ -1,238 +1,108 @@
-//! The Gatekeeper: decides whether the family's evidence agrees strongly
-//! enough to say anything at all.
-//!
-//! Port of lib/gate.ts. Pure: no I/O, no clock, no randomness. Behavior is
-//! pinned by conformance/gate-fixtures.json, which was generated from the
-//! TypeScript original.
-//!
-//! C = 0.35V + 0.25R + 0.20A + 0.15S - 0.25X, SPEAK at C >= 0.80.
-
-use std::collections::HashMap;
-
+//! Conservative P0 gate. Conformance fixtures are generated from lib/gate.ts.
 use serde::{Deserialize, Serialize};
 
-use crate::config::{SilenceReason, GATE};
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Claim { pub subject_node_id: String, pub label: String }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Claim {
-    #[serde(rename = "subjectNodeId")]
-    pub subject_node_id: String,
-    pub label: String,
+#[serde(rename_all = "camelCase")]
+pub struct Evidence {
+    pub memory_id: String, pub contributor_id: String, pub subject_node_id: String,
+    pub source: String, pub supported_facts: Vec<String>,
 }
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct KeeperResult {
-    #[serde(rename = "keeperId")]
-    pub keeper_id: String,
-    pub claim: Option<Claim>,
-    #[serde(rename = "memoryIds")]
-    pub memory_ids: Vec<String>,
-    pub v: f64,
-    pub r: f64,
-    #[serde(default)]
-    pub reason: String,
+    pub keeper_id: String, pub claim: Option<Claim>, pub memory_ids: Vec<String>,
+    pub v: f64, pub r: f64, pub reason: String, pub support: String, pub evidence: Vec<Evidence>,
 }
-
-/// Evidence the pure gate needs that does not live on KeeperResult.
-/// All three are plain lookups so the gate stays fully testable.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "status", rename_all = "snake_case")]
+pub enum FaceOutcome {
+    Matched {
+        #[serde(rename = "subjectNodeId")] subject_node_id: String,
+        model: String,
+        #[serde(rename = "enrollmentIds")] enrollment_ids: Vec<String>,
+        distance: f64, v: f64,
+    },
+    NoFace { model: String }, Unknown { model: String },
+    Ambiguous { model: String }, Unavailable { model: String },
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GateInfo {
-    /// node id -> whether the node has at least one provenance row
-    #[serde(rename = "subjectProvenance")]
-    pub subject_provenance: HashMap<String, bool>,
-    /// memory id -> kind
-    #[serde(rename = "memoryKinds")]
-    pub memory_kinds: HashMap<String, String>,
-    /// memory id -> contributor who owns the memory
-    #[serde(rename = "memoryOwners")]
-    pub memory_owners: HashMap<String, String>,
+    pub face: FaceOutcome,
+    #[serde(default)] pub provider_failure: bool,
 }
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum Decision {
-    Speak,
-    Silent,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GateResult {
-    #[serde(rename = "V")]
-    pub v: f64,
-    #[serde(rename = "R")]
-    pub r: f64,
-    #[serde(rename = "A")]
-    pub a: f64,
-    #[serde(rename = "S")]
-    pub s: f64,
-    #[serde(rename = "X")]
-    pub x: f64,
-    #[serde(rename = "C")]
-    pub c: f64,
-    pub threshold: f64,
-    pub decision: Decision,
-    pub reason: String,
-    #[serde(rename = "subjectNodeId")]
-    pub subject_node_id: Option<String>,
-    #[serde(rename = "agreeingKeeperIds")]
-    pub agreeing_keeper_ids: Vec<String>,
-    #[serde(rename = "citedMemoryIds")]
+    #[serde(rename = "V")] pub v: f64,
+    #[serde(rename = "R")] pub r: f64,
+    #[serde(rename = "A")] pub a: f64,
+    #[serde(rename = "S")] pub s: f64,
+    #[serde(rename = "X")] pub x: f64,
+    #[serde(rename = "C")] pub c: f64,
+    pub threshold: f64, pub decision: String, pub reason: String,
+    pub subject_node_id: Option<String>, pub agreeing_keeper_ids: Vec<String>,
     pub cited_memory_ids: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")] pub reason_code: Option<String>,
 }
-
 impl GateResult {
-    /// The zeroed result used for every silence that exits before scoring.
-    fn empty(reason: SilenceReason) -> Self {
-        GateResult {
-            v: 0.0,
-            r: 0.0,
-            a: 0.0,
-            s: 0.0,
-            x: 0.0,
-            c: 0.0,
-            threshold: GATE.threshold,
-            decision: Decision::Silent,
-            reason: reason.as_str().to_string(),
-            subject_node_id: None,
-            agreeing_keeper_ids: Vec::new(),
-            cited_memory_ids: Vec::new(),
-        }
+    fn silent(mut self, code: &str, reason: &str) -> Self {
+        self.decision = "silent".into(); self.reason_code = Some(code.into()); self.reason = reason.into(); self
     }
 }
-
-/// Scored signals for the winning subject, before the decision is made.
-struct Scored {
-    v: f64,
-    r: f64,
-    a: f64,
-    s: f64,
-    x: f64,
-    c: f64,
-    subject_node_id: String,
-    agreeing_keeper_ids: Vec<String>,
-    cited_memory_ids: Vec<String>,
-}
-
-impl Scored {
-    fn into_result(self, decision: Decision, reason: String) -> GateResult {
-        GateResult {
-            v: self.v,
-            r: self.r,
-            a: self.a,
-            s: self.s,
-            x: self.x,
-            c: self.c,
-            threshold: GATE.threshold,
-            decision,
-            reason,
-            subject_node_id: Some(self.subject_node_id),
-            agreeing_keeper_ids: self.agreeing_keeper_ids,
-            cited_memory_ids: self.cited_memory_ids,
-        }
-    }
-}
-
 pub fn evaluate_gate(results: &[KeeperResult], info: &GateInfo) -> GateResult {
-    let claiming: Vec<&KeeperResult> = results.iter().filter(|r| r.claim.is_some()).collect();
-    if claiming.is_empty() {
-        return GateResult::empty(SilenceReason::NoClaims);
+    let configured = std::env::var("KIN_GATE_THRESHOLD").unwrap_or_default();
+    let threshold = if configured.is_empty() { Some(crate::config::GATE.threshold) }
+        else { configured.parse::<f64>().ok().filter(|v| v.is_finite() && (0.85..=1.0).contains(v)) };
+    let mut g = GateResult { v: 0.0, r: 0.0, a: 0.0, s: 0.0, x: 0.0, c: 0.0,
+        threshold: threshold.unwrap_or(1.0), decision: "silent".into(), reason: String::new(),
+        subject_node_id: None, agreeing_keeper_ids: vec![], cited_memory_ids: vec![], reason_code: None };
+    if threshold.is_none() { return g.silent("provider_failure", "Invalid evidence scores"); }
+    if info.provider_failure || matches!(info.face, FaceOutcome::Unavailable { .. }) {
+        return g.silent("provider_failure", "Required service unavailable");
     }
-
-    // Group claims by subject; top subject = most claims, tie -> highest summed v+r.
-    // Insertion order is preserved so ties beyond that resolve as they do in JS.
-    let mut order: Vec<String> = Vec::new();
-    let mut by_subject: HashMap<String, Vec<&KeeperResult>> = HashMap::new();
-    for r in &claiming {
-        let key = r.claim.as_ref().expect("filtered to claimants").subject_node_id.clone();
-        if !by_subject.contains_key(&key) {
-            order.push(key.clone());
-        }
-        by_subject.entry(key).or_default().push(r);
-    }
-
-    let sum_vr = |rs: &Vec<&KeeperResult>| -> f64 { rs.iter().map(|r| r.v + r.r).sum() };
-    let mut groups: Vec<(String, Vec<&KeeperResult>)> = order
-        .into_iter()
-        .map(|k| {
-            let rs = by_subject.remove(&k).expect("key came from insertion order");
-            (k, rs)
-        })
-        .collect();
-    groups.sort_by(|a, b| {
-        b.1.len()
-            .cmp(&a.1.len())
-            .then_with(|| sum_vr(&b.1).total_cmp(&sum_vr(&a.1)))
-    });
-
-    let (top_subject, agreeing) = groups.first().expect("at least one claimant");
-    let disagreeing: Vec<&KeeperResult> =
-        groups.iter().skip(1).flat_map(|(_, rs)| rs.iter().copied()).collect();
-
-    let agree = agreeing.len() as f64;
-    let disagree = disagreeing.len() as f64;
-
-    let v = agreeing.iter().map(|r| r.v).fold(f64::NEG_INFINITY, f64::max);
-    let r_signal = agreeing.iter().map(|r| r.r).sum::<f64>() / agree;
-    let a = if agreeing.len() == 1 && disagreeing.is_empty() {
-        GATE.single_claimant_agreement
-    } else {
-        agree / (agree + disagree)
+    let (subject, v) = match &info.face {
+        FaceOutcome::NoFace { .. } => return g.silent("no_face", "No face detected"),
+        FaceOutcome::Unknown { .. } => return g.silent("unknown_face", "No eligible enrolled face matched"),
+        FaceOutcome::Ambiguous { .. } => return g.silent("ambiguous_face", "Face match is ambiguous"),
+        FaceOutcome::Unavailable { .. } => return g.silent("provider_failure", "Required service unavailable"),
+        FaceOutcome::Matched { subject_node_id, v, .. } => (subject_node_id, *v),
     };
-    let x = disagree / (agree + disagree);
-
-    let cited_memory_ids: Vec<String> =
-        agreeing.iter().flat_map(|r| r.memory_ids.iter().cloned()).collect();
-
-    // S guards provenance: every agreeing keeper must cite a memory it owns,
-    // and the subject itself must be backed by a provenance row.
-    let every_cites_own = agreeing.iter().all(|r| {
-        !r.memory_ids.is_empty()
-            && r.memory_ids
-                .iter()
-                .all(|id| info.memory_owners.get(id) == Some(&r.keeper_id))
-    });
-    let subject_has_provenance = info.subject_provenance.get(top_subject) == Some(&true);
-    let has_visual = agreeing.iter().any(|r| r.v > 0.0)
-        || cited_memory_ids
-            .iter()
-            .any(|id| info.memory_kinds.get(id).map(String::as_str) == Some("photo"));
-    let s = if every_cites_own && subject_has_provenance {
-        if has_visual {
-            1.0
-        } else {
-            0.5
-        }
-    } else {
-        0.0
-    };
-
-    let c = GATE.w_v * v + GATE.w_r * r_signal + GATE.w_a * a + GATE.w_s * s - GATE.w_x * x;
-
-    let scored = Scored {
-        v,
-        r: r_signal,
-        a,
-        s,
-        x,
-        c,
-        subject_node_id: top_subject.clone(),
-        agreeing_keeper_ids: agreeing.iter().map(|r| r.keeper_id.clone()).collect(),
-        cited_memory_ids,
-    };
-
-    // Any dissent at all is an absolute veto, checked before the threshold:
-    // two strong agreeing keepers still fall silent against one weak dissenter.
-    if x > 0.0 {
-        let reason = SilenceReason::Disagree.as_str().to_string();
-        return scored.into_result(Decision::Silent, reason);
+    g.subject_node_id = Some(subject.clone()); g.v = v;
+    let has_subject = |r: &&KeeperResult| r.claim.as_ref().is_some_and(|c| &c.subject_node_id == subject);
+    let supporting: Vec<_> = results.iter().filter(|r| r.support == "supports" && has_subject(r)).collect();
+    let contradicting = results.iter().filter(|r| r.support == "contradicts" || (r.support == "supports" && !has_subject(r))).count();
+    g.x = contradicting as f64 / (contradicting + supporting.len()).max(1) as f64;
+    if contradicting > 0 { return g.silent("contradiction", "Keepers disagree"); }
+    if supporting.iter().any(|r| r.evidence.is_empty() || r.memory_ids.is_empty() ||
+        r.memory_ids.iter().any(|id| !r.evidence.iter().any(|e| &e.memory_id == id)) ||
+        r.evidence.iter().any(|e| e.source != "human" || e.contributor_id != r.keeper_id ||
+            &e.subject_node_id != subject || !r.memory_ids.contains(&e.memory_id) ||
+            e.supported_facts.is_empty() || e.supported_facts.iter().any(|f| f.trim().is_empty()))) {
+        return g.silent("no_provenance", "Supporting claim has no valid human provenance");
     }
-    if s == 0.0 {
-        let reason = SilenceReason::NoProvenance.as_str().to_string();
-        return scored.into_result(Decision::Silent, reason);
+    // JS Map semantics: preserve initial position, use the last value for a duplicate.
+    let mut unique: Vec<&KeeperResult> = vec![];
+    for r in supporting {
+        if let Some(i) = unique.iter().position(|other| other.keeper_id == r.keeper_id) { unique[i] = r; }
+        else { unique.push(r); }
     }
-    if c >= GATE.threshold {
-        return scored.into_result(Decision::Speak, "speak".to_string());
+    g.agreeing_keeper_ids = unique.iter().map(|r| r.keeper_id.clone()).collect();
+    for id in unique.iter().flat_map(|r| &r.memory_ids) {
+        if !g.cited_memory_ids.contains(id) { g.cited_memory_ids.push(id.clone()); }
     }
-    let reason = SilenceReason::BelowThreshold.as_str().to_string();
-    scored.into_result(Decision::Silent, reason)
+    if !unique.is_empty() { g.r = unique.iter().map(|r| r.r).sum::<f64>() / unique.len() as f64; g.s = 1.0; }
+    if unique.len() >= 2 { g.a = 1.0; }
+    g.c = 0.35*g.v + 0.25*g.r + 0.20*g.a + 0.15*g.s - 0.25*g.x;
+    if unique.len() < 2 { return g.silent("insufficient_evidence", "Two distinct contributors with human stories are required"); }
+    if ![g.v,g.r,g.a,g.s,g.x,g.c].iter().all(|n| n.is_finite()) ||
+        unique.iter().any(|r| !(0.0..=1.0).contains(&r.r)) || !(0.0..=1.0).contains(&g.v) {
+        return g.silent("provider_failure", "Invalid evidence scores");
+    }
+    if g.c < g.threshold { return g.silent("below_threshold", "Evidence is below the recall threshold"); }
+    g.decision = "speak".into(); g.reason = "Verified independent human evidence".into(); g
 }

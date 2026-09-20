@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { getAnonClient, FAMILY_ID } from "@/lib/supabase";
-import { loadFaceModels, detectFaces } from "@/lib/faces";
+import { getAnonClient } from "@/lib/supabase";
+import { AuthBoundary, useKinAuth, authenticatedFetch, responseJSON, SignOutButton } from "@/lib/client-auth";
 import { CONFIG } from "@/lib/config";
 
 // Tiny silent MP3 used to unlock audio playback inside the tap handler (iOS).
@@ -11,7 +11,12 @@ const SILENT_MP3 =
 
 type Phase = "idle" | "thinking" | "cue";
 
-export default function WearerPage() {
+export default function WearerPage() { return <AuthBoundary><WearerContent /></AuthBoundary>; }
+
+function WearerContent() {
+  const { familyId } = useKinAuth();
+  const requestId = useRef(0);
+  const controller = useRef<AbortController | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const cueTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -20,26 +25,32 @@ export default function WearerPage() {
   const [wearerName, setWearerName] = useState<string>("");
   const [cameraError, setCameraError] = useState<string | null>(null);
 
+  const stopAudio = () => {
+    const audio = audioRef.current;
+    if (audio) { audio.pause(); audio.onerror = null; audio.removeAttribute("src"); audio.load(); }
+    window.speechSynthesis?.cancel();
+  };
+
   useEffect(() => {
-    // Pre-create the audio element; iOS requires play() inside the tap handler.
+    const generation = requestId;
+    let active = true;
+    let camera: MediaStream | null = null;
     audioRef.current = new Audio(SILENT_MP3);
-    loadFaceModels().catch(() => {});
-    getAnonClient()
-      ?.from("wearer")
-      .select("name")
-      .eq("family_id", FAMILY_ID)
-      .single()
-      .then(({ data }) => setWearerName(data?.name ?? ""));
-    navigator.mediaDevices
-      ?.getUserMedia({ video: { facingMode: "environment" } })
-      .then((stream) => {
-        if (videoRef.current) videoRef.current.srcObject = stream;
-      })
-      .catch(() => setCameraError("Camera is not available on this device."));
+    getAnonClient()?.from("wearer").select("name").eq("family_id", familyId).single()
+      .then(({ data, error }) => { if (active) { setWearerName(data?.name ?? ""); if (error) setCameraError("Could not load family details."); } });
+    if (!navigator.mediaDevices?.getUserMedia) setCameraError("Camera requires a supported browser over HTTPS.");
+    else navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then((stream) => {
+      if (!active) { stream.getTracks().forEach((track) => track.stop()); return; }
+      camera = stream;
+      if (videoRef.current) videoRef.current.srcObject = stream;
+    }).catch(() => { if (active) setCameraError("Camera is not available on this device. Check camera permission."); });
     return () => {
+      active = false; generation.current++; controller.current?.abort();
+      camera?.getTracks().forEach((track) => track.stop());
+      stopAudio();
       if (cueTimerRef.current) clearTimeout(cueTimerRef.current);
     };
-  }, []);
+  }, [familyId]);
 
   const captureFrame = (): { blob: Promise<Blob>; canvas: HTMLCanvasElement } | null => {
     const video = videoRef.current;
@@ -70,39 +81,45 @@ export default function WearerPage() {
   };
 
   const onTap = async () => {
-    if (phase !== "idle") return;
+    const captureId = ++requestId.current;
+    controller.current?.abort();
+    controller.current = new AbortController();
+    const signal = controller.current.signal;
+    stopAudio();
+    setCueText(null);
     if (cueTimerRef.current) {
       clearTimeout(cueTimerRef.current);
       cueTimerRef.current = null;
     }
     // 1. Unlock audio inside the tap handler, before any await.
     const audio = audioRef.current;
-    if (audio) audio.onerror = null;
+    if (audio) { audio.onerror = null; audio.src = SILENT_MP3; }
     audio?.play().catch(() => {});
 
+    try {
     const frame = captureFrame();
     if (!frame) {
+      setPhase("idle");
       setCameraError("One moment, the camera is warming up.");
       return;
     }
+    setCameraError(null);
     setPhase("thinking");
     setCueText(null);
-    try {
-      const faces = await detectFaces(frame.canvas);
       const blob = await frame.blob;
       const fd = new FormData();
       fd.append("snapshot", new File([blob], "snapshot.jpg", { type: "image/jpeg" }));
-      fd.append("faceDescriptors", JSON.stringify(faces.map((f) => f.descriptor)));
-      const res = await fetch("/api/recall", { method: "POST", body: fd });
-      const json = await res.json();
+      if (captureId !== requestId.current) return;
+      const json = await responseJSON(await authenticatedFetch("/api/recall", { method: "POST", body: fd, signal }));
+      if (captureId !== requestId.current) return;
 
-      if (res.ok && json.decision === "speak") {
+      if (json.decision === "speak") {
         setCueText(json.cueText);
         setPhase("cue");
         if (json.audio && audio) {
           let fellBack = false;
           const fallbackOnce = () => {
-            if (fellBack) return;
+            if (fellBack || captureId !== requestId.current) return;
             fellBack = true;
             speakFallback(json.cueText);
           };
@@ -113,14 +130,20 @@ export default function WearerPage() {
           speakFallback(json.cueText);
         }
         cueTimerRef.current = setTimeout(() => {
+          if (captureId !== requestId.current) return;
+          stopAudio();
           setPhase("idle");
           setCueText(null);
         }, CONFIG.wearerCueDisplayMs);
       } else {
-        // SILENT: play nothing, show nothing, return to idle quietly.
+        stopAudio();
+        setCueText(null);
         setPhase("idle");
       }
-    } catch {
+    } catch (failure) {
+      if (captureId !== requestId.current) return;
+      stopAudio(); setCueText(null);
+      setCameraError(failure instanceof Error ? failure.message : "Could not complete recall. Please try again.");
       setPhase("idle");
     }
   };
@@ -134,6 +157,7 @@ export default function WearerPage() {
         {wearerName && (
           <span className="text-lg text-white/50">{wearerName}</span>
         )}
+        <SignOutButton />
       </header>
 
       <div className="relative mx-4 flex-1 overflow-hidden rounded-3xl bg-black/40 ring-1 ring-white/10">
@@ -180,7 +204,6 @@ export default function WearerPage() {
       <div className="px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4">
         <button
           onClick={onTap}
-          disabled={phase !== "idle"}
           className={`w-full min-h-[220px] rounded-[2rem] bg-primary text-[32px] font-semibold text-white shadow-[0_18px_40px_-18px_rgba(47,93,80,0.9)] ring-1 ring-white/10 transition-transform duration-150 active:scale-[0.985] disabled:active:scale-100 ${
             phase === "thinking" ? "kin-pulse" : ""
           } ${phase === "cue" ? "opacity-60" : ""}`}
