@@ -1,0 +1,51 @@
+{
+  "expo": {
+    "name": "Kin",
+    "slug": "kin-mobile",
+    "version": "1.0.0",
+    "scheme": "kin",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Kin needs camera access to identify family members and provide memory cues.",
+          "microphonePermission": "Kin needs microphone access to record family stories and memories.",
+          "recordAudioAndroid": true
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Kin needs microphone access to record family stories and memories.",
+          "enableBackgroundRecording": false,
+          "enableBackgroundPlayback": true
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Kin needs access to your photos to add family memories."
+        }
+      ]
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
