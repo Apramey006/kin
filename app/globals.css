@@ -403,6 +403,7 @@ details p {
   display: flex;
   flex-direction: column;
   z-index: 30;
+  overflow-y: auto;
 }
 .app-sidebar > .brand {
   padding-left: 15px;
@@ -2197,7 +2198,7 @@ details p {
     left: 50%;
     transform: translateX(-50%);
     width: calc(100% - 36px);
-    max-width: 420px;
+    max-width: 480px;
     display: flex;
     gap: 3px;
     align-items: center;
@@ -2215,8 +2216,8 @@ details p {
     justify-content: center;
     flex-direction: column;
     gap: 3px;
-    font-size: 0.63rem;
-    letter-spacing: 0.01em;
+    font-size: 0.68rem;
+    letter-spacing: 0;
     min-height: 55px;
     padding: 6px 3px;
     border-radius: 28px;
@@ -2828,3 +2829,28 @@ h3,
 }
 
 .loved-one-shell .app-main{margin-left:auto;margin-right:auto;max-width:700px;min-height:0;padding-bottom:40px}.loved-one-shell .wearer-header{max-width:700px}.loved-one-shell{min-height:100dvh}
+
+/* Pending recordings belong with the library; recording policy belongs in Settings. */
+.review-summary { display: flex; align-items: center; gap: .85rem; padding: 1rem; margin-bottom: 1.5rem; background: var(--surface, #f5f5f7); border-radius: 1rem; }
+.review-symbol { display: grid; place-items: center; flex: 0 0 2.5rem; height: 2.5rem; border-radius: .8rem; background: white; color: var(--accent); }
+.review-symbol svg { width: 1.1rem; height: 1.1rem; }
+.review-summary > div { flex: 1; min-width: 0; }
+.review-summary h2 { font-size: .94rem; font-weight: 600; letter-spacing: -.01em; }
+.review-summary p { color: var(--muted); font-size: .78rem; margin-top: .15rem; }
+.review-summary > .button { flex-shrink: 0; color: var(--accent); }
+.review-list { list-style: none; padding: 0; margin: 0; }
+.review-list li { padding: 1.25rem 0; border-bottom: 1px solid var(--line, #e5e5ea); }
+.review-list li:last-child { border-bottom: 0; }
+.review-list blockquote { font-size: 1.05rem; line-height: 1.6; overflow-wrap: anywhere; }
+.review-actions { display: flex; flex-wrap: wrap; gap: .65rem; margin-top: 1.25rem; }
+.review-actions .button { flex: 1 1 12rem; }
+.review-complete { display: grid; justify-items: center; gap: 1rem; padding: 2rem 0; }
+.review-complete > svg { width: 2rem; height: 2rem; color: var(--accent); }
+.recognition-main .wearer-content { width: 100%; padding: 0; }
+.recognition-for { text-align: center; font-size: .85rem; }
+.remember-main > div { padding: 1rem 0; }
+@media (max-width: 400px) {
+  .review-summary { gap: .6rem; padding: .8rem; }
+  .review-summary .review-symbol { display: none; }
+  .mobile-nav { width: calc(100% - 24px); }
+}

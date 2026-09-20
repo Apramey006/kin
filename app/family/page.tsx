@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import { AppShell, LoadingView, PrivacyNote } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
-import { SelfCaptureToggle } from "@/components/SelfCaptureToggle";
 import { SelfReviewQueue } from "@/components/SelfReviewQueue";
 import { contributionKey } from "@/lib/client-auth";
 import { MemorySceneEntry } from "@/components/MemoryScene";
@@ -114,7 +113,6 @@ export default function FamilyPage() {
             <div>
               <h1>Memories</h1>
               <p className="muted">{data.wearer.name}’s family library</p>
-              <Link href="/stories" className="text-link">Living Stories</Link>
             </div>
             <Button onClick={() => setCompose("choose")}>
               <Plus aria-hidden="true" />
@@ -140,10 +138,9 @@ export default function FamilyPage() {
             </p>
           )}
           <MemorySceneEntry data={data} refresh={refresh} />
-          <SelfReviewQueue wearerName={data.wearer.name} onChanged={refresh} />
-          <SelfCaptureToggle />
           <div className="family-layout">
             <div className="family-primary">
+              <SelfReviewQueue wearerName={data.wearer.name} onChanged={refresh} />
               <WeaverInbox
                 me={me}
                 relatives={data.relatives}

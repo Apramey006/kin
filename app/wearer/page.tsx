@@ -1,17 +1,13 @@
 "use client";
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
-  ArrowLeft,
-  Settings,
   Camera,
   ScanFace,
   Headphones,
   Volume2,
   RotateCcw,
 } from "lucide-react";
-import { Brand } from "@/components/Brand";
-import { Preferences } from "@/components/AppShell";
+import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { useFamilyData } from "@/lib/family-data";
 
@@ -139,30 +135,9 @@ export default function Wearer() {
     }
   };
   return (
-    <div className="wearer-page">
-      <Preferences />
-      <header className="wearer-header">
-        <Link
-          href={data?.role === "loved_one" ? "/settings" : "/family"}
-          className="icon-button"
-          aria-label={
-            data?.role === "loved_one"
-              ? "Your settings"
-              : "Back to family memories"
-          }
-        >
-          {data?.role === "loved_one" ? (
-            <Settings aria-hidden="true" />
-          ) : (
-            <ArrowLeft aria-hidden="true" />
-          )}
-        </Link>
-        <Brand href={data?.role === "loved_one" ? "/wearer" : "/family"} />
-        <span className="wearer-title">
-          {data ? `For ${data.wearer.name}` : "A familiar connection"}
-        </span>
-      </header>
-      <main id="main-content" className="wearer-content">
+    <AppShell data={data} className="recognition-main">
+      <div className="wearer-content">
+        <p className="recognition-for muted">{data ? `For ${data.wearer.name}` : "A familiar connection"}</p>
         {!enabled ? (
           <div className="camera-intro">
             <div className="camera-orb">
@@ -259,8 +234,6 @@ export default function Wearer() {
             )}
           </>
         )}
-        <Link href="/stories" className="text-link">Listen to family stories</Link>
-        {data?.role === "loved_one" && <Link href="/remember" className="text-link">Record a memory for your family</Link>}
         {error && (
           <div className="stack" style={{ width: "100%", marginTop: 20 }}>
             <p className="notice notice-error" role="alert">
@@ -272,7 +245,7 @@ export default function Wearer() {
             </Button>
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }

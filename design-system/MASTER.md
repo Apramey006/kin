@@ -7,7 +7,9 @@ is the structure and restraint of Photos, Settings, and native iOS sheets.
 - System typography, optical sizing, normal body tracking, size-specific heading tracking.
 - White canvas; neutral grouped surfaces; blue actions. Color carries state or content type.
 - Desktop sidebar; mobile floating labeled tab bar. Translucency belongs to navigation and modal chrome.
-- Direct names: Memories, Recognize, Connections, Settings. No decorative slogans in app workflows.
+- Direct names: Memories, Stories, Recognize, Connections, Settings. No decorative slogans in app workflows.
+- Stories uses the shared app shell; loved-one navigation is Recognize, Stories, Record.
+- Recording review preferences live in Settings. Only pending reviews appear in the library.
 - Sheets use a live position/velocity spring, pointer capture, velocity projection and rubber-banding.
   Both animation directions remain interruptible; only an actual save prevents dismissal.
 - 44px minimum controls. Keyboard dialog containment, Escape and close button, focus restoration.

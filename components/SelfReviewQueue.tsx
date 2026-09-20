@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { authenticatedFetch, responseJSON } from "@/lib/client-auth";
 import { Button } from "@/components/ui/button";
-import { Sparkles } from "lucide-react";
+import { Mic, Check } from "lucide-react";
+import { Sheet } from "./Sheet";
 import type { PendingContributionRow } from "@/lib/types";
 
 type Pending = Pick<PendingContributionRow, "id" | "kind" | "preview" | "created_at">;
@@ -15,6 +16,7 @@ type Pending = Pick<PendingContributionRow, "id" | "kind" | "preview" | "created
  */
 export function SelfReviewQueue({ wearerName, onChanged }: { wearerName?: string; onChanged?: () => Promise<void> }) {
   const [pending, setPending] = useState<Pending[]>([]);
+  const [open, setOpen] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,39 +50,39 @@ export function SelfReviewQueue({ wearerName, onChanged }: { wearerName?: string
     }
   };
 
-  if (!pending.length) return null;
-
+  if (!pending.length && !open) return null;
+  const title = wearerName ? `${wearerName}’s new stories` : "New family stories";
   return (
-    <section className="animate-fade-up rounded-2xl border border-primary/25 bg-primary-soft p-5">
-      <div className="mb-3 flex items-center gap-2">
-        <Sparkles className="h-[18px] w-[18px] text-primary" aria-hidden />
-        <h2 className="font-semibold">
-          {wearerName ? `${wearerName}'s new stories` : "New stories"}
-        </h2>
-      </div>
-      <p className="mb-4 text-sm text-ink/70">
-        Add these to your family memory, or keep them just as a recording.
-      </p>
-      {error && <p role="alert" className="mb-3 text-sm text-amber-700">{error}</p>}
-      <ul className="space-y-3">
-        {pending.map((row) => (
-          <li key={row.id} className="rounded-xl bg-paper/80 p-4">
-            <p className="text-[15px] leading-snug text-ink">“{row.preview}”</p>
-            <div className="mt-3 flex gap-2">
-              <Button onClick={() => decide(row.id, "approve")} disabled={busyId === row.id}>
-                Add to our memory
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => decide(row.id, "reject")}
-                disabled={busyId === row.id}
-              >
-                Just keep the recording
-              </Button>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </section>
+    <>
+      <section className="review-summary" aria-label="Stories awaiting review">
+        <span className="review-symbol"><Mic aria-hidden="true" /></span>
+        <div>
+          <h2>{title}</h2>
+          <p>{pending.length ? `${pending.length} ${pending.length === 1 ? "recording" : "recordings"} ready to review` : "You’re all caught up."}</p>
+        </div>
+        <Button variant="ghost" onClick={() => setOpen(true)} aria-haspopup="dialog">Review</Button>
+      </section>
+      <Sheet open={open} onClose={() => setOpen(false)} title={title} busy={!!busyId}>
+        {error && <p role="alert" className="notice notice-error">{error}</p>}
+        {pending.length ? <>
+          <p className="sheet-intro">Choose which stories to add to your family’s shared memories. Every recording is kept.</p>
+          <ul className="review-list">
+            {pending.map((row) => (
+              <li key={row.id}>
+                <blockquote>“{row.preview}”</blockquote>
+                <div className="review-actions">
+                  <Button onClick={() => decide(row.id, "approve")} disabled={!!busyId}>Add to our memory</Button>
+                  <Button variant="outline" onClick={() => decide(row.id, "reject")} disabled={!!busyId}>Just keep the recording</Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </> : <div className="review-complete" role="status">
+          <Check aria-hidden="true" />
+          <p>You’re all caught up.</p>
+          <Button variant="outline" onClick={() => setOpen(false)}>Done</Button>
+        </div>}
+      </Sheet>
+    </>
   );
 }

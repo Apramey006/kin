@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { authenticatedFetch, responseJSON } from "@/lib/client-auth";
-import { Button } from "@/components/ui/button";
 
 /**
  * Whether the wearer's own stories join the family memory directly, or wait
@@ -29,7 +28,7 @@ export function SelfCaptureToggle() {
   }, []);
 
   if (!state) return null;
-  const who = state.name ?? "their";
+  const who = state.name ?? "your loved one";
   const reviewing = !state.captureOpen;
 
   const toggle = async () => {
@@ -50,17 +49,22 @@ export function SelfCaptureToggle() {
   };
 
   return (
-    <section className="rounded-2xl border border-ink/10 bg-paper-deep p-5">
-      <h2 className="font-semibold">{who}&rsquo;s own stories</h2>
-      <p className="mt-1 text-sm leading-snug text-ink/70">
-        {reviewing
-          ? `You read ${who}'s new stories before they join your family memory. ${who} records exactly as before.`
-          : `${who}'s stories join your family memory as soon as they record them.`}
-      </p>
-      {error && <p role="alert" className="mt-2 text-sm text-amber-700">{error}</p>}
-      <Button variant="outline" className="mt-3" onClick={toggle} disabled={busy}>
-        {reviewing ? "Add them automatically" : "Review them first"}
-      </Button>
+    <section className="panel settings-section" aria-labelledby="recording-settings-heading">
+      <h2 id="recording-settings-heading">{state.name ? `${state.name}’s recordings` : "Family recordings"}</h2>
+      <div className="setting-row">
+        <label htmlFor="review-recordings">
+          Review before adding
+          <small id="review-recordings-description">
+            {reviewing
+              ? `Read ${who}’s new stories before adding them to the shared library. Recordings are always saved.`
+              : `New recordings join the shared library automatically.`}
+          </small>
+        </label>
+        <input id="review-recordings" className="toggle" type="checkbox" role="switch"
+          aria-describedby="review-recordings-description" checked={reviewing} disabled={busy} onChange={toggle} />
+      </div>
+      {error && <p role="alert" className="notice notice-error">{error}</p>}
+      {busy && <p className="small muted" role="status">Saving preference…</p>}
     </section>
   );
 }

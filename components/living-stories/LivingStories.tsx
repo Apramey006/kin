@@ -21,10 +21,11 @@ export function LivingStories({ data, topicId, refresh }: { data: FamilyData; to
   const topic = data.nodes.find((n) => n.id === topicId);
   if (topic) return <StoryRoom key={topic.id} data={data} topic={topic} refresh={refresh} />;
   return <div className={styles.stories}>
-    <header className={styles.intro}>
-      <span className={styles.eyebrow}><Headphones size={17} aria-hidden="true" /> LIVING STORIES</span>
-      <h1>A little of everyone.<br /><em>A story of your own.</em></h1>
-      <p>People, places, and traditions, told in your family’s own voices. Choose a thread and listen to it unfold.</p>
+    <header className="page-header">
+      <div>
+        <h1>Living Stories</h1>
+        <p className="muted">Your family’s memories, told in their own voices.</p>
+      </div>
     </header>
     {topicId && <p className="notice" role="status">That story is no longer available. Explore another family story below.</p>}
     {topics.length ? <>

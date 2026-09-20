@@ -11,6 +11,7 @@ import {
 import { useFamilyData, initials } from "@/lib/family-data";
 import { AppShell, LoadingView, PrivacyNote } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
+import { SelfCaptureToggle } from "@/components/SelfCaptureToggle";
 import { DemoTools } from "@/components/DemoTools";
 import { getAnonClient } from "@/lib/supabase";
 export default function Settings() {
@@ -186,6 +187,7 @@ export default function Settings() {
               )}
             </section>
           )}
+          {!isLovedOne && <SelfCaptureToggle />}
           <section
             className="panel settings-section"
             aria-labelledby="access-heading"

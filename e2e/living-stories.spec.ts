@@ -48,6 +48,9 @@ for (const width of [375, 1440]) {
   test(`story discovery, sources and listening view are accessible at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 1000 });
     await mount(page, storyFixture());
+    const navigation = page.getByRole("navigation", { name: "Main navigation" });
+    await expect(navigation.getByRole("link")).toHaveText(["Memories", "Stories", "Recognize", "Connections"]);
+    await expect(navigation.getByRole("link", { name: "Stories", exact: true })).toHaveAttribute("aria-current", "page");
     const a11y = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
     expect(a11y.violations.map((v) => ({ id: v.id, nodes: v.nodes.map((n) => n.target) }))).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -57,7 +60,8 @@ for (const width of [375, 1440]) {
     await expect(page.getByLabel("Full original recording from Maya")).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog")).not.toBeVisible();
-    await page.getByRole("link", { name: "All stories" }).click();
+    await navigation.getByRole("link", { name: "Stories", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Living Stories", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Stories to spend time with" })).toBeVisible();
     expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);
     await page.screenshot({ path: `test-results/living-stories-${width}.png`, fullPage: true });
@@ -124,6 +128,7 @@ test("records, previews, saves and links a new contribution to the selected topi
 test("loved-one accounts start in quiet view and cannot contribute", async ({ page }) => {
   const data = storyFixture(); data.role = "loved_one"; data.relativeId = null;
   await mount(page, data);
+  await expect(page.getByRole("navigation", { name: "Main navigation" }).getByRole("link")).toHaveText(["Recognize", "Stories", "Record"]);
   await expect(page.getByRole("button", { name: "Quiet view" })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("complementary", { name: "Story chapters" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Add your part" })).toHaveCount(0);

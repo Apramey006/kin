@@ -127,7 +127,7 @@ test("sign in, create an empty family, invite a member, enforce ownership, and s
   }
 });
 
-test("a loved-one invitation joins without a relationship and opens recognition only", async ({
+test("a loved-one invitation joins without a relationship and opens loved-one navigation", async ({
   page,
   browser,
 }) => {
@@ -242,8 +242,8 @@ test("a loved-one invitation joins without a relationship and opens recognition 
       rosa.getByRole("button", { name: /Invite|Create invitation/ }),
     ).toHaveCount(0);
     await expect(
-      rosa.getByRole("navigation", { name: "Main navigation" }),
-    ).toHaveCount(0);
+      rosa.getByRole("navigation", { name: "Main navigation" }).getByRole("link"),
+    ).toHaveText(["Recognize", "Stories", "Record"]);
     const a = await new AxeBuilder({ page: rosa })
       .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
       .analyze();

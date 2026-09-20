@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { test, expect } from "@playwright/test";
 import { json, member, signInDemo } from "./auth-fixture";
 
@@ -80,12 +81,26 @@ test("contributors review held stories and can reopen the window", async ({ page
 
   await signInDemo(page, "/family", true, undefined, "Maya");
 
-  await expect(page.getByText("My mother taught me the cake in Kraków.")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Stories awaiting review" })).toBeVisible();
+  await expect(page.getByText(/My mother taught me/)).not.toBeVisible();
+  await page.screenshot({ path: "test-results/stories-review-summary.png", fullPage: true });
+  await page.getByRole("button", { name: "Review", exact: true }).click();
+  await expect(page.getByRole("dialog")).toContainText("My mother taught me the cake in Kraków.");
+  expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);
   await page.getByRole("button", { name: "Add to our memory" }).click();
   await expect(page.getByText("My mother taught me the cake in Kraków.")).toHaveCount(0);
   expect(decisions).toEqual([{ id: "pending-1", action: "approve" }]);
 
-  await page.getByRole("button", { name: "Add them automatically" }).click();
-  await expect(page.getByRole("button", { name: "Review them first" })).toBeVisible();
+  await page.getByRole("button", { name: "Done", exact: true }).click();
+  await expect(page.getByRole("region", { name: "Stories awaiting review" })).toHaveCount(0);
+  await page.goto("/settings");
+  const review = page.getByRole("switch", { name: /Review before adding/ });
+  await expect(review).toBeChecked();
+  await review.click();
+  await expect(review).not.toBeChecked();
   expect(captureOpen).toBe(true);
+  await review.click();
+  await expect(review).toBeChecked();
+  expect(captureOpen).toBe(false);
+  await page.screenshot({ path: "test-results/recording-settings.png", fullPage: true });
 });

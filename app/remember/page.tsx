@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
-import { AuthBoundary, useKinAuth, authenticatedFetch, responseJSON, contributionKey, SignOutButton } from "@/lib/client-auth";
+import { AuthBoundary, useKinAuth, authenticatedFetch, responseJSON, contributionKey } from "@/lib/client-auth";
+import { AppShell } from "@/components/AppShell";
+import { useFamilyData } from "@/lib/family-data";
 import { Recorder } from "@/components/Recorder";
 
 export default function RememberPage() {
@@ -20,6 +21,7 @@ export default function RememberPage() {
  */
 function RememberContent() {
   const { role } = useKinAuth();
+  const { data } = useFamilyData();
   const [self, setSelf] = useState<{ contributorId: string; name: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState<string | null>(null);
@@ -60,14 +62,7 @@ function RememberContent() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col bg-paper text-ink text-[22px]">
-      <header className="flex items-center justify-between px-6 pb-3 pt-[max(1rem,env(safe-area-inset-top))]">
-        <span className="text-lg font-semibold tracking-[0.18em] text-ink/70">KIN</span>
-        {self?.name && <span className="text-lg text-ink/70">{self.name}</span>}
-        <Link href="/wearer" className="text-link">Back</Link>
-        <SignOutButton />
-      </header>
-
+    <AppShell data={data} className="remember-main">
       <div className="flex flex-1 flex-col justify-center gap-6 px-6 pb-6 w-full max-w-xl mx-auto">
         <div>
           <h1 className="text-[34px] font-semibold leading-tight">Tell us something.</h1>
@@ -96,6 +91,6 @@ function RememberContent() {
           />
         </div>
       </div>
-    </main>
+    </AppShell>
   );
 }
