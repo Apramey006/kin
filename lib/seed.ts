@@ -5,13 +5,10 @@ import { zeroVector } from "./util";
 
 /** Wipe every table for the demo family and empty its storage prefix. */
 export async function resetFamily(sb: SupabaseClient, familyId: string) {
-  await sb.from("weaver_questions").delete().eq("family_id", familyId);
-  await sb.from("recall_events").delete().eq("family_id", familyId);
-  await sb.from("face_embeddings").delete().eq("family_id", familyId);
-  await sb.from("memories").delete().eq("family_id", familyId);
-  await sb.from("graph_nodes").delete().eq("family_id", familyId);
-  await sb.from("relatives").delete().eq("family_id", familyId);
-  await sb.from("wearer").delete().eq("family_id", familyId);
+  for (const table of ["weaver_questions", "recall_events", "face_embeddings", "memories", "graph_nodes", "relatives", "wearer"]) {
+    const { error } = await sb.from(table).delete().eq("family_id", familyId);
+    if (error) throw new Error(`Could not reset ${table}: ${error.message}`);
+  }
   try {
     const { data: files } = await sb.storage
       .from(CONFIG.storageBucket)
@@ -41,9 +38,10 @@ async function embed(summary: string): Promise<number[]> {
 export async function seedDemo(sb: SupabaseClient, familyId: string) {
   await resetFamily(sb, familyId);
 
-  await sb.from("wearer").insert({ family_id: familyId, name: "Rosa" });
+  const wearerInsert = await sb.from("wearer").insert({ family_id: familyId, name: "Rosa" });
+  if (wearerInsert.error) throw new Error(wearerInsert.error.message);
 
-  const { data: rels } = await sb
+  const { data: rels, error: relsError } = await sb
     .from("relatives")
     .insert([
       { family_id: familyId, name: "Maya", relation_to_wearer: "granddaughter", color: "#E0A458" },
@@ -51,9 +49,10 @@ export async function seedDemo(sb: SupabaseClient, familyId: string) {
       { family_id: familyId, name: "Elena", relation_to_wearer: "daughter", color: "#B07CC6" },
     ])
     .select();
+  if (relsError) throw new Error(relsError.message);
   const [maya, david, elena] = rels!;
 
-  const { data: nodeRows } = await sb
+  const { data: nodeRows, error: nodeRowsError } = await sb
     .from("graph_nodes")
     .insert([
       { family_id: familyId, type: "person", label: "Rosa", relation_to_wearer: "self" },
@@ -63,6 +62,7 @@ export async function seedDemo(sb: SupabaseClient, familyId: string) {
       { family_id: familyId, type: "object", label: "Nana's recipe book" },
     ])
     .select();
+  if (nodeRowsError) throw new Error(nodeRowsError.message);
   const byLabel = Object.fromEntries(nodeRows!.map((n) => [n.label, n.id]));
   const rosa = byLabel["Rosa"];
   const nora = byLabel["Nora"];
@@ -70,7 +70,7 @@ export async function seedDemo(sb: SupabaseClient, familyId: string) {
   const apron = byLabel["yellow apron"];
   const book = byLabel["Nana's recipe book"];
 
-  const { data: edgeRows } = await sb
+  const { data: edgeRows, error: edgeRowsError } = await sb
     .from("graph_edges")
     .insert([
       { family_id: familyId, from_node: rosa, rel: "participates_in", to_node: cake },
@@ -81,6 +81,7 @@ export async function seedDemo(sb: SupabaseClient, familyId: string) {
       { family_id: familyId, from_node: rosa, rel: "owns", to_node: book },
     ])
     .select();
+  if (edgeRowsError) throw new Error(edgeRowsError.message);
   const edgeId = (from: string, rel: string, to: string) =>
     edgeRows!.find((e) => e.from_node === from && e.rel === rel && e.to_node === to)!.id;
 
@@ -95,7 +96,7 @@ export async function seedDemo(sb: SupabaseClient, familyId: string) {
   const davidSummary =
     "David shared a photo of Nana's recipe book on the kitchen shelf.";
 
-  const { data: memRows } = await sb
+  const { data: memRows, error: memRowsError } = await sb
     .from("memories")
     .insert([
       {
@@ -124,9 +125,10 @@ export async function seedDemo(sb: SupabaseClient, familyId: string) {
       },
     ])
     .select();
+  if (memRowsError) throw new Error(memRowsError.message);
   const [mayaMem, elenaMem, davidMem] = memRows!;
 
-  await sb.from("provenance").insert([
+  const provenanceInsert = await sb.from("provenance").insert([
     // Maya's story -> Rosa, Nora, cake, apron + their edges
     { memory_id: mayaMem.id, contributor_id: maya.id, node_id: rosa },
     { memory_id: mayaMem.id, contributor_id: maya.id, node_id: nora },
@@ -145,6 +147,8 @@ export async function seedDemo(sb: SupabaseClient, familyId: string) {
     { memory_id: davidMem.id, contributor_id: david.id, node_id: rosa },
     { memory_id: davidMem.id, contributor_id: david.id, edge_id: edgeId(rosa, "owns", book) },
   ]);
+
+  if (provenanceInsert.error) throw new Error(provenanceInsert.error.message);
 
   return {
     relatives: { maya: maya.id, david: david.id, elena: elena.id },
