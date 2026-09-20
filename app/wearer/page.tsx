@@ -14,6 +14,23 @@ import { useFamilyData } from "@/lib/family-data";
 import { SILENT_AUDIO, unlockAudio, playCue, stopCue } from "@/lib/audio";
 import { authenticatedFetch } from "@/lib/client-auth";
 import { CONFIG } from "@/lib/config";
+function quietFeedback(reason?: string) {
+  switch (reason) {
+    case "no_face":
+      return { title: "I couldn’t see a face clearly.", detail: "Try facing the camera in good lighting." };
+    case "unknown_face":
+      return { title: "No familiar face this time.", detail: "Kin will stay quiet." };
+    case "ambiguous_face":
+      return { title: "I couldn’t make a clear match.", detail: "Try with one person in view and good lighting." };
+    case "insufficient_evidence":
+      return { title: "A familiar face. Not enough memories to share yet.", detail: "Your family can add stories about this person in Memories." };
+    case "below_threshold":
+      return { title: "Not quite enough certainty to share a memory.", detail: "Kin will stay quiet. You can try again with a clearer view." };
+    default:
+      return { title: "No clear memory to share this time.", detail: "Kin will stay quiet when it can’t verify a memory." };
+  }
+}
+
 export default function Wearer() {
   const { data } = useFamilyData();
   const video = useRef<HTMLVideoElement | null>(null);
@@ -26,7 +43,7 @@ export default function Wearer() {
   const [ready, setReady] = useState(false);
   const [thinking, setThinking] = useState(false);
   const [cue, setCue] = useState<string | null>(null);
-  const [quiet, setQuiet] = useState(false);
+  const [quiet, setQuiet] = useState<ReturnType<typeof quietFeedback> | null>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     mounted.current = true;
@@ -90,7 +107,7 @@ export default function Wearer() {
     pending.current = controller;
     setThinking(true);
     setCue(null);
-    setQuiet(false);
+    setQuiet(null);
     setError(null);
     try {
       const scale = Math.min(1, CONFIG.snapshotMaxPx / v.videoWidth);
@@ -124,7 +141,7 @@ export default function Wearer() {
         playCue(audio.current, j);
       } else {
         if (j.reasonCode === "provider_failure") setError("Recognition is temporarily unavailable. Please try again.");
-        else setQuiet(true);
+        else setQuiet(quietFeedback(j.reasonCode));
       }
     } catch (e) {
       if (mounted.current && !controller.signal.aborted)
@@ -214,9 +231,9 @@ export default function Wearer() {
             </Button>
             {quiet ? (
               <p className="wearer-quiet" role="status">
-                No familiar face this time.
+                {quiet.title}
                 <br />
-                <span className="muted">Kin will stay quiet.</span>
+                <span className="muted">{quiet.detail}</span>
               </p>
             ) : (
               <p className="camera-help">

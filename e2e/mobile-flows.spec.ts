@@ -71,21 +71,36 @@ test("wearer uploads snapshots only and clears the prior cue on SILENT", async (
     CanvasRenderingContext2D.prototype.drawImage = function () {};
     navigator.mediaDevices.getUserMedia = async () => new MediaStream();
   });
+  const outcomes = [
+    ["unknown_face", "No familiar face this time."],
+    ["insufficient_evidence", "A familiar face. Not enough memories to share yet."],
+    ["no_face", "I couldn’t see a face clearly."],
+    ["ambiguous_face", "I couldn’t make a clear match."],
+    ["below_threshold", "Not quite enough certainty to share a memory."],
+    ["contradiction", "No clear memory to share this time."],
+    ["no_provenance", "No clear memory to share this time."],
+    ["grounding_failure", "No clear memory to share this time."],
+    ["provider_failure", "Recognition is temporarily unavailable. Please try again."],
+  ];
   let calls = 0;
   await page.route("**/api/recall", (route) => {
     expect(route.request().headers().authorization).toMatch(/^Bearer /);
     expect(route.request().postData()).toContain('name="snapshot"');
     expect(route.request().postData()).not.toContain("faceDescriptors");
-    return route.fulfill(json(++calls === 1 ? { decision: "speak", cueText: "Nora baked lemon cake on Sundays.", audio: null } : { decision: "silent", reasonCode: "unknown_face" }));
+    return route.fulfill(json(++calls === 1 ? { decision: "speak", cueText: "Nora baked lemon cake on Sundays.", audio: null } : { decision: "silent", reasonCode: outcomes[calls - 2][0] }));
   });
   await signInDemo(page, "/wearer");
   await expect(page.getByText("For Rosa", { exact: true })).toBeVisible();
   await page.getByRole("button",{name:"Open camera",exact:true}).click();
   await page.getByRole("button", { name: "Who is this?" }).click();
   await expect(page.getByText("Nora baked lemon cake on Sundays.").filter({ visible: true }).last()).toBeVisible();
-  await page.getByRole("button", { name: "Who is this?" }).click();
-  await expect(page.getByText("Nora baked lemon cake on Sundays.")).toHaveCount(0);
-  await expect.poll(() => calls).toBe(2);
+  for (const [reason, message] of outcomes) {
+    await page.getByRole("button", { name: "Who is this?" }).click();
+    await expect(page.getByText(message)).toBeVisible();
+    await expect(page.getByText("Nora baked lemon cake on Sundays.")).toHaveCount(0);
+    if (reason !== "unknown_face") await expect(page.getByText("No familiar face this time.")).toHaveCount(0);
+  }
+  await expect.poll(() => calls).toBe(outcomes.length + 1);
 });
 
 test("stage terminal SILENT overrides a stale speak gate", async ({ page }) => {
