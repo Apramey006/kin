@@ -37,6 +37,7 @@ function database() {
     updates: [] as Record<string, unknown>[], inserts: 0,
     errorTable: "", failSpeak: false, failEveryUpdate: false, storageError: false,
     authError: false, replayFamily: "670f5075-c286-4b29-8074-86401c18d0c0", memories: [mem("m1", MAYA), mem("m2", ELENA)],
+    relationship: "sister" as string | null,
   };
   const sb = {
     auth: { getUser: async (token: string) => ({ data: { user: state.authError || token !== "session" ? null : { id: "user", app_metadata: { kin_family_id: "670f5075-c286-4b29-8074-86401c18d0c0", kin_contributor_id: MAYA } } }, error: null }) },
@@ -49,6 +50,7 @@ function database() {
         // Model a project that has only migrations 001–006 applied.
         if (table === "relatives" && columns.split(",").includes("is_self")) return { data: null, error: { code: "42703" } };
         if (table === state.errorTable) return { data: null, error: { code: "DB_ERROR" } };
+        if (table === "graph_nodes") return { data: [{ id: "nora", label: "Nora", relation_to_wearer: state.relationship }], error: null };
         if (table === "relatives") return { data: [{ id: MAYA, family_id: "670f5075-c286-4b29-8074-86401c18d0c0", name: "Maya", color: "gold" }, { id: ELENA, family_id: "670f5075-c286-4b29-8074-86401c18d0c0", name: "Elena", color: "pink" }], error: null };
         if (table === "memories") return { data: state.memories, error: null };
         if (table === "recall_events") {
@@ -101,10 +103,17 @@ describe("authenticated image-first recall", () => {
   it("speaks only a literal grounded cue and persists matching terminal gate", async () => {
     const db = database(); const res = await POST(request()); const body = await res.json();
     expect(res.status).toBe(200); expect(body.decision).toBe("speak");
-    expect(body.cueText).toBe("A relative said: “Nora bakes lemon cake every Sunday.”");
+    expect(body.cueText).toBe("Maya said: “Nora bakes lemon cake every Sunday.”");
+    expect(body.context.person).toEqual({ id: "nora", name: "Nora", relationship: "Your sister" });
+    expect(body.context.facts[0]).toMatchObject({ speaker: "Maya", text: "Nora bakes lemon cake every Sunday." });
+    expect(body.context.supporters).toEqual(["Maya", "Elena"]);
     expect(body.evidence[0].source).toBe("human"); expect(body.scores.C).toBeCloseTo(.95);
     expect(db.updates.at(-1)).toMatchObject({ status: "speak", gate: { decision: "speak" }, cue_text: body.cueText });
     expect(h.rewrite.mock.calls[0][0].user).not.toContain("not source truth");
+  });
+  it("does not invent an absent relationship", async () => {
+    const db = database(); db.relationship = null;
+    expect((await (await POST(request())).json()).context.person.relationship).toBeNull();
   });
   it.each(["no_face", "unknown", "ambiguous", "unavailable"] as const)("silences %s without synthesis/TTS", async status => {
     database(); h.face = { status, model: "canonical" };

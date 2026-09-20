@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./offline-test";
 import { json, signInDemo } from "./auth-fixture";
 import { addSceneAnswer, sceneFixture } from "../tests/fixtures/memory-scene";
 import type { SceneData } from "../lib/memory-scene";

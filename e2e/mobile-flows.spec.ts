@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./offline-test";
 import { json, member, signInDemo } from "./auth-fixture";
 
 const nora = { id: "33333333-3333-4333-8333-333333333333", family_id: "670f5075-c286-4b29-8074-86401c18d0c0", type: "person", label: "Nora", relation_to_wearer: "sister", aliases: [] };

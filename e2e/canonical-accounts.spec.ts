@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./offline-test";
 import { DEMO_ACCOUNTS, DEMO_FAMILY_ID } from "../lib/demo";
 import { signInDemo, json } from "./auth-fixture";
 

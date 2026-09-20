@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./offline-test";
 import { json, member, signInDemo } from "./auth-fixture";
 
 const SELF_ID = "44444444-4444-4444-8444-444444444444";

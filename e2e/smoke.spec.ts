@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./offline-test";
 
 const routes = ["/", "/family", "/wearer", "/stage"];
 

@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./offline-test";
 import { signInDemo } from "./auth-fixture";
 
 test("live Atlas uses signed-in family scope and clears on sign out", async ({ page }) => {

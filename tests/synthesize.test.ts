@@ -6,6 +6,11 @@ const facts: VerifiedFact[] = [
   { id: "f2", subjectNodeId: "nora", memoryId: "m2", contributorId: "david", text: "The lemon cake recipe came from Nora’s mother." },
 ];
 describe("exact fact grounding", () => {
+  it("uses the resolved contributor name without allowing an attribution swap", () => {
+    const named = [{ ...facts[0], speaker: "Maya" }];
+    expect(validateGrounding({ factIds: ["f1"], cue: "Maya said: “Nora bakes lemon cake every Sunday.”" }, named)).toBe(true);
+    expect(validateGrounding({ factIds: ["f1"], cue: "Elena said: “Nora bakes lemon cake every Sunday.”" }, named)).toBe(false);
+  });
   it("accepts only exact composition of selected facts", () => {
     expect(validateGrounding({ factIds: ["f2"], cue: renderFacts([facts[1]]) }, facts)).toBe(true);
   });
