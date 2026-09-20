@@ -147,11 +147,15 @@ export function routeQuestion(d: WeaverData, gap: Gap): string | null {
   const describers = new Set(d.memories.filter(m => m.kind !== "photo" && touching.has(m.id)).map(m => m.contributor_id));
   const open = new Set(d.openQuestionRelativeIds);
 
-  let candidates = d.relatives.filter(
+  // The wearer is never a routing target. Asking someone with memory loss a
+  // question they cannot retrieve is distressing, and a gap the family cannot
+  // fill is not a reason to put that on them.
+  const askable = d.relatives.filter((r) => !r.is_self);
+  let candidates = askable.filter(
     (r) => !open.has(r.id) && !describers.has(r.id)
   );
   if (!candidates.length) {
-    candidates = d.relatives.filter((r) => !open.has(r.id));
+    candidates = askable.filter((r) => !open.has(r.id));
   }
   if (!candidates.length) return null;
 

@@ -69,6 +69,8 @@ export interface ExtractOpts {
   existingNodes: GraphNodeRow[];
   /** for Weaver answers: the question being answered */
   questionContext?: string;
+  /** the wearer speaking about their own life, in first person */
+  isSelf?: boolean;
 }
 
 export async function extractMemory(opts: ExtractOpts): Promise<Extraction> {
@@ -82,7 +84,10 @@ Rules:
 - A question provides referents, not evidence that its premise is true. Resolve pronouns using it only when unambiguous; preserve uncertainty otherwise.
 - Do not infer names, identities, kinship, or relationships from appearance, co-occurrence, or a tradition. A speaker's relationship to the wearer does not establish other people's relationships.
 - Reuse an existing node (ref "existing:<id>") when the text refers to the same entity. Otherwise use ref "new:<short-tmp-name>".
-- "Grandma", "Nana", "Mom", "Dad" etc. are relative to the speaker's relationship to the wearer (${opts.wearerName}). The speaker is ${opts.contributorName} (${opts.contributorRelation} of ${opts.wearerName}).
+${opts.isSelf
+  ? `- The speaker is ${opts.wearerName}, the wearer, speaking in the first person about their own life. "I", "me", "my" and "mine" all refer to ${opts.wearerName}.
+- Kinship terms are relative to ${opts.wearerName} as the speaker: "my mother" is ${opts.wearerName}'s mother, "my daughter" is ${opts.wearerName}'s daughter. Do not reinterpret them through any other relative.`
+  : `- "Grandma", "Nana", "Mom", "Dad" etc. are relative to the speaker's relationship to the wearer (${opts.wearerName}). The speaker is ${opts.contributorName} (${opts.contributorRelation} of ${opts.wearerName}).`}
 - The wearer ${opts.wearerName} is a person node with relation_to_wearer "self".
 - Edge rel must be one of: ${ALLOWED_RELS.join(", ")}.
 - summary: one sentence, third person, faithful to the text.`;

@@ -7,6 +7,23 @@ export interface Relative {
   name: string;
   relation_to_wearer: string;
   color: string;
+  /** The wearer's own Keeper. Exactly one per family, or none. */
+  is_self?: boolean;
+  /** Only meaningful on the is_self row: self contributions commit directly. */
+  self_capture_open?: boolean;
+}
+
+export interface PendingContributionRow {
+  id: string;
+  family_id: string;
+  contributor_id: string;
+  kind: MemoryKind;
+  preview: string;
+  media_path: string | null;
+  state: "pending" | "approved" | "rejected";
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  created_at: string;
 }
 
 export interface Wearer {
@@ -111,6 +128,8 @@ export interface VerifiedFact {
   contributorId: string;
   memoryId: string;
   sourceSpan?: { start: number; end: number };
+  /** Cue attribution. "You" for the wearer's own words; defaults to "A relative". */
+  speaker?: string;
 }
 
 export type SilenceReasonCode = "no_face" | "unknown_face" | "ambiguous_face" | "insufficient_evidence" | "contradiction" | "no_provenance" | "below_threshold" | "provider_failure" | "grounding_failure";

@@ -32,7 +32,7 @@ describe("stable demo and Weaver answer loop", () => {
     const transcript = "It was actually their mother's recipe. She brought it from Italy.";
     const subjects = anchorOriginAnswer(extraction, transcript, { gap_node_id: gap.nodeId, gap_type: gap.type }, dataset.nodes, dataset.edges);
     expect(subjects.map((s) => s.id)).toContain(nora.id);
-    const graph = prepareGraph({ familyId: "670f5075-c286-4b29-8074-86401c18d0c0", contributorId: dataset.ids.david, userId: "demo-user", isAdmin: false,
+    const graph = prepareGraph({ familyId: "670f5075-c286-4b29-8074-86401c18d0c0", contributorId: dataset.ids.david, userId: "demo-user", isAdmin: false, isSelf: false,
       contributor: dataset.relatives.find((r) => r.id === dataset.ids.david)! }, "answer-id", extraction, dataset.nodes, dataset.edges);
     expect(graph.edges).toContainEqual(expect.objectContaining({ from_node: gap.nodeId, rel: "origin" }));
     expect(graph.provenance).toContainEqual(expect.objectContaining({ memory_id: "answer-id", node_id: nora.id, contributor_id: dataset.ids.david }));

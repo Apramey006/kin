@@ -81,7 +81,7 @@ export async function ingestMemory(req: Request, kind: MemoryKind) {
     const source = kind === "photo"
       ? JSON.stringify({ contributor_caption: caption, explicitly_labeled_people: labelNodes.map((node) => ({ name: node.label, relation_to_wearer: node.relation_to_wearer })) })
       : transcript!;
-    const extraction: Extraction = await extractMemory({ text: source, questionContext,
+    const extraction: Extraction = await extractMemory({ text: source, questionContext, isSelf: identity.isSelf,
       wearerName: wearerResult.data?.name ?? "the wearer", contributorName: identity.contributor.name,
       contributorRelation: identity.contributor.relation_to_wearer, existingNodes: nodes });
     for (const label of labelNodes) {
@@ -109,14 +109,27 @@ export async function ingestMemory(req: Request, kind: MemoryKind) {
     const persons = labelNodes.map((node, index) => ({ index, node_id: graph.refs.get(node.ref)! }));
     const response = { memory_id: memoryId, media_path: path, transcript, caption: visionCaption,
       summary: extraction.summary, entities: graph.chips, persons };
-    const result = await commitIngestion(sb, {
+    const payload = {
       id: memoryId, request_hash: requestHash, family_id: identity.familyId, contributor_id: identity.contributorId,
       memory: { id: memoryId, family_id: identity.familyId, contributor_id: identity.contributorId, kind,
         media_path: path, transcript, caption: visionCaption, summary: extraction.summary, embedding, source_question_id: questionId,
         source: humanSource, verified_facts: verifiedFacts },
       nodes: graph.nodes, edges: graph.edges, provenance: graph.provenance, response,
       source: humanSource,
-    });
+    };
+    // Window closed: hold the prepared payload for family review rather than
+    // committing it. The wearer's experience is unchanged; only what the system
+    // does with the recording differs. Nothing enters the graph until approved,
+    // so no reader anywhere has to filter unreviewed rows.
+    if (identity.isSelf && identity.contributor.self_capture_open === false) {
+      const held = await sb.from("pending_contributions").upsert({
+        id: memoryId, family_id: identity.familyId, contributor_id: identity.contributorId,
+        kind, preview: humanText.trim().slice(0, 2000), media_path: path, payload, state: "pending",
+      }, { onConflict: "id" }).select("id").single();
+      if (held.error) throw held.error;
+      return NextResponse.json({ ...response, pending_review: true });
+    }
+    const result = await commitIngestion(sb, payload);
     return NextResponse.json(result);
   } catch (error) {
     return ingestionError(error);

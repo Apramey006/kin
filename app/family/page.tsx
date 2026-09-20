@@ -9,6 +9,8 @@ import { MemorySceneEntry } from "@/components/MemoryScene";
 import { Recorder } from "@/components/Recorder";
 import { PhotoUploader } from "@/components/PhotoUploader";
 import { WeaverInbox } from "@/components/WeaverInbox";
+import { SelfReviewQueue } from "@/components/SelfReviewQueue";
+import { SelfCaptureToggle } from "@/components/SelfCaptureToggle";
 import { CONFIG } from "@/lib/config";
 import type { SceneData } from "@/lib/memory-scene";
 import type { GraphEdgeRow, GraphNodeRow, MemoryRow, ProvenanceRow, Relative, WeaverQuestionRow } from "@/lib/types";
@@ -211,6 +213,8 @@ function FamilyContent() {
         </div>
       </header>
       <div className="mx-auto max-w-2xl space-y-5 px-4 py-6">
+        <SelfReviewQueue />
+        <SelfCaptureToggle />
         <WeaverInbox me={me} relatives={relatives} onAnswered={() => { loadMyMemories(me.id); loadPersonNodes(); loadScene(); }} />
         {sceneData && <MemorySceneEntry data={sceneData} refresh={refresh} />}
 
