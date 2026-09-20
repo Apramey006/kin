@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "seed": "tsx scripts/seed.ts",
-    "postinstall": "node scripts/copy-face-models.mjs"
+    "postinstall": "node scripts/copy-face-models.mjs",
+    "test:db": "bash scripts/test-db.sh"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.3.11",
