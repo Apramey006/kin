@@ -10,11 +10,13 @@ export function WeaverInbox({
   relatives,
   questions,
   onAnswered,
+  onOpenChange,
 }: {
   me: Relative;
   relatives: Relative[];
   questions: WeaverQuestionRow[];
   onAnswered: () => void;
+  onOpenChange?: (open: boolean) => void;
 }) {
   const [selected, setSelected] = useState<WeaverQuestionRow | null>(null);
   const [busy, setBusy] = useState(false);
@@ -39,6 +41,7 @@ export function WeaverInbox({
       const j = await r.json();
       if (!r.ok) throw new Error(j.error ?? "Your answer couldn’t be saved.");
       setSelected(null);
+      onOpenChange?.(false);
       setSuccess(true);
       onAnswered();
       return true;
@@ -65,7 +68,7 @@ export function WeaverInbox({
           </div>
           <h2>Do you remember?</h2>
           <p>{q.question_text}</p>
-          <Button onClick={() => setSelected(q)}>
+          <Button onClick={() => { setSelected(q); onOpenChange?.(true); }}>
             Share what you remember
             <ArrowRight aria-hidden="true" />
           </Button>
@@ -73,7 +76,7 @@ export function WeaverInbox({
       ))}
       <Sheet
         open={!!selected}
-        onClose={() => setSelected(null)}
+        onClose={() => { setSelected(null); onOpenChange?.(false); }}
         title="Record an answer"
         busy={busy}
       >

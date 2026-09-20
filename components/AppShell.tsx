@@ -10,11 +10,13 @@ import {
   Settings,
   LockKeyhole,
   Users,
+  Headphones,
 } from "lucide-react";
 import { Brand } from "./Brand";
 import { initials, type FamilyData } from "@/lib/family-data";
 const tabs = [
   { href: "/family", label: "Memories", icon: Images },
+  { href: "/stories", label: "Stories", icon: Headphones },
   { href: "/wearer", label: "Recognize", icon: ScanFace },
   { href: "/stage", label: "Connections", icon: Network },
 ];

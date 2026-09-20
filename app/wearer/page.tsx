@@ -187,6 +187,7 @@ export default function Wearer() {
             <p className="small" style={{ marginTop: 20 }}>
               Kin stays quiet when it isn’t sure.
             </p>
+            <Link className="button button-quiet" style={{ marginTop: 16 }} href="/stories"><Headphones aria-hidden="true" /> Listen to family stories</Link>
           </div>
         ) : (
           <>

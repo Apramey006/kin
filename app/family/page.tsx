@@ -115,6 +115,9 @@ export default function FamilyPage() {
               Add a memory
             </Button>
           </header>
+          <Link href="/stories" className="notice" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+            <span><strong>Living Stories</strong> · Hear your family’s memories come together.</span><ArrowRight size={20} aria-hidden="true" />
+          </Link>
           {notice && (
             <p
               className="notice notice-success"

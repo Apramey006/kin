@@ -61,6 +61,7 @@ export const config = {
     "/family/:path*",
     "/stage/:path*",
     "/wearer/:path*",
+    "/stories/:path*",
     "/settings/:path*",
     "/onboarding/:path*",
   ],

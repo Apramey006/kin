@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   UserRound,
@@ -244,6 +245,7 @@ export function FamilyGraph({
                 ].join(", ") || "your family"}
                 .
               </p>
+              <Link className="button button-quiet button-sm" style={{ marginTop: 12 }} href={`/stories?topic=${encodeURIComponent(selectedNode.id)}`}>Hear the story</Link>
             </div>
           )}
         </>
