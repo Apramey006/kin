@@ -3,6 +3,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { test, expect, familyFixture, relativeId } from "./living-stories-fixtures";
 import type { Page } from "@playwright/test";
 import type { FamilyData } from "../lib/family-data";
+import { sceneFixture as coreSceneFixture } from "../tests/fixtures/memory-scene";
 
 
 const topicId = "44444444-4444-4444-8444-444444444444";
@@ -45,6 +46,33 @@ async function mount(page: Page, data: FamilyData) {
 const refresh = (page: Page) => page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
 
 for (const width of [375, 1440]) {
+  test(`Rosa can discover and unfold shared stories at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 1000 });
+    const scene = coreSceneFixture();
+    const data: FamilyData = { ...familyFixture(), ...scene, familyId: scene.relatives[0].family_id, role: "loved_one", relativeId: null, isOwner: false };
+    await page.route("**/api/stories", route => route.fulfill({ json: data }));
+    await signInDemo(page, "/stories", false, data.familyId, "Rosa", data);
+    const entry = page.getByRole("button", { name: /A story to step inside/ });
+    await entry.click();
+    await expect(page.getByRole("dialog", { name: "Sunday lemon cake" })).toBeVisible();
+    await page.locator(".scene-photograph").click();
+    await expect(page.locator(".scene-world")).toHaveClass(/is-unfolded/);
+    await page.getByRole("button", { name: "Explore Maya’s memory", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Maya remembers" })).toBeFocused();
+    await expect(page.locator(".scene-detail")).toContainText("before we even opened the door");
+    await page.getByRole("button", { name: "Close memory details" }).click();
+    await page.getByRole("button", { name: "Explore the missing piece" }).click();
+    await expect(page.locator(".scene-detail")).toContainText("Waiting for David");
+    await expect(page.getByRole("button", { name: "Record the missing piece", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Go to family memories" })).toHaveCount(0);
+    expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).not.toBeVisible();
+    await expect(entry).toBeFocused();
+    await expect(page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Stories", exact: true })).toHaveAttribute("aria-current", "page");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  });
+
   test(`story discovery, sources and listening view are accessible at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 1000 });
     await mount(page, storyFixture());

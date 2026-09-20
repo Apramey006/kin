@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, BookOpen, Check, Headphones, Mic, Plus, Sparkles, Users } from "lucide-react";
 import { FamilyGraph } from "@/components/FamilyGraph";
+import { MemorySceneEntry } from "@/components/MemoryScene";
 import { Recorder } from "@/components/Recorder";
 import { Sheet } from "@/components/Sheet";
 import { WeaverInbox } from "@/components/WeaverInbox";
@@ -27,6 +28,7 @@ export function LivingStories({ data, topicId, refresh }: { data: FamilyData; to
         <p className="muted">Your family’s memories, told in their own voices.</p>
       </div>
     </header>
+    <MemorySceneEntry data={data} refresh={refresh} />
     {topicId && <p className="notice" role="status">That story is no longer available. Explore another family story below.</p>}
     {topics.length ? <>
       <div className={styles.collectionHeading}><h2>Stories to spend time with</h2><span>{topics.length} {topics.length === 1 ? "story" : "stories"}</span></div>

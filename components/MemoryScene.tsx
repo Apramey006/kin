@@ -684,13 +684,13 @@ function ConnectionDetail({
               ? `When ${scene.recipient.name} answers in Memories, the new source will appear here. The connection completes when the answer supplies an origin.`
               : "Add a family recollection or use Connections to find a question."}
           </p>
-          <Link
+          {data.role !== "loved_one" && <Link
             href="/family"
             className="scene-text-link"
             onClick={onReturnToMemories}
           >
             Go to family memories <ArrowUpRight size={15} aria-hidden="true" />
-          </Link>
+          </Link>}
         </div>
       )}
       <p className="scene-source-note">
