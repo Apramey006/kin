@@ -38,3 +38,6 @@ next-env.d.ts
 # playwright
 /test-results/
 /playwright-report/
+
+# internal planning notes, not part of the project
+design_doc.txt
