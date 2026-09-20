@@ -11,10 +11,16 @@ export function WeaverInbox({
   me,
   relatives,
   onAnswered,
+  topicId,
+  providedQuestions,
+  onOpenChange,
 }: {
   me: Relative;
   relatives: Relative[];
   onAnswered?: () => void;
+  topicId?: string;
+  providedQuestions?: WeaverQuestionRow[];
+  onOpenChange?: (open: boolean) => void;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [questions, setQuestions] = useState<WeaverQuestionRow[]>([]);
@@ -22,6 +28,7 @@ export function WeaverInbox({
   const [submittingId, setSubmittingId] = useState<string | null>(null);
 
   useEffect(() => {
+    if (providedQuestions) { setQuestions(providedQuestions.filter(q => q.status === "open" && q.target_relative_id === me.id && (!topicId || q.gap_node_id === topicId))); return; }
     const sb = getAnonClient();
     if (!sb) return;
     let cancelled = false;
@@ -34,7 +41,7 @@ export function WeaverInbox({
         .eq("status", "open")
         .order("created_at", { ascending: false });
       if (failure) { if (!cancelled) setError("Could not load your questions. Please refresh."); return; }
-      if (!cancelled) setQuestions((data ?? []) as WeaverQuestionRow[]);
+      if (!cancelled) setQuestions(((data ?? []) as WeaverQuestionRow[]).filter(q => !topicId || q.gap_node_id === topicId));
     };
     load();
     const channel = sb
@@ -54,7 +61,7 @@ export function WeaverInbox({
       cancelled = true;
       sb.removeChannel(channel);
     };
-  }, [me.id, me.family_id]);
+  }, [me.id, me.family_id, topicId, providedQuestions]);
 
   if (!questions.length && !Object.keys(answered).length && !error) return null;
 
@@ -82,7 +89,8 @@ export function WeaverInbox({
   };
 
   return (
-    <section className="animate-fade-up rounded-2xl border border-primary/25 bg-primary-soft p-5">
+    <section onFocusCapture={() => onOpenChange?.(true)} onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) onOpenChange?.(false); }}
+      className="animate-fade-up rounded-2xl border border-primary/25 bg-primary-soft p-5">
       <div className="mb-3 flex items-center gap-2">
         <Sparkles className="h-[18px] w-[18px] text-primary" aria-hidden />
         <h2 className="text-lg font-semibold text-primary-deep">Kin is asking you</h2>

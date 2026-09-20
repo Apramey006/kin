@@ -185,3 +185,7 @@ is not verified. Details and exact command outcomes are in KNOWN_ISSUES.md.
   evidence agrees, SILENT otherwise. There is no "I think this might be..."
 - **Not a medical device.** No clinical claims, no reminders, no tracking.
   Just the family, remembering together.
+
+## Living Stories
+
+Open `/stories` to hear source-grounded chapters across family voices. See [Living Stories setup and playback](docs/living-stories.md).

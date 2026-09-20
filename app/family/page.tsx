@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 
 import { useEffect, useState, useCallback } from "react";
 import { getAnonClient } from "@/lib/supabase";
@@ -209,6 +210,7 @@ function FamilyContent() {
             </h1>
             <p className="truncate text-sm text-ink/50">{me.relation_to_wearer}</p>
           </div>
+          <Link className="underline text-sm" href="/stories">Living Stories</Link>
           <SignOutButton />
         </div>
       </header>

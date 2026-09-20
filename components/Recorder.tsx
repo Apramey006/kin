@@ -16,15 +16,23 @@ export function Recorder({
   maxSeconds = 60,
   label = "Record",
   disabled = false,
+  previewBeforeSave = false,
 }: {
   onRecorded: (blob: Blob, mimeType: string) => void;
   maxSeconds?: number;
   label?: string;
   disabled?: boolean;
+  previewBeforeSave?: boolean;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
   const [lastRecording, setLastRecording] = useState<Blob | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!previewBeforeSave || !lastRecording) return;
+    const url = URL.createObjectURL(lastRecording); setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [lastRecording, previewBeforeSave]);
   const active = useRef(true);
   const streamRef = useRef<MediaStream | null>(null);
   const [recording, setRecording] = useState(false);
@@ -69,7 +77,7 @@ export function Recorder({
       const blob = new Blob(chunksRef.current, {
         type: rec.mimeType || mime || "audio/webm",
       });
-      if (active.current && blob.size) { setLastRecording(blob); onRecorded(blob, blob.type); }
+      if (active.current && blob.size) { setLastRecording(blob); if (!previewBeforeSave) onRecorded(blob, blob.type); }
     };
     recorderRef.current = rec;
     rec.start();
@@ -95,6 +103,7 @@ export function Recorder({
     <div className="flex flex-wrap items-center gap-4">
       {recording ? (
         <Button
+          aria-label="Stop recording"
           onClick={stop}
           size="lg"
           variant="outline"
@@ -111,7 +120,8 @@ export function Recorder({
           <Mic className="h-5 w-5" /> {starting ? "Opening microphone…" : label}
         </Button>
       )}
-      {!recording && lastRecording && <Button variant="outline" disabled={disabled || starting} onClick={() => onRecorded(lastRecording, lastRecording.type)}>Send recording again</Button>}
+      {!recording && previewUrl && <audio controls src={previewUrl} aria-label="Preview your recording" />}
+      {!recording && lastRecording && <Button variant="outline" disabled={disabled || starting} onClick={() => onRecorded(lastRecording, lastRecording.type)}>{previewBeforeSave ? "Save memory" : "Send recording again"}</Button>}
       {error && <p role="alert" className="w-full text-sm text-amber-700">{error}</p>}
       {recording && (
         <div className="flex min-w-[8rem] flex-1 items-center gap-2">

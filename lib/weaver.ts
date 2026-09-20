@@ -125,8 +125,8 @@ export function gapScore(d: WeaverData, gap: Gap): number {
   return degree + 2 * contributorsOf(d, gap.nodeId).size;
 }
 
-export function pickTopGap(d: WeaverData): Gap | null {
-  const gaps = findGaps(d);
+export function pickTopGap(d: WeaverData, openGaps: Gap[] = [], topicId?: string): Gap | null {
+  const gaps = findGaps(d).filter(gap => (!topicId || gap.nodeId === topicId) && !openGaps.some(open => open.nodeId === gap.nodeId && open.type === gap.type));
   if (!gaps.length) return null;
   return gaps.sort((a, b) => {
     const diff = gapScore(d, b) - gapScore(d, a);
@@ -204,7 +204,8 @@ const questionZod = z.object({ question: z.string() });
 /** Full DB-backed Weaver run: detect gap, pick target, phrase, insert. */
 export async function runWeaver(
   sb: SupabaseClient,
-  familyId: string
+  familyId: string,
+  topicId?: string,
 ): Promise<{ question: Record<string, unknown> | null; gap: Gap | null;
   reason: "created" | "existing_open" | "no_gap" | "no_target" }> {
   const [nodes, edges, prov, mems, faces, relatives, questions, wearer] =
@@ -239,7 +240,7 @@ export async function runWeaver(
     ),
   };
 
-  const gap = pickTopGap(data);
+  const gap = pickTopGap(data, [], topicId);
   if (!gap) return { question: null, gap: null, reason: "no_gap" };
   const existing = (questions.data ?? []).find((q) => q.gap_node_id === gap.nodeId && q.gap_type === gap.type);
   if (existing) return { question: existing, gap, reason: "existing_open" };

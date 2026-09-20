@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 
 import { useEffect, useRef, useState } from "react";
 import { getAnonClient } from "@/lib/supabase";
@@ -157,6 +158,7 @@ function WearerContent() {
         {wearerName && (
           <span className="text-lg text-white/50">{wearerName}</span>
         )}
+        <Link className="underline text-sm" href="/stories">Living Stories</Link>
         <SignOutButton />
       </header>
 
