@@ -4,7 +4,7 @@ const config = getDefaultConfig(__dirname);
 
 // Add support for @ imports
 config.watchFolders = [__dirname];
-config.resolver.sourceExts = ['ts', 'tsx', 'js', 'jsx'];
+config.resolver.sourceExts = [...new Set([...config.resolver.sourceExts, 'ts', 'tsx', 'js', 'jsx'])];
 
 // Improve performance and fix QR code loading issues
 config.maxWorkers = 2;

@@ -30,7 +30,8 @@
         {
           "photosPermission": "Kin needs access to your photos to add family memories."
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "ios": {
       "supportsTablet": true
