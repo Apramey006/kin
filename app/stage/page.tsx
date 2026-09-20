@@ -101,7 +101,7 @@ function StageContent() {
     const sb = getAnonClient();
     if (!sb) return;
     const [mems, qs] = await Promise.all([
-      sb.from("memories").select("*").eq("family_id", familyId),
+      sb.from("memories").select("id,family_id,contributor_id,kind,media_path,transcript,caption,summary,source_question_id,created_at").eq("family_id", familyId),
       sb.from("weaver_questions").select("*").eq("family_id", familyId),
     ]);
     if (mems.error || qs.error) return;

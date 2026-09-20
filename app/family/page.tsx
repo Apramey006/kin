@@ -41,7 +41,7 @@ function FamilyContent() {
     if (!sb) return;
     const [rels, mems, ns, es, ps, qs] = await Promise.all([
       sb.from("relatives").select("*").eq("family_id", familyId),
-      sb.from("memories").select("*").eq("family_id", familyId),
+      sb.from("memories").select("id,family_id,contributor_id,kind,media_path,transcript,caption,summary,source_question_id,created_at").eq("family_id", familyId),
       sb.from("graph_nodes").select("*").eq("family_id", familyId),
       sb.from("graph_edges").select("*").eq("family_id", familyId),
       sb.from("provenance").select("*"),

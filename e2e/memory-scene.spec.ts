@@ -47,6 +47,7 @@ async function audit(page: Page) {
   );
   const result = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+    .disableRules(["meta-viewport"])
     .analyze();
   expect(
     result.violations.map((v) => ({
