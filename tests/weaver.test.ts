@@ -21,6 +21,12 @@ const nodes = [
   node("book", "object", "Nana's recipe book"),
 ];
 
+it("keeps a story-specific question on the requested topic", () => {
+  expect(pickTopGap(seeded, [], "book")?.nodeId).toBe("book");
+  expect(pickTopGap(seeded, [], "unknown")).toBeNull();
+  expect(pickTopGap(seeded, [{ nodeId: "book", type: "orphan_object" }], "book")).toBeNull();
+});
+
 const edge = (id: string, from: string, rel: string, to: string): GraphEdgeRow => ({
   id, family_id: "demo", from_node: from, rel, to_node: to,
 });

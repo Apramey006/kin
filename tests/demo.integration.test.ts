@@ -130,7 +130,7 @@ describe.skipIf(!enabled)("demo loop with real database and mocked providers", (
     expect(unknown.audio).toBeUndefined();
     expect((await json(await replayTarget())).lastEventId).toBe(known.eventId);
 
-    const question = (await json(await weaver())).question;
+    const question = (await json(await weaver(new Request("http://localhost/api/weaver/run", { method: "POST" })))).question;
     expect(question.target_relative_id).toBe(seeded.relatives.david);
     expect(question.gap_type).toBe("missing_origin");
     const answered = await json(await answer(formRequest({ contributor_id: seeded.relatives.david, question_id: question.id },
