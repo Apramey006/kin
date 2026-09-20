@@ -49,6 +49,7 @@ function database() {
         // Model a project that has only migrations 001–006 applied.
         if (table === "relatives" && columns.split(",").includes("is_self")) return { data: null, error: { code: "42703" } };
         if (table === state.errorTable) return { data: null, error: { code: "DB_ERROR" } };
+        if (table === "graph_nodes") return { data: [{ id: "nora", label: "Nora" }], error: null };
         if (table === "relatives") return { data: [{ id: MAYA, family_id: "670f5075-c286-4b29-8074-86401c18d0c0", name: "Maya", color: "gold" }, { id: ELENA, family_id: "670f5075-c286-4b29-8074-86401c18d0c0", name: "Elena", color: "pink" }], error: null };
         if (table === "memories") return { data: state.memories, error: null };
         if (table === "recall_events") {

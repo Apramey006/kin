@@ -10,16 +10,16 @@ const config: Config = {
     extend: {
       colors: {
         paper: {
-          DEFAULT: "#FBF8F3",
+          DEFAULT: "#F5F5F7",
           deep: "#F4EFE6",
           card: "#FFFFFF",
         },
         ink: {
-          DEFAULT: "#1F1B16",
+          DEFAULT: "#1D1D1F",
           soft: "#524B41",
         },
         primary: {
-          DEFAULT: "#2F5D50",
+          DEFAULT: "#0066CC",
           soft: "#F0F4F2",
           deep: "#23453C",
         },

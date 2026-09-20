@@ -1,327 +1,414 @@
 "use client";
-
-import { useEffect, useState, useCallback } from "react";
-import { getAnonClient } from "@/lib/supabase";
-import { AuthBoundary, useKinAuth, authenticatedFetch, responseJSON, contributionKey, SignOutButton } from "@/lib/client-auth";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ImagePlus, Mic, BookHeart } from "lucide-react";
-import { MemorySceneEntry } from "@/components/MemoryScene";
-import { Recorder } from "@/components/Recorder";
-import { PhotoUploader } from "@/components/PhotoUploader";
-import { WeaverInbox } from "@/components/WeaverInbox";
-import { SelfReviewQueue } from "@/components/SelfReviewQueue";
+import Link from "next/link";
+import { useState } from "react";
+import {
+  Plus,
+  ImagePlus,
+  Mic,
+  ArrowRight,
+  Heart,
+  Trash2,
+  Image as ImageIcon,
+  MessageCircle,
+  Images,
+} from "lucide-react";
+import { AppShell, LoadingView, PrivacyNote } from "@/components/AppShell";
+import { Button } from "@/components/ui/button";
 import { SelfCaptureToggle } from "@/components/SelfCaptureToggle";
-import { CONFIG } from "@/lib/config";
-import type { SceneData } from "@/lib/memory-scene";
-import type { GraphEdgeRow, GraphNodeRow, MemoryRow, ProvenanceRow, Relative, WeaverQuestionRow } from "@/lib/types";
-
-interface Chip {
-  label: string;
-  type: string;
-  relation_to_wearer: string | null;
-}
-
-export default function FamilyPage() { return <AuthBoundary contributorOnly><FamilyContent /></AuthBoundary>; }
-
-function FamilyContent() {
-  const { familyId, contributorId, role } = useKinAuth();
-  const [relatives, setRelatives] = useState<Relative[]>([]);
-  const [personNodes, setPersonNodes] = useState<GraphNodeRow[]>([]);
-  const [me, setMe] = useState<Relative | null>(null);
-  const [myMemories, setMyMemories] = useState<MemoryRow[]>([]);
-  const [storyResult, setStoryResult] = useState<{
-    transcript: string;
-    entities: Chip[];
-  } | null>(null);
+import { SelfReviewQueue } from "@/components/SelfReviewQueue";
+import { contributionKey } from "@/lib/client-auth";
+import { MemorySceneEntry } from "@/components/MemoryScene";
+import { Sheet } from "@/components/Sheet";
+import { PhotoUploader } from "@/components/PhotoUploader";
+import { Recorder } from "@/components/Recorder";
+import { WeaverInbox } from "@/components/WeaverInbox";
+import {
+  useFamilyData,
+  initials,
+  relativeTime,
+  type FamilyData,
+} from "@/lib/family-data";
+type Memory = FamilyData["memories"][number];
+export default function FamilyPage() {
+  const { data, error, loading, refresh } = useFamilyData();
+  const [compose, setCompose] = useState<"choose" | "photo" | "story" | null>(
+    null,
+  );
+  const [filter, setFilter] = useState("all");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [notConfigured, setNotConfigured] = useState(false);
-  const [sceneData, setSceneData] = useState<SceneData | null>(null);
-
-  const loadScene = useCallback(async () => {
-    const sb = getAnonClient();
-    if (!sb) return;
-    const [rels, mems, ns, es, ps, qs] = await Promise.all([
-      sb.from("relatives").select("*").eq("family_id", familyId),
-      sb.from("memories").select("id,family_id,contributor_id,kind,media_path,transcript,caption,summary,source_question_id,created_at").eq("family_id", familyId),
-      sb.from("graph_nodes").select("*").eq("family_id", familyId),
-      sb.from("graph_edges").select("*").eq("family_id", familyId),
-      sb.from("provenance").select("*"),
-      sb.from("weaver_questions").select("*").eq("family_id", familyId),
-    ]);
-    if (rels.error || mems.error || ns.error || es.error || ps.error || qs.error) return;
-    const memories = (mems.data ?? []) as MemoryRow[];
-    const paths = memories.map((m) => m.media_path).filter((p): p is string => !!p);
-    const urls = new Map<string, string>();
-    if (paths.length) {
-      const { data: signed } = await sb.storage.from(CONFIG.storageBucket).createSignedUrls(paths, 3600);
-      signed?.forEach((entry, i) => {
-        if (entry?.signedUrl) urls.set(paths[i], entry.signedUrl);
-      });
-    }
-    setSceneData({
-      relatives: (rels.data ?? []) as Relative[],
-      memories: memories.map((m) => ({ ...m, mediaUrl: m.media_path ? (urls.get(m.media_path) ?? null) : null })),
-      nodes: (ns.data ?? []) as GraphNodeRow[],
-      edges: (es.data ?? []) as GraphEdgeRow[],
-      provenance: (ps.data ?? []) as ProvenanceRow[],
-      questions: (qs.data ?? []) as WeaverQuestionRow[],
-      relativeId: contributorId,
-      role,
-    });
-  }, [familyId, contributorId, role]);
-
-  const loadPersonNodes = useCallback(async () => {
-    const sb = getAnonClient();
-    if (!sb) return;
-    const { data, error: failure } = await sb
-      .from("graph_nodes")
-      .select("*")
-      .eq("family_id", familyId)
-      .eq("type", "person");
-    if (failure) { setError("Could not load family people. Please refresh."); return; }
-    setPersonNodes((data ?? []) as GraphNodeRow[]);
-  }, [familyId]);
-
-  useEffect(() => {
-    const sb = getAnonClient();
-    if (!sb) {
-      setNotConfigured(true);
-      return;
-    }
-    (async () => {
-      const { data: rels, error: failure } = await sb
-        .from("relatives")
-        .select("*")
-        .eq("family_id", familyId);
-      if (failure) { setError("Could not load family membership. Please refresh."); return; }
-      const sorted = ((rels ?? []) as Relative[]).sort((a, b) =>
-        a.name.localeCompare(b.name)
-      );
-      setRelatives(sorted);
-      setMe(sorted.find((relative) => relative.id === contributorId) ?? null);
-      if (!sorted.some((relative) => relative.id === contributorId)) setError("Your family membership is not available. Ask the demo owner to run the seed.");
-    })();
-    loadPersonNodes();
-    loadScene();
-    const channel = sb
-      .channel("family-graph-nodes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "graph_nodes", filter: `family_id=eq.${familyId}` },
-        () => loadPersonNodes()
-      )
-      .subscribe();
-    return () => {
-      sb.removeChannel(channel);
-    };
-  }, [loadPersonNodes, loadScene, familyId, contributorId]);
-
-  const loadMyMemories = useCallback(async (id: string) => {
-    const sb = getAnonClient();
-    if (!sb) return;
-    const { data, error: failure } = await sb
-      .from("memories")
-      .select("id, kind, summary, caption, transcript, created_at")
-      .eq("family_id", familyId)
-      .eq("contributor_id", id)
-      .order("created_at", { ascending: false });
-    if (failure) { setError("Could not load your memories. Please refresh."); return; }
-    setMyMemories((data ?? []) as MemoryRow[]);
-  }, [familyId]);
-
-  useEffect(() => {
-    if (me) loadMyMemories(me.id);
-  }, [me, loadMyMemories]);
-
-  const refresh = useCallback(async () => {
-    await Promise.all([
-      loadScene(),
-      loadPersonNodes(),
-      me ? loadMyMemories(me.id) : Promise.resolve(),
-    ]);
-  }, [loadScene, loadPersonNodes, loadMyMemories, me]);
-
-  const submitStory = async (blob: Blob, mime: string) => {
-    if (!me) return;
+  const [deleting, setDeleting] = useState<Memory | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const me = data?.relatives.find((r) => r.id === data.relativeId);
+  const saveStory = async (blob: Blob, mime: string) => {
+    if (!me) return false;
     setBusy(true);
-    setError(null);
-    setStoryResult(null);
     try {
       const fd = new FormData();
       fd.append(
         "file",
-        new File([blob], `story.${mime.includes("mp4") ? "m4a" : "webm"}`, { type: mime })
+        new File([blob], `story.${mime.includes("mp4") ? "m4a" : "webm"}`, {
+          type: mime,
+        }),
       );
       fd.append("contributor_id", me.id);
-      const json = await responseJSON(await authenticatedFetch("/api/memories/story", { method: "POST", body: fd, headers: { "Idempotency-Key": await contributionKey(blob, [me.id, mime]) } }));
-      setStoryResult({ transcript: json.transcript, entities: json.entities });
-      loadMyMemories(me.id);
-      loadPersonNodes();
-      loadScene();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "story failed");
+      const r = await fetch("/api/memories/story", {
+        method: "POST",
+        body: fd,
+        headers: { "Idempotency-Key": await contributionKey(blob, [me.id, mime]) },
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error ?? "Your memory couldn’t be saved.");
+      setCompose(null);
+      setNotice("Voice memory saved.");
+      await refresh();
+      return true;
     } finally {
       setBusy(false);
     }
   };
-
-  if (notConfigured) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-paper p-6">
-        <Card className="max-w-md">
-          <CardHeader>
-            <CardTitle>Kin needs its keys</CardTitle>
-            <CardDescription>One step before the family can start.</CardDescription>
-          </CardHeader>
-          <CardContent className="text-ink/70">
-            Supabase is not configured. Copy{" "}
-            <code className="rounded bg-ink/[0.06] px-1.5 py-0.5 font-mono text-sm">
-              .env.example
-            </code>{" "}
-            to{" "}
-            <code className="rounded bg-ink/[0.06] px-1.5 py-0.5 font-mono text-sm">
-              .env.local
-            </code>{" "}
-            and fill in the keys, then run the seed.
-          </CardContent>
-        </Card>
-      </main>
-    );
-  }
-
-  if (!me) return <main className="min-h-screen bg-paper p-6"><p role="status">{error ?? "Loading your family…"}</p><SignOutButton /></main>;
-
+  const remove = async () => {
+    if (!deleting || !me) return;
+    setBusy(true);
+    setActionError(null);
+    try {
+      const r = await fetch(
+        `/api/memories/${deleting.id}?contributor_id=${me.id}`,
+        { method: "DELETE" },
+      );
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error ?? "Could not delete this memory.");
+      setDeleting(null);
+      setNotice("Memory and its upload deleted.");
+      await refresh();
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
+  const memories =
+    data?.memories.filter(
+      (m) =>
+        filter === "all" ||
+        (filter === "mine" && m.contributor_id === me?.id) ||
+        (filter === "photos" && m.kind === "photo") ||
+        (filter === "stories" && m.kind !== "photo"),
+    ) ?? [];
   return (
-    <main className="min-h-screen bg-paper pb-16">
-      <header className="sticky top-0 z-10 border-b border-ink/[0.07] bg-paper/85 backdrop-blur-md">
-        <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-3.5">
-          <span
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-base font-semibold text-white"
-            style={{ background: me.color }}
-            aria-hidden
-          >
-            {me.name.trim().charAt(0).toUpperCase()}
-          </span>
-          <div className="min-w-0 flex-1">
-            <h1 className="truncate text-lg font-semibold leading-tight">
-              Hi, {me.name}
-            </h1>
-            <p className="truncate text-sm text-ink/50">{me.relation_to_wearer}</p>
+    <AppShell data={data}>
+      {loading ? (
+        <LoadingView />
+      ) : !data || !me ? (
+        <div className="empty-state">
+          <div className="empty-icon">
+            <Heart aria-hidden="true" />
           </div>
-          <SignOutButton />
+          <h1>Your family is close by.</h1>
+          <p role="alert">{error ?? "We’re getting your family ready."}</p>
+          <Button onClick={refresh}>Try again</Button>
         </div>
-      </header>
-      <div className="mx-auto max-w-2xl space-y-5 px-4 py-6">
-        <SelfReviewQueue />
-        <SelfCaptureToggle />
-        <WeaverInbox me={me} relatives={relatives} onAnswered={() => { loadMyMemories(me.id); loadPersonNodes(); loadScene(); }} />
-        {sceneData && <MemorySceneEntry data={sceneData} refresh={refresh} />}
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ImagePlus className="h-[18px] w-[18px] text-primary" />
-              Add a photo
-            </CardTitle>
-            <CardDescription>
-              Kin learns faces only from photos you label.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <PhotoUploader
-              contributorId={me.id}
-              personNodes={personNodes}
-              onDone={() => {
-                loadMyMemories(me.id);
-                loadPersonNodes();
-                loadScene();
-              }}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Mic className="h-[18px] w-[18px] text-primary" />
-              Record a story
-            </CardTitle>
-            <CardDescription>
-              Say it the way you would tell it. Up to a minute.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Recorder onRecorded={submitStory} label="Record a memory" disabled={busy} />
-            {busy && (
-              <p className="flex items-center gap-2 text-ink/55">
-                <span className="kin-pulse h-2 w-2 rounded-full bg-primary" />
-                Kin is listening to your story…
-              </p>
-            )}
-            {storyResult && (
-              <div className="animate-fade-up rounded-2xl border border-ink/[0.07] bg-paper-deep p-4">
-                <p className="mb-3 leading-relaxed text-ink/80">
-                  {storyResult.transcript}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {storyResult.entities.map((c, i) => (
-                    <span
-                      key={i}
-                      className="rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary"
-                    >
-                      {c.label}
-                      {c.relation_to_wearer && c.relation_to_wearer !== "self"
-                        ? ` · ${c.relation_to_wearer}`
-                        : ""}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {error && (
-              <p role="alert" className="text-sm font-medium text-amber-700">
-                {error}
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BookHeart className="h-[18px] w-[18px] text-primary" />
-              My memories
-            </CardTitle>
-            <CardDescription>
-              {myMemories.length
-                ? `${myMemories.length} shared with the family`
-                : "Nothing shared yet"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {!myMemories.length ? (
-              <p className="rounded-2xl border border-dashed border-ink/15 px-5 py-8 text-center text-ink/45">
-                Nothing yet. Your stories will live here.
-              </p>
-            ) : (
-              <ul className="space-y-2.5">
-                {myMemories.map((m) => (
-                  <li
-                    key={m.id}
-                    className="rounded-2xl border border-ink/[0.07] bg-paper-deep px-4 py-3"
+      ) : (
+        <>
+          <header className="page-header library-header">
+            <div>
+              <h1>Memories</h1>
+              <p className="muted">{data.wearer.name}’s family library</p>
+            </div>
+            <Button onClick={() => setCompose("choose")}>
+              <Plus aria-hidden="true" />
+              Add a memory
+            </Button>
+          </header>
+          {notice && (
+            <p
+              className="notice notice-success"
+              role="status"
+              style={{ marginBottom: 24 }}
+            >
+              {notice}
+            </p>
+          )}
+          {error && (
+            <p
+              className="notice notice-error"
+              role="alert"
+              style={{ marginBottom: 24 }}
+            >
+              {error}
+            </p>
+          )}
+          <MemorySceneEntry data={data} refresh={refresh} />
+          <SelfReviewQueue wearerName={data.wearer.name} onChanged={refresh} />
+          <SelfCaptureToggle />
+          <div className="family-layout">
+            <div className="family-primary">
+              <WeaverInbox
+                me={me}
+                relatives={data.relatives}
+                questions={data.questions}
+                onAnswered={refresh}
+              />
+              <div
+                className="segmented"
+                role="group"
+                aria-label="Filter memories"
+              >
+                {[
+                  ["all", "All"],
+                  ["photos", "Photos"],
+                  ["stories", "Stories"],
+                  ["mine", "By you"],
+                ].map(([value, label]) => (
+                  <button
+                    key={value}
+                    onClick={() => setFilter(value)}
+                    aria-pressed={filter === value}
                   >
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink/40">
-                      {m.kind}
-                    </span>
-                    <p className="mt-0.5 leading-relaxed text-ink/85">{m.summary}</p>
-                  </li>
+                    {label}
+                  </button>
                 ))}
-              </ul>
+              </div>
+              {memories.length ? (
+                <div className="memory-grid">
+                  {memories.map((m) => {
+                    const owner = data.relatives.find(
+                      (r) => r.id === m.contributor_id,
+                    );
+                    return (
+                      <article className="memory-card animate-in" key={m.id}>
+                        {m.kind === "photo" && m.mediaUrl && (
+                          <>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              className="memory-image"
+                              src={m.mediaUrl}
+                              alt={
+                                m.caption || "A photo shared with your family"
+                              }
+                              loading="lazy"
+                            />
+                          </>
+                        )}
+                        <div className="memory-card-content">
+                          <div className="memory-card-meta">
+                            <span className="avatar">
+                              {initials(owner?.name ?? "Family")}
+                            </span>
+                            <div>
+                              <strong>
+                                {owner?.name ?? "Your family"}
+                                {m.contributor_id === me.id ? " · You" : ""}
+                              </strong>
+                              <time dateTime={m.created_at}>
+                                {relativeTime(m.created_at)}
+                              </time>
+                            </div>
+                            <span
+                              className="memory-kind"
+                              aria-label={
+                                m.kind === "photo"
+                                  ? "Photo"
+                                  : m.kind === "answer"
+                                    ? "Answer"
+                                    : "Voice memory"
+                              }
+                            >
+                              {m.kind === "photo" ? (
+                                <ImageIcon aria-hidden="true" />
+                              ) : m.kind === "answer" ? (
+                                <MessageCircle aria-hidden="true" />
+                              ) : (
+                                <Mic aria-hidden="true" />
+                              )}
+                            </span>
+                          </div>
+                          {m.transcript ? (
+                            <p className="memory-quote">“{m.transcript}”</p>
+                          ) : (
+                            <p className="memory-caption">{m.summary}</p>
+                          )}
+                          {m.mediaUrl && m.kind !== "photo" && (
+                            <audio
+                              controls
+                              preload="none"
+                              src={m.mediaUrl}
+                              aria-label={`Listen to ${owner?.name ?? "your relative"}’s memory`}
+                            />
+                          )}
+                          <div className="memory-card-actions">
+                            <span className="pill pill-neutral">
+                              {m.kind === "answer"
+                                ? "A missing piece"
+                                : m.kind === "photo"
+                                  ? "A familiar moment"
+                                  : "In their words"}
+                            </span>
+                            {m.contributor_id === me.id && (
+                              <button
+                                className="button button-quiet button-sm"
+                                onClick={() => {
+                                  setDeleting(m);
+                                  setActionError(null);
+                                }}
+                                aria-label={`Delete memory: ${m.summary}`}
+                              >
+                                <Trash2 size={16} aria-hidden="true" />
+                                <span className="sr-only">Delete</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="library-empty">
+                  <div className="empty-photo-stack" aria-hidden="true">
+                    <span />
+                    <span />
+                    <span>
+                      <Images />
+                    </span>
+                  </div>
+                  <h2>
+                    {data.memories.length
+                      ? "No memories in this view"
+                      : "Your memories belong here."}
+                  </h2>
+                  <p>
+                    {data.memories.length
+                      ? "Choose a different view, or add a memory."
+                      : `Add a photo or record a story for ${data.wearer.name}. Your family can add theirs, too.`}
+                  </p>
+                  <Button variant="ghost" onClick={() => setCompose("choose")}>
+                    {data.memories.length
+                      ? "Add a memory"
+                      : "Add your first memory"}
+                    <Plus aria-hidden="true" />
+                  </Button>
+                  {!data.memories.length && (
+                    <Link className="text-link" href="/settings#invite-heading">
+                      Invite family
+                    </Link>
+                  )}
+                </div>
+              )}
+              {!!data.memories.length && (
+                <p className="library-count">
+                  {data.memories.length}{" "}
+                  {data.memories.length === 1 ? "memory" : "memories"} · Shared
+                  with {data.relatives.length}{" "}
+                  {data.relatives.length === 1 ? "person" : "people"}
+                </p>
+              )}
+            </div>
+          </div>
+          <PrivacyNote />
+          <Sheet
+            open={!!compose}
+            onClose={() => setCompose(null)}
+            busy={busy}
+            title={
+              compose === "photo"
+                ? "Add photo"
+                : compose === "story"
+                  ? "Record a memory"
+                  : "Add a memory"
+            }
+          >
+            {compose === "choose" ? (
+              <>
+                <p className="sheet-intro">Choose a photo or record a story.</p>
+                <div className="stack">
+                  <button
+                    className="choice-card"
+                    onClick={() => setCompose("photo")}
+                  >
+                    <ImagePlus aria-hidden="true" />
+                    <span>
+                      <strong>A photo</strong>
+                      <small>Label the people in a family photo.</small>
+                    </span>
+                    <ArrowRight aria-hidden="true" />
+                  </button>
+                  <button
+                    className="choice-card"
+                    onClick={() => setCompose("story")}
+                  >
+                    <Mic aria-hidden="true" />
+                    <span>
+                      <strong>A voice memory</strong>
+                      <small>Record a story in your own words.</small>
+                    </span>
+                    <ArrowRight aria-hidden="true" />
+                  </button>
+                </div>
+              </>
+            ) : compose === "photo" ? (
+              <PhotoUploader
+                onBusy={setBusy}
+                contributorId={me.id}
+                personNodes={data.nodes.filter((n) => n.type === "person")}
+                onDone={() => {
+                  setCompose(null);
+                  setNotice(
+                    "Your photo is now part of your family’s memories.",
+                  );
+                  refresh();
+                }}
+              />
+            ) : (
+              <>
+                <p className="sheet-intro">
+                  Say who you’re remembering and a little thing that makes them
+                  special.
+                </p>
+                <Recorder
+                  label="Record a memory"
+                  onRecorded={saveStory}
+                  disabled={busy}
+                />
+              </>
             )}
-          </CardContent>
-        </Card>
-      </div>
-    </main>
+          </Sheet>
+          <Sheet
+            open={!!deleting}
+            onClose={() => setDeleting(null)}
+            title="Delete this memory?"
+            busy={busy}
+          >
+            <p className="sheet-intro">
+              Its photo or recording and face labels will be removed, too. Other
+              family memories will stay. This can’t be undone.
+            </p>
+            {actionError && (
+              <p className="notice notice-error" role="alert">
+                {actionError}
+              </p>
+            )}
+            <div className="row" style={{ marginTop: 24 }}>
+              <Button
+                className="full"
+                variant="outline"
+                onClick={() => setDeleting(null)}
+                disabled={busy}
+              >
+                Keep memory
+              </Button>
+              <Button
+                className="full"
+                variant="danger"
+                onClick={remove}
+                disabled={busy}
+              >
+                {busy ? "Deleting…" : "Delete memory"}
+              </Button>
+            </div>
+          </Sheet>
+        </>
+      )}
+    </AppShell>
   );
 }

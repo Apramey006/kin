@@ -19,7 +19,8 @@ export async function authenticatedFetch(input: RequestInfo | URL, init: Request
   const { data, error } = sb ? await sb.auth.getSession() : { data: { session: null }, error: null };
   if (error || !data.session) throw new Error("Please sign in again before continuing.");
   const headers = new Headers(init.headers);
-  headers.set("Authorization", `Bearer ${data.session.access_token}`);
+  if (typeof data.session.user.app_metadata.kin_family_id === "string")
+    headers.set("Authorization", `Bearer ${data.session.access_token}`);
   return fetch(input, { ...init, headers });
 }
 
@@ -60,7 +61,22 @@ export function AuthBoundary({ children, contributorOnly = false }: { children: 
     const { data } = sb.auth.onAuthStateChange((_event, next) => { if (active) { setSession(next); setLoading(false); } });
     return () => { active = false; data.subscription.unsubscribe(); };
   }, []);
+  const [account, setAccount] = useState<Membership | null>(null);
+  useEffect(() => {
+    if (!session) { setAccount(null); return; }
+    let active=true;
+    fetch("/api/account").then(responseJSON).then(data => {
+      const m=data.membership;
+      if(active && m) setAccount({familyId:m.family_id,contributorId:m.relative_id,
+        role:m.role === "loved_one" ? "wearer" : "contributor",admin:false});
+    }).catch(()=>{});
+    return ()=>{active=false};
+  },[session]);
   const claims = session?.user.app_metadata;
+  if(account && typeof claims?.kin_family_id !== "string") {
+    if(contributorOnly && account.role === "wearer") return <main className="p-8"><Link href="/wearer">Open recognition</Link></main>;
+    return <MembershipContext.Provider key={session?.user.id} value={account}>{children}</MembershipContext.Provider>;
+  }
   if (session && typeof claims?.kin_family_id === "string" && (typeof claims?.kin_contributor_id === "string" || claims?.kin_role === "wearer")) {
     if (contributorOnly && claims.kin_role === "wearer") return <main className="p-8 space-y-4"><h1>Welcome, Rosa</h1><Link className="block underline" href="/wearer">Open recognition</Link><SignOutButton /></main>;
     return <MembershipContext.Provider key={session.user.id} value={{ familyId: claims.kin_family_id, contributorId: claims.kin_role === "wearer" ? null : claims.kin_contributor_id, admin: claims.kin_role !== "wearer" && claims.kin_admin === true, role: claims.kin_role ?? "contributor" }}>{children}</MembershipContext.Provider>;

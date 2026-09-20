@@ -1,216 +1,277 @@
 "use client";
-
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { getAnonClient } from "@/lib/supabase";
-import { AuthBoundary, useKinAuth, authenticatedFetch, responseJSON, SignOutButton } from "@/lib/client-auth";
+import {
+  ArrowLeft,
+  Settings,
+  Camera,
+  ScanFace,
+  Headphones,
+  Volume2,
+  RotateCcw,
+} from "lucide-react";
+import { Brand } from "@/components/Brand";
+import { Preferences } from "@/components/AppShell";
+import { Button } from "@/components/ui/button";
+import { useFamilyData } from "@/lib/family-data";
+
+import { SILENT_AUDIO, unlockAudio, playCue, stopCue } from "@/lib/audio";
+import { authenticatedFetch } from "@/lib/client-auth";
 import { CONFIG } from "@/lib/config";
-
-// Tiny silent MP3 used to unlock audio playback inside the tap handler (iOS).
-const SILENT_MP3 =
-  "data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAADhAC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7////////////////////////////////////////////////////////////////AAAAAExhdmM1OC4xMwAAAAAAAAAAAAAAACQCQAAAAAAAADhA1Z7mGQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//sQZAAP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU=";
-
-type Phase = "idle" | "thinking" | "cue";
-
-export default function WearerPage() { return <AuthBoundary><WearerContent /></AuthBoundary>; }
-
-function WearerContent() {
-  const { familyId } = useKinAuth();
-  const requestId = useRef(0);
-  const controller = useRef<AbortController | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const cueTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [phase, setPhase] = useState<Phase>("idle");
-  const [cueText, setCueText] = useState<string | null>(null);
-  const [wearerName, setWearerName] = useState<string>("");
-  const [cameraError, setCameraError] = useState<string | null>(null);
-
-  const stopAudio = () => {
-    const audio = audioRef.current;
-    if (audio) { audio.pause(); audio.onerror = null; audio.removeAttribute("src"); audio.load(); }
-    window.speechSynthesis?.cancel();
-  };
-
+export default function Wearer() {
+  const { data } = useFamilyData();
+  const video = useRef<HTMLVideoElement | null>(null);
+  const audio = useRef<HTMLAudioElement | null>(null);
+  const stream = useRef<MediaStream | null>(null);
+  const mounted = useRef(true);
+  const pending = useRef<AbortController | null>(null);
+  const [enabled, setEnabled] = useState(false);
+  const [starting, setStarting] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [thinking, setThinking] = useState(false);
+  const [cue, setCue] = useState<string | null>(null);
+  const [quiet, setQuiet] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   useEffect(() => {
-    const generation = requestId;
-    let active = true;
-    let camera: MediaStream | null = null;
-    audioRef.current = new Audio(SILENT_MP3);
-    getAnonClient()?.from("wearer").select("name").eq("family_id", familyId).single()
-      .then(({ data, error }) => { if (active) { setWearerName(data?.name ?? ""); if (error) setCameraError("Could not load family details."); } });
-    if (!navigator.mediaDevices?.getUserMedia) setCameraError("Camera requires a supported browser over HTTPS.");
-    else navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then((stream) => {
-      if (!active) { stream.getTracks().forEach((track) => track.stop()); return; }
-      camera = stream;
-      if (videoRef.current) videoRef.current.srcObject = stream;
-    }).catch(() => { if (active) setCameraError("Camera is not available on this device. Check camera permission."); });
+    mounted.current = true;
+    audio.current = new Audio(SILENT_AUDIO);
     return () => {
-      active = false; generation.current++; controller.current?.abort();
-      camera?.getTracks().forEach((track) => track.stop());
-      stopAudio();
-      if (cueTimerRef.current) clearTimeout(cueTimerRef.current);
+      mounted.current = false;
+      stream.current?.getTracks().forEach((t) => t.stop());
+      pending.current?.abort();
+      stopCue(audio.current);
+      if (typeof speechSynthesis !== "undefined") speechSynthesis.cancel();
     };
-  }, [familyId]);
-
-  const captureFrame = (): { blob: Promise<Blob>; canvas: HTMLCanvasElement } | null => {
-    const video = videoRef.current;
-    if (!video || !video.videoWidth) return null;
-    const scale = Math.min(1, CONFIG.snapshotMaxPx / video.videoWidth);
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.round(video.videoWidth * scale);
-    canvas.height = Math.round(video.videoHeight * scale);
-    canvas.getContext("2d")!.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const blob = new Promise<Blob>((resolve, reject) =>
-      canvas.toBlob(
-        (b) => (b ? resolve(b) : reject(new Error("capture failed"))),
-        "image/jpeg",
-        0.85
-      )
-    );
-    return { blob, canvas };
-  };
-
-  const speakFallback = (text: string) => {
+  }, []);
+  useEffect(() => {
+    if (enabled && video.current && stream.current)
+      video.current.srcObject = stream.current;
+  }, [enabled]);
+  const start = async () => {
+    setError(null);
+    setReady(false);
+    setStarting(true);
     try {
-      const u = new SpeechSynthesisUtterance(text);
-      u.rate = 0.95;
-      window.speechSynthesis.speak(u);
-    } catch {
-      // no audio available; cue text still shows
+      if (!navigator.mediaDevices?.getUserMedia)
+        throw new Error(
+          "Camera access needs HTTPS or localhost. Open Kin using a secure address.",
+        );
+      stream.current?.getTracks().forEach((t) => t.stop());
+      const s = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
+        audio: false,
+      });
+      if (!mounted.current) {
+        s.getTracks().forEach((t) => t.stop());
+        return;
+      }
+      stream.current = s;
+      if (video.current) video.current.srcObject = s;
+      setEnabled(true);
+
+      if (mounted.current) setReady(true);
+    } catch (e) {
+      setError(
+        e instanceof Error && e.name === "NotAllowedError"
+          ? "Camera access is turned off. Allow it in your browser settings, then try again."
+          : e instanceof Error
+            ? e.message
+            : "The camera couldn’t open. Try again.",
+      );
+    } finally {
+      if (mounted.current) setStarting(false);
     }
   };
-
-  const onTap = async () => {
-    const captureId = ++requestId.current;
-    controller.current?.abort();
-    controller.current = new AbortController();
-    const signal = controller.current.signal;
-    stopAudio();
-    setCueText(null);
-    if (cueTimerRef.current) {
-      clearTimeout(cueTimerRef.current);
-      cueTimerRef.current = null;
-    }
-    // 1. Unlock audio inside the tap handler, before any await.
-    const audio = audioRef.current;
-    if (audio) { audio.onerror = null; audio.src = SILENT_MP3; }
-    audio?.play().catch(() => {});
-
-    try {
-    const frame = captureFrame();
-    if (!frame) {
-      setPhase("idle");
-      setCameraError("One moment, the camera is warming up.");
+  const recognize = async () => {
+    if (pending.current || thinking || !ready) return;
+    unlockAudio(audio.current);
+    const v = video.current;
+    if (!v?.videoWidth) {
+      setError("The camera is still getting ready. Try again in a moment.");
       return;
     }
-    setCameraError(null);
-    setPhase("thinking");
-    setCueText(null);
-      const blob = await frame.blob;
-      const fd = new FormData();
-      fd.append("snapshot", new File([blob], "snapshot.jpg", { type: "image/jpeg" }));
-      if (captureId !== requestId.current) return;
-      const json = await responseJSON(await authenticatedFetch("/api/recall", { method: "POST", body: fd, signal }));
-      if (captureId !== requestId.current) return;
+    const controller = new AbortController();
+    pending.current = controller;
+    setThinking(true);
+    setCue(null);
+    setQuiet(false);
+    setError(null);
+    try {
+      const scale = Math.min(1, CONFIG.snapshotMaxPx / v.videoWidth);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(v.videoWidth * scale);
+      canvas.height = Math.round(v.videoHeight * scale);
+      canvas.getContext("2d")!.drawImage(v, 0, 0, canvas.width, canvas.height);
 
-      if (json.decision === "speak") {
-        setCueText(json.cueText);
-        setPhase("cue");
-        if (json.audio && audio) {
-          let fellBack = false;
-          const fallbackOnce = () => {
-            if (fellBack || captureId !== requestId.current) return;
-            fellBack = true;
-            speakFallback(json.cueText);
-          };
-          audio.onerror = fallbackOnce;
-          audio.src = `data:audio/mp3;base64,${json.audio}`;
-          audio.play().catch(fallbackOnce);
-        } else {
-          speakFallback(json.cueText);
-        }
-        cueTimerRef.current = setTimeout(() => {
-          if (captureId !== requestId.current) return;
-          stopAudio();
-          setPhase("idle");
-          setCueText(null);
-        }, CONFIG.wearerCueDisplayMs);
+      const blob = await new Promise<Blob>((resolve, reject) =>
+        canvas.toBlob(
+          (b) =>
+            b
+              ? resolve(b)
+              : reject(new Error("The camera image couldn’t be captured.")),
+          "image/jpeg",
+          0.85,
+        ),
+      );
+      const fd = new FormData();
+      fd.append(
+        "snapshot",
+        new File([blob], "snapshot.jpg", { type: "image/jpeg" }),
+      );
+      const r = await authenticatedFetch("/api/recall", { method: "POST", body: fd, signal: controller.signal });
+      const j = await r.json();
+      if (!r.ok)
+        throw new Error(j.error ?? "Kin couldn’t connect. Please try again.");
+      if (!mounted.current || controller.signal.aborted) return;
+      if (j.decision === "speak") {
+        setCue(j.cueText);
+        playCue(audio.current, j);
       } else {
-        stopAudio();
-        setCueText(null);
-        setPhase("idle");
+        if (j.reasonCode === "provider_failure") setError("Recognition is temporarily unavailable. Please try again.");
+        else setQuiet(true);
       }
-    } catch (failure) {
-      if (captureId !== requestId.current) return;
-      stopAudio(); setCueText(null);
-      setCameraError(failure instanceof Error ? failure.message : "Could not complete recall. Please try again.");
-      setPhase("idle");
+    } catch (e) {
+      if (mounted.current && !controller.signal.aborted)
+        setError(e instanceof Error ? e.message : "Please try again.");
+    } finally {
+      pending.current = null;
+      if (mounted.current) setThinking(false);
     }
   };
-
   return (
-    <main className="fixed inset-0 flex flex-col bg-stage text-white text-[22px]">
-      <header className="flex items-center justify-between px-6 pb-3 pt-[max(1rem,env(safe-area-inset-top))]">
-        <span className="text-lg font-semibold tracking-[0.18em] text-white/70">
-          KIN
-        </span>
-        {wearerName && (
-          <span className="text-lg text-white/50">{wearerName}</span>
-        )}
-        <SignOutButton />
-      </header>
-
-      <div className="relative mx-4 flex-1 overflow-hidden rounded-3xl bg-black/40 ring-1 ring-white/10">
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          onPlaying={() => setCameraError(null)}
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-
-        {/* Gentle viewfinder framing, decorative only. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 rounded-3xl shadow-[inset_0_0_120px_rgba(0,0,0,0.45)]"
-        />
-
-        {cameraError && (
-          <div className="absolute inset-0 flex items-center justify-center p-8 text-center text-[24px] leading-snug text-white/70">
-            {cameraError}
-          </div>
-        )}
-
-        {phase === "thinking" && (
-          <div className="absolute inset-x-0 bottom-6 flex justify-center">
-            <span className="kin-pulse rounded-full bg-black/55 px-5 py-2 text-[20px] font-medium text-white/90 backdrop-blur-sm">
-              Looking…
-            </span>
-          </div>
-        )}
-
-        <div aria-live="polite" className="sr-only">
-          {phase === "cue" && cueText ? cueText : ""}
-        </div>
-
-        {phase === "cue" && cueText && (
-          <div className="animate-fade-up absolute inset-x-4 bottom-4 rounded-3xl bg-paper/95 px-7 py-6 text-center text-[28px] font-medium leading-snug text-ink shadow-cue backdrop-blur-sm">
-            {cueText}
-          </div>
-        )}
-      </div>
-
-      <div className="px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4">
-        <button
-          onClick={onTap}
-          className={`w-full min-h-[220px] rounded-[2rem] bg-primary text-[32px] font-semibold text-white shadow-[0_18px_40px_-18px_rgba(47,93,80,0.9)] ring-1 ring-white/10 transition-transform duration-150 active:scale-[0.985] disabled:active:scale-100 ${
-            phase === "thinking" ? "kin-pulse" : ""
-          } ${phase === "cue" ? "opacity-60" : ""}`}
+    <div className="wearer-page">
+      <Preferences />
+      <header className="wearer-header">
+        <Link
+          href={data?.role === "loved_one" ? "/settings" : "/family"}
+          className="icon-button"
+          aria-label={
+            data?.role === "loved_one"
+              ? "Your settings"
+              : "Back to family memories"
+          }
         >
-          {phase === "thinking" ? "Thinking…" : "Who is this?"}
-        </button>
-      </div>
-    </main>
+          {data?.role === "loved_one" ? (
+            <Settings aria-hidden="true" />
+          ) : (
+            <ArrowLeft aria-hidden="true" />
+          )}
+        </Link>
+        <Brand href={data?.role === "loved_one" ? "/wearer" : "/family"} />
+        <span className="wearer-title">
+          {data ? `For ${data.wearer.name}` : "A familiar connection"}
+        </span>
+      </header>
+      <main id="main-content" className="wearer-content">
+        {!enabled ? (
+          <div className="camera-intro">
+            <div className="camera-orb">
+              <ScanFace aria-hidden="true" />
+            </div>
+            <h1>
+              A familiar face.
+              <br />A gentle reminder.
+            </h1>
+            <p>
+              Point the camera at someone you know, or their photo. Tap once to
+              hear a memory from your family.
+            </p>
+            <Button
+              className="full"
+              size="lg"
+              onClick={start}
+              disabled={starting}
+            >
+              {starting ? (
+                <span className="spinner" aria-hidden="true" />
+              ) : (
+                <Camera aria-hidden="true" />
+              )}
+              {starting ? "Opening your camera…" : "Open camera"}
+            </Button>
+            <p className="small" style={{ marginTop: 20 }}>
+              Kin stays quiet when it isn’t sure.
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="camera-view">
+              <video
+                ref={video}
+                autoPlay
+                playsInline
+                muted
+                aria-label="Camera view for recognizing a familiar face"
+              />
+              <div className="camera-corners" aria-hidden="true" />
+              <span className="camera-label">
+                {thinking
+                  ? "Finding a memory…"
+                  : !ready
+                    ? "Getting ready…"
+                    : "One familiar face at a time"}
+              </span>
+              {cue && (
+                <div className="camera-cue" role="status">
+                  <small>
+                    <Volume2 aria-hidden="true" />
+                    From your family
+                  </small>
+                  <p>{cue}</p>
+                </div>
+              )}
+            </div>
+            <Button
+              className="camera-action"
+              onClick={recognize}
+              disabled={thinking || !ready}
+            >
+              {thinking || !ready ? (
+                <span className="spinner" aria-hidden="true" />
+              ) : (
+                <ScanFace aria-hidden="true" />
+              )}
+              {thinking
+                ? "One little moment…"
+                : !ready
+                  ? "Getting ready…"
+                  : "Who is this?"}
+            </Button>
+            {quiet ? (
+              <p className="wearer-quiet" role="status">
+                No familiar face this time.
+                <br />
+                <span className="muted">Kin will stay quiet.</span>
+              </p>
+            ) : (
+              <p className="camera-help">
+                <Headphones
+                  size={16}
+                  style={{
+                    display: "inline",
+                    verticalAlign: "middle",
+                    marginRight: 7,
+                  }}
+                  aria-hidden="true"
+                />
+                Keep sound on, or connect your headphones.
+              </p>
+            )}
+          </>
+        )}
+        {data?.role === "loved_one" && <Link href="/remember" className="text-link">Record a memory for your family</Link>}
+        {error && (
+          <div className="stack" style={{ width: "100%", marginTop: 20 }}>
+            <p className="notice notice-error" role="alert">
+              {error}
+            </p>
+            <Button variant="outline" onClick={start} disabled={starting}>
+              <RotateCcw aria-hidden="true" />
+              Try camera again
+            </Button>
+          </div>
+        )}
+      </main>
+    </div>
   );
 }

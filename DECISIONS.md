@@ -1,61 +1,50 @@
-# DECISIONS
+# Design decisions
 
-Ambiguities resolved while building Kin. Each picks the simplest option that
-satisfies the spec's acceptance criteria.
+## Integration with main
 
-- **Weaver routing exclusion.** The scoring formula alone tends to route a
-  question to the relative who already described the gap. Relatives whose
-  memories already provide provenance for the gap node are excluded from
-  routing, so the Weaver asks someone whose contributions sit next to the gap
-  but who has not described it. Ties go to the relative who uploaded a related
-  photo. This makes routing on the seeded sample graph deterministic and
-  unit-tested.
+- Preserve main's server-owned, versioned face inference, sealed enrollment
+  selections, atomic/idempotent ingestion, human provenance, and conservative
+  gate. The full redesigned interface uses those contracts.
+- Supabase sessions use shared browser cookies. APIs verify users server-side;
+  main's bearer-token clients remain supported. New family rows and existing
+  admin-provisioned accounts can both use the interface.
+- New account migrations are numbered 008/009 after main's 001–007. They preserve
+  existing data, restrict private family reads, and keep biometric descriptors
+  and retrieval RPCs server-only.
+- A loved-one membership is distinct from contributor membership. Main's self
+  Keeper enables their personal recordings, with family review by default for
+  newly invited loved ones. Loved ones cannot invite members or use admin tools.
+- Keep Memory Atlas, the self-review queue, organizer demo controls, Rust sources,
+  conformance fixtures, and canonical demo provisioning from main.
 
-- **One seeded sample memory has `kind='photo'`** (text stand-in, no media
-  file), so the routing tie-break "uploaded a related photo" works with the
-  sample data.
+## Recognition and evidence
 
-- **`recall_events.face_descriptors` (jsonb) column added** beyond the printed
-  schema to support "Replay last recall" as specified in Section 9.5/10.7.
+- Identity comes from server face matching, never image-caption guessing.
+  Photos retain original bytes and enrollment requires explicit permission.
+- Main's 0.85 minimum, two independent supporting Keepers, literal fact grounding,
+  contradiction handling and latest retrieval calibration remain unchanged.
+- OpenAI handles descriptive captions, extraction and embeddings. Deepgram
+  transcribes; ElevenLabs provides speech. No Anthropic-only embedding fallback
+  is introduced because main's retrieval depends on real semantic vectors.
+- Replay selects the latest successful event and evaluates it against current
+  memories, even if a more recent attempt was silent. New attempts clear prior
+  cues; leaving the screen cancels pending playback and speech fallback.
+- Removing a contribution invalidates cached recall evidence and retry receipts
+  and preserves graph facts still supported by another memory. Storage and SQL
+  cleanup still span multiple operations; the memory remains until cleanup
+  succeeds so failures can be retried.
 
-- **RLS enabled with permissive `select using (true)` policies** on all tables.
-  The prototype has no auth; anon clients only read (Realtime + initial fetch). All
-  writes go through the service role on the server, which bypasses RLS.
+## Interface and graph
 
-- **Storage bucket `media` is created inside the migration** (`insert into
-  storage.buckets ... on conflict do nothing`) so setup is one step.
-
-- **React Flow v11 (`reactflow` package)** rather than the v12 `@xyflow/react`
-  rename; both are "React Flow". v11 chosen for the stable, well-known API.
-
-- **shadcn/ui**: implemented as local `components/ui/*` primitives in the
-  shadcn style (cva + radix-slot) instead of running the shadcn CLI, which is
-  interactive. Dropdowns use native `<select>` for mobile reliability.
-
-- **Single-claimant agreement**: `A = 0.75` only when exactly one Keeper claims
-  and none disagree (per spec). With one claimant and one dissenter the gate
-  exits earlier on `X > 0` anyway.
-
-- **S signal**: `1.0` requires every agreeing Keeper to cite at least one memory
-  it owns *and* the subject node to have provenance; drops to `0.5` when the
-  evidence is text-only (no face match and no photo-kind memory cited); `0`
-  otherwise.
-
-- **Silence on the wearer screen**: on SILENT the client literally does nothing
-  (no audio, no message). A camera-not-ready message is the only error the
-  wearer can ever see.
-
-- **Cue fallback template** is `You two {node label}.` per spec; labels that
-  read as verb phrases (e.g. "bake a favorite cake on Sundays") make it natural.
-
-- **`match_memories`/`match_faces` take vector params as JSON strings** from the
-  JS client (`JSON.stringify(descriptor)`), which pgvector accepts for
-  `vector` casts via the RPC parameter binding.
-
-- **Seed writes the graph literally** (no LLM extraction at seed time) so the
-  Weaver outcome in Section 11 is deterministic and unit-testable.
-
-- **Keeper error containment**: a failing keeper resolves to an abstain result
-  so one bad query cannot kill a recall.
-
-- **No em dashes in UI copy.**
+- System typography, neutral surfaces, desktop navigation and mobile tabs follow
+  the supplied design guidance. Technical details stay behind optional controls.
+- Pull-apart stories retain original sources and opt-in audio. Sheets support
+  pointer tracking, interruptible springs, keyboard alternatives and reduced motion.
+- Recording requires stop, preview, then save. Camera/microphone permissions
+  begin with a user action. Large text, contrast and reduced transparency are
+  part of browser checks; physical devices still need manual testing.
+- The Connections map has an accessible list; the separate React Flow v11 Atlas
+  keeps main's richer exploration and memory-formation view.
+- Main's Weaver routing, photo tie-break, seed baseline and Keeper failure
+  containment are retained. Historical prototype policies in old planning docs
+  are not the current authorization or gate policy.

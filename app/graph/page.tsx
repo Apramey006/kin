@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   description: "Explore the people, places, and stories that connect your family.",
 };
 
-export default function GraphPage({ searchParams }: { searchParams: { demo?: string } }) {
-  return <MemoryAtlas initialDemo={searchParams.demo === "1"} />;
+export default async function GraphPage({ searchParams }: { searchParams: Promise<{ demo?: string }> }) {
+  const params = await searchParams;
+  return <MemoryAtlas initialDemo={params.demo === "1"} />;
 }

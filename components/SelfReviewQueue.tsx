@@ -13,7 +13,7 @@ type Pending = Pick<PendingContributionRow, "id" | "kind" | "preview" | "created
  * Framed as participation rather than gatekeeping: nothing here tells the
  * wearer anything, and an unreviewed story is still kept.
  */
-export function SelfReviewQueue({ wearerName }: { wearerName?: string }) {
+export function SelfReviewQueue({ wearerName, onChanged }: { wearerName?: string; onChanged?: () => Promise<void> }) {
   const [pending, setPending] = useState<Pending[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +40,7 @@ export function SelfReviewQueue({ wearerName }: { wearerName?: string }) {
         body: JSON.stringify({ id, action }),
       }));
       setPending((rows) => rows.filter((row) => row.id !== id));
+      await onChanged?.();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save that decision.");
     } finally {

@@ -1,159 +1,276 @@
 "use client";
-
-import { useEffect, useMemo, useRef } from "react";
-import ReactFlow, {
-  Background,
-  ReactFlowProvider,
-  useReactFlow,
-  type Edge,
-  type Node,
-} from "reactflow";
-import "reactflow/dist/style.css";
-import type { GraphEdgeRow, GraphNodeRow, ProvenanceRow, Relative } from "@/lib/types";
-
-const GOLDEN_ANGLE = 2.399963;
-
-const RINGS: Record<string, { radius: number; offset: number }> = {
-  person: { radius: 160, offset: 0 },
-  tradition: { radius: 300, offset: 0.8 },
-  event: { radius: 300, offset: 0.8 },
-  object: { radius: 430, offset: 1.6 },
-  place: { radius: 430, offset: 1.6 },
+import { useMemo, useState } from "react";
+import {
+  UserRound,
+  Heart,
+  MapPin,
+  CalendarDays,
+  BookOpen,
+  Network,
+  List,
+  X,
+} from "lucide-react";
+import type {
+  GraphNodeRow,
+  GraphEdgeRow,
+  ProvenanceRow,
+  Relative,
+} from "@/lib/types";
+const icons = {
+  person: UserRound,
+  tradition: Heart,
+  event: CalendarDays,
+  object: BookOpen,
+  place: MapPin,
 };
-
-interface Placed {
-  x: number;
-  y: number;
-  ring: string;
-}
-
-function FamilyGraphInner({
+const relationWords: Record<string, string> = {
+  origin: "comes from",
+  started_by: "was started by",
+  taught_by: "learned from",
+  participates_in: "takes part in",
+  located_at: "is connected to",
+  sibling_of: "is a sibling of",
+  child_of: "is a child of",
+  parent_of: "is a parent of",
+  grandchild_of: "is a grandchild of",
+  spouse_of: "is married to",
+  friend_of: "is friends with",
+  wears: "wears",
+  owns: "keeps",
+  made: "made",
+  happens_on: "happens on",
+};
+export function FamilyGraph({
   nodes,
   edges,
   provenance,
   relatives,
-  gapNodeId,
   wearerNodeId,
+  subjectId,
 }: {
   nodes: GraphNodeRow[];
   edges: GraphEdgeRow[];
   provenance: ProvenanceRow[];
   relatives: Relative[];
-  gapNodeId?: string | null;
   wearerNodeId?: string | null;
+  subjectId?: string | null;
 }) {
-  const positions = useRef(new Map<string, Placed>());
-  const { fitView } = useReactFlow();
-
-  const colorOf = useMemo(() => {
-    const map = new Map<string, string>();
-    const relColor = new Map(relatives.map((r) => [r.id, r.color]));
-    const edgeOwner = new Map<string, string>();
-    for (const p of provenance) {
-      const c = relColor.get(p.contributor_id) ?? "#8b8579";
-      if (p.node_id && !map.has(p.node_id)) map.set(p.node_id, c);
-      if (p.edge_id && !edgeOwner.has(p.edge_id)) edgeOwner.set(p.edge_id, c);
-    }
-    return { node: map, edge: edgeOwner };
-  }, [provenance, relatives]);
-
-  const rfNodes: Node[] = useMemo(() => {
-    return nodes.map((n) => {
-      const isWearer = n.id === wearerNodeId;
-      const isNew = !positions.current.has(n.id);
-      if (isNew) {
-        if (isWearer) {
-          positions.current.set(n.id, { x: 0, y: 0, ring: "wearer" });
-        } else {
-          const ring = n.type in RINGS ? n.type : "object";
-          const { radius, offset } = RINGS[ring];
-          const count = [...positions.current.values()].filter(
-            (p) => p.ring === ring
-          ).length;
-          const angle = count * GOLDEN_ANGLE + offset;
-          positions.current.set(n.id, {
-            x: radius * Math.cos(angle),
-            y: radius * Math.sin(angle),
-            ring,
-          });
-        }
-      }
-      const { x, y } = positions.current.get(n.id)!;
-      return {
-        id: n.id,
-        position: { x, y },
-        data: {
-          label: `${n.label}${n.relation_to_wearer && n.relation_to_wearer !== "self" ? ` · ${n.relation_to_wearer}` : ""}`,
-        },
-        className: [
-          isNew ? "node-pop" : "",
-          n.id === gapNodeId ? "gap-pulse" : "",
-        ]
-          .filter(Boolean)
-          .join(" ") || undefined,
-        style: {
-          background: isWearer ? "#2F5D50" : colorOf.node.get(n.id) ?? "#2a3140",
-          color: "#fff",
-          border: n.id === gapNodeId ? "3px solid #E0A458" : "1px solid rgba(255,255,255,0.2)",
-          borderRadius: 12,
-          padding: "8px 14px",
-          fontSize: 15,
-          fontWeight: 600,
-          boxShadow: n.id === gapNodeId ? undefined : "0 2px 10px rgba(0,0,0,0.4)",
-        },
-      };
-    });
-  }, [nodes, colorOf, gapNodeId, wearerNodeId]);
-
-  const rfEdges: Edge[] = useMemo(
-    () =>
-      edges.map((e) => ({
-        id: e.id,
-        source: e.from_node,
-        target: e.to_node,
-        type: "smoothstep",
-        label: e.rel.replace(/_/g, " "),
-        animated: e.id === gapNodeId,
-        style: { stroke: colorOf.edge.get(e.id) ?? "#556", strokeWidth: 2 },
-        labelStyle: { fill: "#aab", fontSize: 11 },
-        labelBgStyle: { fill: "#0E1116", fillOpacity: 0.8 },
-      })),
-    [edges, colorOf, gapNodeId]
-  );
-
-  useEffect(() => {
-    fitView({ duration: 600, padding: 0.2 });
-  }, [nodes.length, edges.length, fitView]);
-
+  const [view, setView] = useState<"map" | "list">("map");
+  const [selected, setSelected] = useState<string | null>(null);
+  const layout = useMemo(() => {
+    const center =
+      nodes.find((n) => n.id === (selected || subjectId || wearerNodeId)) ??
+      nodes[0];
+    if (!center) return [];
+    const connected = new Set(
+      edges
+        .filter((e) => e.from_node === center.id || e.to_node === center.id)
+        .flatMap((e) => [e.from_node, e.to_node]),
+    );
+    const others = nodes
+      .filter((n) => n.id !== center.id)
+      .sort((a, b) => Number(connected.has(b.id)) - Number(connected.has(a.id)))
+      .slice(0, 6);
+    return [
+      { node: center, x: 50, y: 48, center: true },
+      ...others.map((node, i) => {
+        const angle = -Math.PI / 2 + (i / others.length) * Math.PI * 2;
+        return {
+          node,
+          x: 50 + 32 * Math.cos(angle),
+          y: 48 + 31 * Math.sin(angle),
+          center: false,
+        };
+      }),
+    ];
+  }, [nodes, edges, subjectId, wearerNodeId, selected]);
+  const selectedNode = nodes.find((n) => n.id === selected);
+  const relevant = selected
+    ? edges.filter((e) => e.from_node === selected || e.to_node === selected)
+    : edges;
+  const name = (id: string) =>
+    nodes.find((n) => n.id === id)?.label ?? "Someone";
   return (
-    <ReactFlow
-      nodes={rfNodes}
-      edges={rfEdges}
-      fitView
-      proOptions={{ hideAttribution: true }}
-      nodesDraggable={false}
-      nodesConnectable={false}
-      elementsSelectable={false}
-      zoomOnScroll={false}
-      panOnDrag={false}
-      preventScrolling={false}
-    >
-      <Background color="#1a2030" gap={24} />
-    </ReactFlow>
-  );
-}
-
-export function FamilyGraph(props: {
-  nodes: GraphNodeRow[];
-  edges: GraphEdgeRow[];
-  provenance: ProvenanceRow[];
-  relatives: Relative[];
-  gapNodeId?: string | null;
-  wearerNodeId?: string | null;
-}) {
-  return (
-    <ReactFlowProvider>
-      <FamilyGraphInner {...props} />
-    </ReactFlowProvider>
+    <section className="map-card" aria-labelledby="map-title">
+      <div className="panel-heading">
+        <div>
+          <h2 id="map-title">Family map</h2>
+          <p>Select a person or memory to explore.</p>
+        </div>
+        <div className="segmented" role="group" aria-label="Connection view">
+          <button
+            aria-pressed={view === "map"}
+            aria-label="Show connection map"
+            onClick={() => setView("map")}
+          >
+            <Network size={17} aria-hidden="true" />
+          </button>
+          <button
+            aria-pressed={view === "list"}
+            aria-label="Show connection list"
+            onClick={() => setView("list")}
+          >
+            <List size={17} aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+      {!nodes.length ? (
+        <div className="empty-state">
+          <div className="empty-icon">
+            <Network aria-hidden="true" />
+          </div>
+          <h3>No connections yet</h3>
+          <p>
+            Photos and voice memories connect people, places, and traditions.
+          </p>
+        </div>
+      ) : view === "map" ? (
+        <>
+          <div
+            className="memory-map"
+            aria-label="Family connections. Select a person or memory to explore."
+          >
+            <svg
+              className="map-lines"
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              {edges.map((e) => {
+                const from = layout.find((p) => p.node.id === e.from_node);
+                const to = layout.find((p) => p.node.id === e.to_node);
+                if (!from || !to) return null;
+                return (
+                  <path
+                    key={e.id}
+                    className={
+                      e.from_node === selected || e.to_node === selected
+                        ? "highlight"
+                        : ""
+                    }
+                    vectorEffect="non-scaling-stroke"
+                    d={`M ${from.x} ${from.y} Q ${(from.x + to.x) / 2 + 4} ${(from.y + to.y) / 2 - 4} ${to.x} ${to.y}`}
+                  />
+                );
+              })}
+            </svg>
+            {layout.map(({ node, x, y, center }) => {
+              const Icon = icons[node.type];
+              return (
+                <button
+                  key={node.id}
+                  className={`map-node node-${node.type} ${center ? "center" : ""}`}
+                  style={{ left: `${x}%`, top: `${y}%` }}
+                  aria-label={`${node.label}, ${node.type}. Explore connections`}
+                  aria-pressed={selected === node.id}
+                  onClick={() =>
+                    setSelected(selected === node.id ? null : node.id)
+                  }
+                >
+                  <span className="node-symbol">
+                    <Icon aria-hidden="true" />
+                  </span>
+                  <strong>{node.label}</strong>
+                </button>
+              );
+            })}
+          </div>
+          <div className="map-legend">
+            <span>
+              <UserRound aria-hidden="true" />
+              People
+            </span>
+            <span>
+              <Heart aria-hidden="true" />
+              Traditions
+            </span>
+            <span>
+              <MapPin aria-hidden="true" />
+              Places
+            </span>
+            <span>
+              <BookOpen aria-hidden="true" />
+              Objects
+            </span>
+            {nodes.length > 7 && (
+              <button
+                className="button button-quiet button-sm"
+                onClick={() => setView("list")}
+              >
+                See all {nodes.length} connections
+              </button>
+            )}
+          </div>
+          {selectedNode && (
+            <div className="map-selection" aria-live="polite">
+              <button
+                className="icon-button selection-close"
+                aria-label="Close connection details"
+                onClick={() => setSelected(null)}
+              >
+                <X aria-hidden="true" />
+              </button>
+              <strong>
+                {selectedNode.label}
+                {selectedNode.relation_to_wearer &&
+                selectedNode.relation_to_wearer !== "self"
+                  ? ` · ${selectedNode.relation_to_wearer}`
+                  : ""}
+              </strong>
+              <ul className="connections-list">
+                {relevant.map((e) => (
+                  <li key={e.id}>
+                    {name(e.from_node)}{" "}
+                    <span className="connection-rel">
+                      {relationWords[e.rel] ?? e.rel.replaceAll("_", " ")}
+                    </span>{" "}
+                    {name(e.to_node)}
+                  </li>
+                ))}
+              </ul>
+              <p className="small muted" style={{ marginTop: 10 }}>
+                Shared by{" "}
+                {[
+                  ...new Set(
+                    provenance
+                      .filter((p) => p.node_id === selected)
+                      .map(
+                        (p) =>
+                          relatives.find((r) => r.id === p.contributor_id)
+                            ?.name,
+                      )
+                      .filter(Boolean),
+                  ),
+                ].join(", ") || "your family"}
+                .
+              </p>
+            </div>
+          )}
+        </>
+      ) : (
+        <div style={{ padding: "10px 0 18px" }}>
+          <ul className="connections-list">
+            {edges.length
+              ? edges.map((e) => (
+                  <li key={e.id}>
+                    <strong>{name(e.from_node)}</strong>
+                    <span className="connection-rel">
+                      {relationWords[e.rel] ?? e.rel.replaceAll("_", " ")}
+                    </span>
+                    <strong>{name(e.to_node)}</strong>
+                  </li>
+                ))
+              : nodes.map((n) => (
+                  <li key={n.id}>
+                    <strong>{n.label}</strong>
+                    <span className="connection-rel">
+                      {n.relation_to_wearer || n.type}
+                    </span>
+                  </li>
+                ))}
+          </ul>
+        </div>
+      )}
+    </section>
   );
 }

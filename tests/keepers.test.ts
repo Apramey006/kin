@@ -13,12 +13,12 @@ function memory(id = "m1", contributor = "maya", subject = "nora", text = "Nora 
 describe("human-scoped keepers", () => {
   it("maps distance and similarity conservatively", () => {
     expect(faceScore(.35)).toBe(1); expect(faceScore(.6)).toBe(0);
-    expect(simScore(.2)).toBe(0); expect(simScore(.6)).toBeCloseTo(1);
+    expect(simScore(.1)).toBe(0); expect(simScore(.4)).toBeCloseTo(1);
   });
   it("excludes other contributors and other subjects, including their high scores", () => {
     const own = memory(); own.similarity = .3;
     const result = buildKeeperResult(keeper, { face, subjectLabel: "Nora", memories: [own, memory("foreign", "david"), memory("unrelated", "maya", "sam")] });
-    expect(result.memoryIds).toEqual(["m1"]); expect(result.r).toBeCloseTo(.25);
+    expect(result.memoryIds).toEqual(["m1"]); expect(result.r).toBeCloseTo(2 / 3);
     expect(result.evidence[0].source).toBe("human");
   });
   it("cannot cite a vision caption or generated summary as a human fact", () => {

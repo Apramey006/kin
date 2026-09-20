@@ -14,7 +14,26 @@ export interface IngestionIdentity {
 
 export async function authenticateFamily(req: Request, sb: SupabaseClient) {
   const token = req.headers.get("authorization")?.match(/^Bearer (\S+)$/i)?.[1];
-  if (!token) throw new IngestionError(401, "Authentication required");
+  if (!token) {
+    // Redesigned web screens use verified Supabase cookies. Existing bearer
+    // clients retain the original contract and server-owned face pipeline.
+    let context;
+    try { context = await (await import("../auth/server")).requireFamily(); }
+    catch (error) {
+      const status = error instanceof Error && "status" in error ? Number(error.status) : 401;
+      throw new IngestionError(status === 409 ? 403 : status, "Authentication or family membership required");
+    }
+    if (context.role === "loved_one") {
+      const self = await sb.from("relatives").select("*").eq("family_id", context.familyId).eq("is_self", true).maybeSingle();
+      if (self.error && !["42703", "PGRST204", "PGRST205"].includes(self.error.code)) throw self.error;
+      return {userId:context.user.id, familyId:context.familyId, isAdmin:false, isSelf:true,
+        contributorId:(self.data?.id as string | undefined) ?? null, contributor:(self.data as Relative | null) ?? null};
+    }
+    const contributor = await sb.from("relatives").select("*").eq("id",context.relativeId).eq("family_id",context.familyId).single();
+    if(contributor.error) throw contributor.error;
+    return {userId:context.user.id,familyId:context.familyId,contributorId:contributor.data.id,
+      contributor:contributor.data as Relative,isAdmin:context.isOwner,isSelf:contributor.data.is_self === true};
+  }
   const { data, error } = await sb.auth.getUser(token);
   if (error || !data.user) throw new IngestionError(401, "Invalid authentication");
   const family = familySchema.safeParse(data.user.app_metadata.kin_family_id);

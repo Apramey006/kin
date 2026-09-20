@@ -1,39 +1,14 @@
 import AxeBuilder from "@axe-core/playwright";
-import { test, expect } from "@playwright/test";
-import { json, signInDemo } from "./auth-fixture";
-import { addSceneAnswer, sceneFixture } from "../tests/fixtures/memory-scene";
-import type { SceneData } from "../lib/memory-scene";
+import { test, expect, familyFixture } from "./fixtures";
+import { addSceneAnswer, sceneFixture as coreSceneFixture } from "../tests/fixtures/memory-scene";
 import type { Page } from "@playwright/test";
 
-async function mockFamily(page: Page, data: SceneData) {
-  await page.route("**/api/**", (route) => route.abort());
-  await page.route("**/rest/v1/**", (route) => {
-    const path = new URL(route.request().url()).pathname;
-    const rows = path.endsWith("/relatives")
-      ? data.relatives
-      : path.endsWith("/memories")
-        ? data.memories.map(({ mediaUrl: _mediaUrl, ...memory }) => memory)
-        : path.endsWith("/graph_nodes")
-          ? data.nodes
-          : path.endsWith("/graph_edges")
-            ? data.edges
-            : path.endsWith("/provenance")
-              ? data.provenance
-              : path.endsWith("/weaver_questions")
-                ? data.questions
-                : [];
-    return route.fulfill(json(rows));
-  });
-  await page.route("**/storage/v1/object/sign/**", async (route) => {
-    const body = route.request().postDataJSON() as { paths?: string[] };
-    return route.fulfill(
-      json((body.paths ?? []).map((p) => ({ signedURL: `/media/${p}` }))),
-    );
-  });
+function sceneFixture() {
+  const scene=coreSceneFixture();
+  return {...familyFixture(),...scene,familyId:scene.relatives[0].family_id,role:"contributor" as const};
 }
-
-async function openScene(page: Page, accountName = "Maya") {
-  await signInDemo(page, "/family", true, undefined, accountName);
+async function openScene(page: Page) {
+  await page.goto("/family");
   await page.getByRole("button", { name: /A story to step inside/ }).click();
   await expect(
     page.getByRole("dialog", { name: "Sunday lemon cake" }),
@@ -47,7 +22,6 @@ async function audit(page: Page) {
   );
   const result = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
-    .disableRules(["meta-viewport"])
     .analyze();
   expect(
     result.violations.map((v) => ({
@@ -62,7 +36,9 @@ for (const width of [375, 1440]) {
     page,
   }) => {
     await page.setViewportSize({ width, height: 1000 });
-    await mockFamily(page, sceneFixture());
+    await page.route("**/api/family", (r) =>
+      r.fulfill({ json: sceneFixture() }),
+    );
     await openScene(page);
     await audit(page);
     await page.screenshot({ path: `test-results/story-folded-${width}.png` });
@@ -128,7 +104,7 @@ test("an answer arrives live; only evidence of an origin completes the connectio
   page,
 }) => {
   const data = sceneFixture();
-  await mockFamily(page, data);
+  await page.route("**/api/family", (r) => r.fulfill({ json: data }));
   await openScene(page);
   await page.locator(".scene-photograph").click();
   addSceneAnswer(data, false);
@@ -161,7 +137,7 @@ test("an answer arrives live; only evidence of an origin completes the connectio
 test("photograph follows the pointer and can reverse before its spring settles", async ({
   page,
 }) => {
-  await mockFamily(page, sceneFixture());
+  await page.route("**/api/family", (r) => r.fulfill({ json: sceneFixture() }));
   await openScene(page);
   const photo = page.locator(".scene-photograph");
   const box = (await photo.boundingBox())!;
@@ -197,8 +173,10 @@ test("large text, reduced motion and keyboard alternatives work on a narrow phon
   await page.addInitScript(() =>
     localStorage.setItem("kin-large-text", "true"),
   );
-  await mockFamily(page, sceneFixture());
-  await openScene(page, "David");
+  const data = sceneFixture();
+  data.relativeId = data.relatives.find(r=>r.name==="David")!.id;
+  await page.route("**/api/family", (r) => r.fulfill({ json: data }));
+  await openScene(page);
   await page.locator(".scene-photograph").focus();
   await page.keyboard.press("Enter");
   await expect(page.locator(".scene-world")).toHaveClass(/is-still/);
@@ -224,7 +202,7 @@ test("touch drag tracks continuously and a reverse drag folds the story", async 
   context,
 }) => {
   await page.setViewportSize({ width: 375, height: 812 });
-  await mockFamily(page, sceneFixture());
+  await page.route("**/api/family", (r) => r.fulfill({ json: sceneFixture() }));
   await openScene(page);
   const cdp = await context.newCDPSession(page);
   await cdp.send("Emulation.setTouchEmulationEnabled", { enabled: true });
@@ -287,14 +265,14 @@ test("original recordings stay opt-in and pause when their perspective is closed
   page,
 }) => {
   const data = sceneFixture();
-  data.memories[0].media_path = "test-original.wav";
-  await mockFamily(page, data);
+  data.memories[0].mediaUrl = "/test-original.wav";
+  await page.route("**/api/family", (r) => r.fulfill({ json: data }));
   // Two seconds of silent PCM: exercises browser playback without a real family recording.
   const wav = Buffer.alloc(44 + 16000 * 2 * 2);
   wav.write("RIFF");
   wav.writeUInt32LE(wav.length - 8, 4);
   wav.write("WAVEfmt ", 8);
-  wav.writeUInt16LE(16, 16);
+  wav.writeUInt32LE(16, 16);
   wav.writeUInt16LE(1, 20);
   wav.writeUInt16LE(1, 22);
   wav.writeUInt32LE(16000, 24);
@@ -303,7 +281,7 @@ test("original recordings stay opt-in and pause when their perspective is closed
   wav.writeUInt16LE(16, 34);
   wav.write("data", 36);
   wav.writeUInt32LE(wav.length - 44, 40);
-  await page.route("**/media/test-original.wav", (r) =>
+  await page.route("**/test-original.wav", (r) =>
     r.fulfill({ body: wav, contentType: "audio/wav" }),
   );
   await openScene(page);

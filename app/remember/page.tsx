@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AuthBoundary, useKinAuth, authenticatedFetch, responseJSON, contributionKey, SignOutButton } from "@/lib/client-auth";
 import { Recorder } from "@/components/Recorder";
@@ -49,25 +50,28 @@ function RememberContent() {
       // Identical confirmation whether the story committed or is awaiting
       // review. The distinction is the family's business, not the wearer's.
       setSaved(json.transcript ?? "Saved.");
+      return true;
     } catch (e) {
       setError(e instanceof Error ? e.message : "That didn't save. Please try again.");
+      return false;
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <main className="fixed inset-0 flex flex-col bg-stage text-white text-[22px]">
+    <main className="min-h-screen flex flex-col bg-paper text-ink text-[22px]">
       <header className="flex items-center justify-between px-6 pb-3 pt-[max(1rem,env(safe-area-inset-top))]">
-        <span className="text-lg font-semibold tracking-[0.18em] text-white/70">KIN</span>
-        {self?.name && <span className="text-lg text-white/50">{self.name}</span>}
+        <span className="text-lg font-semibold tracking-[0.18em] text-ink/70">KIN</span>
+        {self?.name && <span className="text-lg text-ink/70">{self.name}</span>}
+        <Link href="/wearer" className="text-link">Back</Link>
         <SignOutButton />
       </header>
 
-      <div className="flex flex-1 flex-col justify-center gap-6 px-6 pb-6">
+      <div className="flex flex-1 flex-col justify-center gap-6 px-6 pb-6 w-full max-w-xl mx-auto">
         <div>
           <h1 className="text-[34px] font-semibold leading-tight">Tell us something.</h1>
-          <p className="mt-3 text-[22px] leading-snug text-white/65">
+          <p className="mt-3 text-[22px] leading-snug text-ink/70">
             Anything you remember. Your family keeps it.
           </p>
         </div>
@@ -80,10 +84,10 @@ function RememberContent() {
         )}
 
         {error && (
-          <p role="alert" className="text-[20px] leading-snug text-amber-200/90">{error}</p>
+          <p role="alert" className="text-[20px] leading-snug text-red-700">{error}</p>
         )}
 
-        <div className="[&_button]:min-h-[180px] [&_button]:w-full [&_button]:rounded-[2rem] [&_button]:text-[30px]">
+        <div className="rounded-3xl bg-white p-4">
           <Recorder
             onRecorded={submit}
             maxSeconds={180}

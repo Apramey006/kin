@@ -26,9 +26,10 @@ try {
   await db.exec(`
     create role anon; create role authenticated; create role service_role bypassrls;
     create schema auth; create schema storage; create schema extensions;
-    create table auth.users(id uuid primary key);
+    create table auth.users(id uuid primary key, raw_app_meta_data jsonb default '{}'::jsonb);
     create function auth.jwt() returns jsonb language sql stable as $$
       select coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb $$;
+    create function auth.uid() returns uuid language sql stable as $$ select (auth.jwt()->>'sub')::uuid $$;
     create table storage.buckets(id text primary key, name text, public boolean);
     create table storage.objects(id uuid primary key default gen_random_uuid(), bucket_id text, name text);
     alter table storage.objects enable row level security;
@@ -37,7 +38,7 @@ try {
     create publication supabase_realtime;
   `);
   await test('all numbered migrations apply with real pgvector', async () => {
-    for (const name of ['001_init.sql', '002_atomic_ingestion.sql', '003_family_boundary_and_weaver.sql', '004_wearer_membership.sql', '005_consolidate_hackmit_demo.sql', '006_explicit_api_grants.sql', '007_self_contribution.sql']) {
+    for (const name of ['001_init.sql', '002_atomic_ingestion.sql', '003_family_boundary_and_weaver.sql', '004_wearer_membership.sql', '005_consolidate_hackmit_demo.sql', '006_explicit_api_grants.sql', '007_self_contribution.sql', '008_family_accounts.sql', '009_loved_one_invites.sql']) {
       await db.exec(await readFile(new URL(`../../supabase/migrations/${name}`, import.meta.url), 'utf8'));
     }
   });
@@ -285,6 +286,44 @@ try {
     assert.equal(await scalar('select self_capture_open as value from relatives where id=$1',[selfId]),true);
     assert.equal(await scalar("select count(*)::int as value from relatives where family_id='670f5075-c286-4b29-8074-86401c18d0c0'"), 2);
     assert.equal(await scalar('select count(*)::int as value from ingestion_receipts'), 0);
+  });
+
+  await test('new accounts create private families without exposing face descriptors', async () => {
+    await db.query('insert into auth.users(id) values($1),($2),($3)',[uuid(9901),uuid(9902),uuid(9903)]);
+    await db.exec('set role authenticated');
+    await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({sub:uuid(9901)})]);
+    const family=await scalar("select create_kin_family('Ada','Lee','child') as value");
+    assert.equal(await scalar('select kin_family_id() as value'),family);
+    assert.equal(await scalar('select count(*)::int as value from relatives'),1);
+    await rejectCode(()=>scalar('select count(*) as value from face_embeddings'),'42501');
+    await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({sub:uuid(9902)})]);
+    assert.equal(await scalar('select count(*)::int as value from relatives'),0);
+    await db.exec('reset role');
+    const owner=await scalar("select raw_app_meta_data->>'kin_family_id' as value from auth.users where id=$1",[uuid(9901)]);
+    assert.equal(owner,family);
+    await db.query("insert into family_invites(token,family_id,role) values($1,$2,'loved_one')",[uuid(9910),family]);
+    await db.exec('set role authenticated');
+    await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({sub:uuid(9902)})]);
+    assert.equal(await scalar("select join_kin_family($1,null,null) as value",[uuid(9910)]),family);
+    await db.exec('reset role');
+    assert.equal(await scalar('select count(*)::int as value from wearer_accounts where user_id=$1',[uuid(9902)]),1);
+    assert.equal(await scalar('select count(*)::int as value from relatives where family_id=$1 and is_self',[family]),1);
+    assert.equal(await scalar('select self_capture_open as value from relatives where family_id=$1 and is_self',[family]),false);
+    await db.exec('set role authenticated');
+    await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({sub:uuid(9903)})]);
+    await rejectCode(()=>scalar('select join_kin_family($1,null,null) as value',[uuid(9910)]),'P0001');
+    await db.exec('reset role');
+  });
+  await test('account migrations preserve existing records when reapplied', async()=>{
+    const memories=await scalar('select count(*)::int as value from memories');
+    const members=await db.query('select * from family_members order by user_id');
+    for(const name of ['008_family_accounts.sql','009_loved_one_invites.sql'])
+      await db.exec(await readFile(new URL(`../../supabase/migrations/${name}`,import.meta.url),'utf8'));
+    assert.equal(await scalar('select count(*)::int as value from memories'),memories);
+    const after=(await db.query('select * from family_members order by user_id')).rows;
+    for(const member of members.rows) assert.deepEqual(after.find(m=>m.user_id===member.user_id),member);
+    await db.exec(await readFile(new URL('../../supabase/migrations/009_loved_one_invites.sql',import.meta.url),'utf8'));
+    assert.deepEqual((await db.query('select * from family_members order by user_id')).rows,after);
   });
   console.log(`${count} database integration checks passed (local PostgreSQL WASM + real pgvector; not hosted Supabase).`);
 } finally { await db.close(); }

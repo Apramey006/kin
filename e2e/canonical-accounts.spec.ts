@@ -10,15 +10,17 @@ for (const account of DEMO_ACCOUNTS) test(`${account.name} opens the correct fam
   )));
   await signInDemo(page, account.role === "wearer" ? "/wearer" : "/family", account.role === "organizer", DEMO_FAMILY_ID, account.name);
   if (account.role === "wearer") {
-    await expect(page.getByRole("button", { name: "Who is this?" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Open camera" })).toBeVisible();
     await page.goto("/family");
-    await expect(page.getByRole("link", { name: "Open recognition" })).toBeVisible();
+    await expect(page).toHaveURL(/\/wearer$/);
     await expect(page.getByText("Add a photo", { exact: true })).toHaveCount(0);
   } else {
-    await expect(page.getByRole("heading", { name: "Hi, " + account.name, exact: true })).toBeVisible();
-    await page.goto("/stage");
-    const seed = page.getByRole("button", { name: /^Seed$/ });
+    await expect(page.getByRole("heading", { name: "Memories", exact: true })).toBeVisible();
+    await page.goto("/settings");
+    const tools=page.getByText("Demo tools", {exact:true});
+    if(account.role === "organizer") await tools.click();
+    const seed = page.getByRole("button", { name: "Add sample memories" });
     if (account.role === "organizer") await expect(seed).toBeEnabled();
-    else await expect(seed).toBeDisabled();
+    else await expect(seed).toHaveCount(0);
   }
 });

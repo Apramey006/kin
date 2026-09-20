@@ -5,15 +5,13 @@ import "./memory-scene.css";
 export const metadata: Metadata = {
   title: "Kin",
   description:
-    "A family memory prototype. The family doesn't train an AI. The family remembers together.",
+    "Family photos and stories. A familiar reminder when you need one.",
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-  themeColor: "#FBF8F3",
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -23,7 +21,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="font-sans antialiased">{children}</body>
+      <body className="antialiased">
+        <a className="skip-link" href="#main-content">
+          Skip to content
+        </a>
+        {children}
+      </body>
     </html>
   );
 }

@@ -1,90 +1,106 @@
 import Link from "next/link";
-import { getServiceClient, FAMILY_ID, supabaseConfigured } from "@/lib/supabase";
-import { Users, Heart, Monitor, ArrowRight } from "lucide-react";
-
-async function wearerName(): Promise<string> {
-  if (!supabaseConfigured()) return "your loved one";
-  try {
-    const { data } = await getServiceClient()
-      .from("wearer")
-      .select("name")
-      .eq("family_id", FAMILY_ID)
-      .single();
-    return data?.name ?? "your loved one";
-  } catch {
-    return "your loved one";
-  }
-}
-
-export default async function Home() {
-  const name = await wearerName();
-  const cards = [
-    {
-      href: "/family",
-      title: "I'm family",
-      desc: "Add photos, record stories, answer Kin's questions.",
-      icon: Users,
-    },
-    {
-      href: "/wearer",
-      title: `Kin for ${name}`,
-      desc: "One button. Point, tap, listen.",
-      icon: Heart,
-    },
-    {
-      href: "/stage",
-      title: "Stage",
-      desc: "Watch the Keepers, the Gate, and the family graph live.",
-      icon: Monitor,
-    },
-  ];
+import { ArrowUpRight, ScanFace, Mic, Images, LockKeyhole } from "lucide-react";
+import { Brand } from "@/components/Brand";
+export default function Home() {
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-paper px-6 py-16 text-ink">
-      {/* Soft warm wash behind the hero, purely decorative. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[420px] bg-[radial-gradient(60%_100%_at_50%_0%,rgba(47,93,80,0.10),transparent_70%)]"
-      />
-
-      <div className="relative w-full max-w-3xl">
-        <header className="mb-14 text-center">
-          <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary-soft px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.28em] text-primary">
-            Kin
-          </p>
-          <h1 className="text-balance text-4xl font-semibold leading-[1.1] tracking-[-0.02em] md:text-5xl">
-            The family remembers together.
+    <div className="landing">
+      <header className="landing-nav">
+        <Brand />
+        <Link href="/signin" className="text-link">
+          Sign in
+          <ArrowUpRight size={16} aria-hidden="true" />
+        </Link>
+      </header>
+      <main id="main-content">
+        <section className="landing-hero">
+          <p className="product-label">KIN · FAMILY MEMORY</p>
+          <h1>
+            A little help.
+            <br />A familiar world.
           </h1>
-          <p className="mx-auto mt-4 max-w-xl text-balance text-lg leading-relaxed text-ink/60">
-            A shared memory for {name}. Every cue comes from something a relative
-            actually said.
+          <p>
+            Photos and stories from the people you love.
+            <br className="desktop-break" /> A gentle reminder when you need
+            one.
           </p>
-        </header>
-
-        <div className="grid gap-4">
-          {cards.map((c) => (
-            <Link
-              key={c.href}
-              href={c.href}
-              className="group flex items-center gap-5 rounded-2xl border border-ink/[0.08] bg-paper-card px-6 py-6 shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lift sm:px-8"
-            >
-              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary-soft text-primary transition-colors group-hover:bg-primary group-hover:text-white">
-                <c.icon className="h-7 w-7" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="text-xl font-semibold tracking-[-0.01em] sm:text-2xl">
-                  {c.title}
-                </div>
-                <div className="mt-0.5 text-ink/55">{c.desc}</div>
-              </div>
-              <ArrowRight className="h-5 w-5 shrink-0 text-ink/25 transition-all group-hover:translate-x-1 group-hover:text-primary" />
-            </Link>
-          ))}
-        </div>
-
-        <p className="mt-12 text-center text-sm text-ink/40">
-          A prototype for family reminiscence. Not a medical device.
+          <Link href="/signup" className="button button-primary button-lg">
+            Get started
+          </Link>
+          <Link href="#how-it-works" className="text-link">
+            See how it works<span aria-hidden="true">↓</span>
+          </Link>
+        </section>
+        <section
+          className="product-preview"
+          aria-label="Illustration of Kin’s recognition interface"
+        >
+          <div className="preview-side">
+            <Images aria-hidden="true" />
+            <p>
+              Your family.
+              <br />
+              <strong>Remembered together.</strong>
+            </p>
+          </div>
+          <div className="preview-device" aria-hidden="true">
+            <div className="device-island" />
+            <div className="preview-app-name">kin</div>
+            <div className="preview-scan">
+              <ScanFace />
+              <span />
+            </div>
+            <div className="preview-caption">
+              <span>FAMILY RECOGNITION</span>
+              <p>
+                A familiar face.
+                <br />
+                In their own words.
+              </p>
+            </div>
+            <div className="preview-control">
+              <ScanFace />
+              Who is this?
+            </div>
+            <div className="device-home" />
+          </div>
+          <div className="preview-side right">
+            <Mic aria-hidden="true" />
+            <p>
+              Their stories.
+              <br />
+              <strong>In their voice.</strong>
+            </p>
+          </div>
+        </section>
+        <section className="landing-explanation" id="how-it-works">
+          <h2>Start with a memory.</h2>
+          <div>
+            <p>
+              <strong>Bring your family in.</strong> Add a photo and label the
+              people in it. Record a story you share. Invite relatives to add
+              what they remember.
+            </p>
+            <p>
+              <strong>Make a connection.</strong> Point the camera at a person
+              or their photo. When two relatives’ photos agree, Kin gives a
+              short reminder using a memory your family shared.
+            </p>
+            <p>
+              <strong>Keep the story growing.</strong> Kin finds missing details
+              and asks the person who might remember. Their answer becomes part
+              of your family’s library.
+            </p>
+          </div>
+        </section>
+      </main>
+      <footer className="landing-footer">
+        <LockKeyhole size={16} aria-hidden="true" />
+        <p>
+          Your family’s memories stay in your family.
+          <br />
+          <span>Kin stays quiet when there isn’t a clear match.</span>
         </p>
-      </div>
-    </main>
+      </footer>
+    </div>
   );
 }

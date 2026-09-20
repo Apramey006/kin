@@ -161,5 +161,9 @@ export interface RecallEventRow {
   silence_reason: string | null;
   latency_ms: number | null;
   face_descriptors: number[][] | null;
+  evidence?: Evidence[];
+  selected_fact_ids?: string[];
+  reason_code?: SilenceReasonCode;
+  face_outcome?: FaceOutcome;
   created_at: string;
 }

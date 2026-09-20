@@ -183,7 +183,7 @@ export async function GET(req: Request) {
   try {
     const sb = getServiceClient();
     const { familyId } = await authenticateFamily(req, sb);
-    const result = await sb.from("recall_events").select("id").eq("family_id", familyId)
+    const result = await sb.from("recall_events").select("id").eq("family_id", familyId).eq("status", "speak")
       .order("created_at", { ascending: false }).limit(1);
     if (result.error) throw new Error("Recall read failed");
     return NextResponse.json({ lastEventId: result.data?.[0]?.id ?? null });
