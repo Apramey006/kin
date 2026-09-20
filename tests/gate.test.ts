@@ -64,7 +64,7 @@ describe("gatekeeper", () => {
     expect(gate.reason).toBe("no reliable memory");
   });
 
-  it("single strong keeper SPEAKS (A=0.75)", () => {
+  it("one strong keeper is insufficient to identify a person", () => {
     const results = [
       keeper("maya", { subjectNodeId: "nora", label: "Nora" }, 0.95, 0.9, ["m1"]),
       keeper("david", null, 0, 0),
@@ -74,7 +74,8 @@ describe("gatekeeper", () => {
       results,
       infoFor({ m1: "maya" }, { m1: "photo" })
     );
-    expect(gate.decision).toBe("speak");
+    expect(gate.decision).toBe("silent");
+    expect(gate.reason).toBe("need two relatives with matching enrolled photos");
     expect(gate.A).toBe(0.75);
   });
 
@@ -87,7 +88,7 @@ describe("gatekeeper", () => {
       infoFor({ m1: "maya" }, { m1: "photo" })
     );
     expect(gate.decision).toBe("silent");
-    expect(gate.reason).toBe("below threshold");
+    expect(gate.reason).toBe("need two relatives with matching enrolled photos");
   });
 
   it("claims without provenance are SILENT (no provenance)", () => {
@@ -102,5 +103,19 @@ describe("gatekeeper", () => {
     );
     expect(gate.decision).toBe("silent");
     expect(gate.reason).toBe("no provenance");
+  });
+});
+
+describe("independent visual support", () => {
+  it("does not count a duplicate result as a second relative", () => {
+    const result = keeper("maya", { subjectNodeId: "nora", label: "Nora" }, 1, 1, ["m1"]);
+    expect(evaluateGate([result, result], infoFor({ m1: "maya" }, { m1: "photo" })).decision).toBe("silent");
+  });
+  it("a strong visual match cannot carry another relative's weak identification", () => {
+    const results = [
+      keeper("maya", { subjectNodeId: "nora", label: "Nora" }, 1, 1, ["m1"]),
+      keeper("elena", { subjectNodeId: "nora", label: "Nora" }, 0.1, 1, ["m2"]),
+    ];
+    expect(evaluateGate(results, infoFor({ m1: "maya", m2: "elena" }, { m1: "photo", m2: "photo" })).decision).toBe("silent");
   });
 });

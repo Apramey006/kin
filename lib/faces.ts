@@ -18,7 +18,10 @@ export function loadFaceModels(): Promise<void> {
         faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
         faceapi.nets.faceRecognitionNet.loadFromUri("/models"),
       ]);
-    })();
+    })().catch((error) => {
+      modelsReady = null;
+      throw error;
+    });
   }
   return modelsReady;
 }

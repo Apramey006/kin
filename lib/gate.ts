@@ -98,6 +98,12 @@ export function evaluateGate(
 
   if (X > 0) return silent(SILENCE_REASONS.disagree, over);
   if (S === 0) return silent(SILENCE_REASONS.noProvenance, over);
+  if (new Set(agreeing.map((r) => r.keeperId)).size < gate.minKeepers) {
+    return silent(SILENCE_REASONS.needAgreement, over);
+  }
+  if (agreeing.some((r) => !Number.isFinite(r.v) || r.v < (CONFIG.face.vZeroDistance - CONFIG.face.maxDistance) / CONFIG.face.vWindow)) {
+    return silent(SILENCE_REASONS.weakFace, over);
+  }
   if (C >= threshold) {
     return { ...base, ...over, decision: "speak", reason: "speak" };
   }

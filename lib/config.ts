@@ -1,5 +1,5 @@
 export const CONFIG = {
-  familyId: process.env.KIN_FAMILY_ID ?? "demo",
+  familyId: process.env.NEXT_PUBLIC_KIN_FAMILY_ID || "demo",
   storageBucket: "media",
   snapshotMaxPx: 1024,
   storyMaxSeconds: 60,
@@ -12,6 +12,8 @@ export const CONFIG = {
     matchK: 5,
     minConfidence: 0.5,
     strongMatchV: 0.9,
+    maxDistance: 0.425,
+    ambiguityMargin: 0.06,
   },
 
   retrieval: {
@@ -31,6 +33,7 @@ export const CONFIG = {
     wX: 0.25,
     threshold: 0.8,
     singleClaimantAgreement: 0.75,
+    minKeepers: 2,
   },
 
   cue: {
@@ -54,4 +57,6 @@ export const SILENCE_REASONS = {
   disagree: "keepers disagree",
   noProvenance: "no provenance",
   belowThreshold: "below threshold",
+  needAgreement: "need two relatives with matching enrolled photos",
+  weakFace: "no strong face match",
 } as const;

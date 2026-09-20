@@ -1,7 +1,9 @@
+import { getServiceClient, FAMILY_ID } from "@/lib/supabase";
 import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
+import { z } from "zod";
+import { enrollFace } from "@/lib/enroll";
 import { CONFIG } from "@/lib/config";
-import { getServiceClient, FAMILY_ID } from "@/lib/supabase";
 import { captionImage, embedText } from "@/lib/providers/ai";
 import { extractMemory, applyExtraction } from "@/lib/extract";
 import type { GraphNodeRow } from "@/lib/types";
@@ -9,22 +11,25 @@ import type { GraphNodeRow } from "@/lib/types";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-interface FaceLabel {
-  person_node_id?: string;
-  new_person?: { name: string; relation_to_wearer: string };
-  box?: { x: number; y: number; width: number; height: number };
-}
+const labelsSchema = z.array(z.object({
+  person_node_id: z.string().uuid().optional(),
+  new_person: z.object({ name: z.string().trim().min(1), relation_to_wearer: z.string().trim().min(1) }).optional(),
+  descriptor: z.array(z.number().finite()).length(128),
+})).max(8).refine((labels) => labels.every((l) => Boolean(l.person_node_id) !== Boolean(l.new_person)), "Label every detected face");
 
 export async function POST(req: Request) {
   try {
     const sb = getServiceClient();
+    const familyId = FAMILY_ID;
     const form = await req.formData();
     const file = form.get("file") as File | null;
     const contributorId = form.get("contributor_id") as string;
+
     const userCaption = (form.get("caption") as string) ?? "";
-    const labels: FaceLabel[] = JSON.parse(
-      (form.get("labels") as string) ?? "[]"
-    );
+    if (form.get("consent") !== "true") return NextResponse.json({ error: "Photo permission is required" }, { status: 400 });
+    const parsedLabels = labelsSchema.safeParse(JSON.parse(String(form.get("labels") ?? "[]")));
+    if (!parsedLabels.success) return NextResponse.json({ error: "Label every face and provide its descriptor" }, { status: 400 });
+    const labels = parsedLabels.data;
     if (!file || !contributorId) {
       return NextResponse.json({ error: "file and contributor_id required" }, { status: 400 });
     }
@@ -36,13 +41,14 @@ export async function POST(req: Request) {
       .from("relatives")
       .select("*")
       .eq("id", contributorId)
+      .eq("family_id", familyId)
       .single();
     if (!contributor) {
       return NextResponse.json({ error: "unknown contributor" }, { status: 400 });
     }
 
     const bytes = Buffer.from(await file.arrayBuffer());
-    const path = `${FAMILY_ID}/${crypto.randomUUID()}.jpg`;
+    const path = `${familyId}/${crypto.randomUUID()}.jpg`;
     const { error: upErr } = await sb.storage
       .from("media")
       .upload(path, bytes, { contentType: file.type || "image/jpeg" });
@@ -57,17 +63,20 @@ export async function POST(req: Request) {
     const { data: existingNodes } = await sb
       .from("graph_nodes")
       .select("*")
-      .eq("family_id", FAMILY_ID);
+      .eq("family_id", familyId);
     const nodes = (existingNodes ?? []) as GraphNodeRow[];
     const persons: { index: number; node_id: string }[] = [];
     const personNames: string[] = [];
     for (const [i, label] of labels.entries()) {
       let nodeId = label.person_node_id;
+      if (nodeId && !nodes.some((n) => n.id === nodeId && n.type === "person")) {
+        return NextResponse.json({ error: "Person does not belong to this family" }, { status: 400 });
+      }
       if (!nodeId && label.new_person?.name) {
         const { data, error } = await sb
           .from("graph_nodes")
           .insert({
-            family_id: FAMILY_ID,
+            family_id: familyId,
             type: "person",
             label: label.new_person.name,
             relation_to_wearer: label.new_person.relation_to_wearer || null,
@@ -88,7 +97,7 @@ export async function POST(req: Request) {
     const { data: wearer } = await sb
       .from("wearer")
       .select("name")
-      .eq("family_id", FAMILY_ID)
+      .eq("family_id", familyId)
       .single();
 
     const names = personNames.length ? personNames.join(" and ") : "family";
@@ -100,7 +109,7 @@ export async function POST(req: Request) {
     const { data: memory, error: memErr } = await sb
       .from("memories")
       .insert({
-        family_id: FAMILY_ID,
+        family_id: familyId,
         contributor_id: contributorId,
         kind: "photo",
         media_path: path,
@@ -124,7 +133,7 @@ export async function POST(req: Request) {
         existingNodes: nodes,
       });
       const applied = await applyExtraction(sb, {
-        familyId: FAMILY_ID,
+        familyId: familyId,
         contributorId,
         memoryId: memory.id,
         extraction,
@@ -139,13 +148,20 @@ export async function POST(req: Request) {
     // Labeled people get provenance on this memory, unless extraction already wrote it.
     const unprovenanced = persons.filter((p) => !appliedNodeIds.includes(p.node_id));
     if (unprovenanced.length) {
-      await sb.from("provenance").insert(
+      const { error } = await sb.from("provenance").insert(
         unprovenanced.map((p) => ({
           memory_id: memory.id,
           contributor_id: contributorId,
           node_id: p.node_id,
         }))
       );
+      if (error) throw error;
+    }
+    for (const person of persons) {
+      await enrollFace(sb, familyId, {
+        person_node_id: person.node_id, contributor_id: contributorId,
+        memory_id: memory.id, descriptor: labels[person.index].descriptor,
+      });
     }
 
     return NextResponse.json({

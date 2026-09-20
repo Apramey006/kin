@@ -68,6 +68,8 @@ export interface ExtractOpts {
   existingNodes: GraphNodeRow[];
   /** for Weaver answers: the question being answered */
   questionContext?: string;
+  /** Explicit graph subject of a Weaver question, so short answers reuse it. */
+  questionTarget?: { nodeId: string; gapType: string };
 }
 
 export async function extractMemory(opts: ExtractOpts): Promise<Extraction> {
@@ -81,8 +83,22 @@ Rules:
 - "Grandma", "Nana", "Mom", "Dad" etc. are relative to the speaker's relationship to the wearer (${opts.wearerName}). The speaker is ${opts.contributorName} (${opts.contributorRelation} of ${opts.wearerName}).
 - The wearer ${opts.wearerName} is a person node with relation_to_wearer "self".
 - Edge rel must be one of: ${ALLOWED_RELS.join(", ")}.
-- summary: one sentence, third person, faithful to the text.`;
-  const user = `${opts.questionContext ? `This text answers the question: "${opts.questionContext}"\n\n` : ""}Existing nodes:\n${nodeList || "(none)"}\n\nText:\n${opts.text}`;
+- Directed edges: origin goes from a tradition/event/object to its stated source (person, place, or object); started_by goes from a tradition/event to its explicitly stated founder; taught_by goes from learner to teacher. Do not infer that a recipe's source founded a tradition.
+- participates_in means a person takes part in an event or tradition. Taking part or teaching someone does NOT mean starting the tradition. Use started_by only when the speaker explicitly describes founding or starting it.
+- A person being in a place is located_at, not origin. Do not infer birthplace, nationality, or ancestry from location.
+- Existing nodes are an identity lookup only, not evidence. Question wording is context only, not an asserted fact. Extract facts solely from the new Text.
+- If Text contains no factual answer (for example "I don't know where it came from"), return empty nodes and edges. Never fill the gap from the existing node labels.
+- summary: one sentence, third person, faithful to the text.
+Examples:
+Text: "Leah taught Amir to knit. They knitted scarves together on Fridays."
+Edges: Amir taught_by Leah; Amir participates_in Friday knitting; Leah participates_in Friday knitting. No origin or started_by: the text never says who started the tradition.
+Text: "The spring soup recipe came from their uncle in Portugal."
+Edges: spring soup tradition origin their uncle; their uncle located_at Portugal. No started_by: the source of a recipe is not necessarily the founder of a tradition.
+Text: "I don't know where it came from."
+Nodes: []. Edges: [].`;
+  const target = opts.questionTarget && opts.existingNodes.find((n) => n.id === opts.questionTarget!.nodeId);
+  const questionTarget = target ? `The question concerns existing:${target.id}, "${target.label}" (${target.type}); gap: ${opts.questionTarget!.gapType}. Reuse this exact node when the answer describes it, including a recipe or practice referred to by this tradition. For a missing_origin answer, link this node via origin to the source stated in the answer. Add that link only if the answer actually provides an origin; uncertainty or "I don't know" supplies no fact. Do not create a duplicate version of the question's subject.\n\n` : "";
+  const user = `${opts.questionContext ? `This text answers the question: "${opts.questionContext}"\n\n` : ""}${questionTarget}Existing nodes:\n${nodeList || "(none)"}\n\nText:\n${opts.text}`;
   return chatJSON<Extraction>({
     name: "memory_extraction",
     jsonSchema: extractionJsonSchema,
@@ -201,10 +217,28 @@ export async function applyExtraction(
   }
 
   const edgeIds: string[] = [];
+  // Models may reference a known endpoint without repeating it in `nodes`,
+  // or use its bare UUID. Resolve both forms against this family's node list.
+  const resolveEndpoint = (ref: string): string | undefined => {
+    const mapped = refToId.get(ref);
+    if (mapped) return mapped;
+    const id = ref.startsWith("existing:") ? ref.slice("existing:".length) : ref;
+    const node = nodes.find((n) => n.id === id);
+    if (!node) return undefined;
+    return id;
+  };
   for (const e of extraction.edges) {
-    const from = refToId.get(e.from);
-    const to = refToId.get(e.to);
-    if (!from || !to || !isAllowedRel(e.rel)) continue;
+    if (!isAllowedRel(e.rel)) continue;
+    const from = resolveEndpoint(e.from);
+    const to = resolveEndpoint(e.to);
+    if (!from || !to) continue;
+    refToId.set(e.from, from);
+    refToId.set(e.to, to);
+    for (const id of [from, to]) {
+      if (!provenance.some((p) => p.node_id === id)) {
+        provenance.push({ memory_id: memoryId, contributor_id: contributorId, node_id: id });
+      }
+    }
     const { data: dup } = await sb
       .from("graph_edges")
       .select("id")
@@ -227,8 +261,9 @@ export async function applyExtraction(
   }
 
   if (provenance.length) {
-    await sb.from("provenance").insert(provenance);
+    const { error } = await sb.from("provenance").insert(provenance);
+    if (error) throw error;
   }
 
-  return { nodeIds: [...refToId.values()], edgeIds, chips };
+  return { nodeIds: [...new Set(refToId.values())], edgeIds, chips };
 }

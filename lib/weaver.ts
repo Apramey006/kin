@@ -125,8 +125,8 @@ export function gapScore(d: WeaverData, gap: Gap): number {
   return degree + 2 * contributorsOf(d, gap.nodeId).size;
 }
 
-export function pickTopGap(d: WeaverData): Gap | null {
-  const gaps = findGaps(d);
+export function pickTopGap(d: WeaverData, openGaps: Gap[] = []): Gap | null {
+  const gaps = findGaps(d).filter((gap) => !openGaps.some((open) => open.nodeId === gap.nodeId && open.type === gap.type));
   if (!gaps.length) return null;
   return gaps.sort((a, b) => {
     const diff = gapScore(d, b) - gapScore(d, a);
@@ -204,13 +204,17 @@ export async function runWeaver(
     await Promise.all([
       sb.from("graph_nodes").select("*").eq("family_id", familyId),
       sb.from("graph_edges").select("*").eq("family_id", familyId),
-      sb.from("provenance").select("*"),
+      sb.from("provenance").select("*, memories!inner(family_id)").eq("memories.family_id", familyId),
       sb.from("memories").select("id, contributor_id, kind, summary").eq("family_id", familyId),
       sb.from("face_embeddings").select("person_node_id").eq("family_id", familyId),
       sb.from("relatives").select("*").eq("family_id", familyId),
-      sb.from("weaver_questions").select("target_relative_id").eq("family_id", familyId).eq("status", "open"),
+      sb.from("weaver_questions").select("target_relative_id, gap_node_id, gap_type").eq("family_id", familyId).eq("status", "open"),
       sb.from("graph_nodes").select("id").eq("family_id", familyId).eq("relation_to_wearer", "self").limit(1),
     ]);
+
+  for (const result of [nodes, edges, prov, mems, faces, relatives, questions, wearer]) {
+    if (result.error) throw result.error;
+  }
 
   const memoryRows = (mems.data ?? []) as WeaverData["memories"];
   const memFamily = new Set(memoryRows.map((m) => m.id));
@@ -229,7 +233,7 @@ export async function runWeaver(
     ),
   };
 
-  const gap = pickTopGap(data);
+  const gap = pickTopGap(data, (questions.data ?? []).map((q) => ({ nodeId: q.gap_node_id, type: q.gap_type as GapType })));
   if (!gap) return { question: null, gap: null };
   const targetId = routeQuestion(data, gap);
   if (!targetId) return { question: null, gap };
@@ -281,8 +285,8 @@ export async function runWeaver(
       },
       zodSchema: questionZod,
       system:
-        "You are the Kin Family Weaver. You ask one relative a warm, low-pressure question to fill a gap in the family memory. One or two sentences. Cite who said what. End with a specific question. No pressure, no guilt.",
-      user: `Gap type: ${gap.type}\nNode: "${gapNode.label}" (${gapNode.type})\nEvidence:\n${evidenceText || "(no direct evidence)"}\n\nWrite the question.`,
+        "You are the Kin Family Weaver. You ask the specified recipient a warm, low-pressure question to fill a gap in the family memory. Evidence contributors may be different people from the recipient; never address a contributor as the recipient. One or two sentences. Cite who said what. End with a specific question. No pressure, no guilt.",
+      user: `Recipient: ${nameOf(targetId)}\nGap type: ${gap.type}\nNode: "${gapNode.label}" (${gapNode.type})\nEvidence:\n${evidenceText || "(no direct evidence)"}\n\nWrite the question for ${nameOf(targetId)}.`,
     });
     questionText = res.question;
   } catch {
@@ -301,6 +305,7 @@ export async function runWeaver(
     })
     .select()
     .single();
+  if (error?.code === "23505") return { question: null, gap };
   if (error) throw error;
   return { question: row, gap };
 }

@@ -86,6 +86,7 @@ export interface KeeperResult {
   v: number;
   r: number;
   reason: string;
+  evidence?: { id: string; summary: string }[];
 }
 
 export interface GateResult {
@@ -114,5 +115,6 @@ export interface RecallEventRow {
   silence_reason: string | null;
   latency_ms: number | null;
   face_descriptors: number[][] | null;
+  cue_source?: { memoryId: string; contributorName: string; quote: string } | null;
   created_at: string;
 }

@@ -1,7 +1,7 @@
+import { getServiceClient, FAMILY_ID } from "@/lib/supabase";
 import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
 import { CONFIG } from "@/lib/config";
-import { getServiceClient, FAMILY_ID } from "@/lib/supabase";
 import { transcribeAudio } from "@/lib/providers/deepgram";
 import { embedText } from "@/lib/providers/ai";
 import { extractMemory, applyExtraction } from "@/lib/extract";
@@ -13,9 +13,11 @@ export const maxDuration = 60;
 export async function POST(req: Request) {
   try {
     const sb = getServiceClient();
+    const familyId = FAMILY_ID;
     const form = await req.formData();
     const file = form.get("file") as File | null;
     const contributorId = form.get("contributor_id") as string;
+
     if (!file || !contributorId) {
       return NextResponse.json({ error: "file and contributor_id required" }, { status: 400 });
     }
@@ -27,6 +29,7 @@ export async function POST(req: Request) {
       .from("relatives")
       .select("*")
       .eq("id", contributorId)
+      .eq("family_id", familyId)
       .single();
     if (!contributor) {
       return NextResponse.json({ error: "unknown contributor" }, { status: 400 });
@@ -34,10 +37,12 @@ export async function POST(req: Request) {
 
     const bytes = Buffer.from(await file.arrayBuffer());
     const ext = file.type.includes("mp4") || file.type.includes("m4a") ? "m4a" : "webm";
-    const path = `${FAMILY_ID}/${crypto.randomUUID()}.${ext}`;
-    await sb.storage
+    const path = `${familyId}/${crypto.randomUUID()}.${ext}`;
+    const upload = await sb.storage
       .from("media")
       .upload(path, bytes, { contentType: file.type || "audio/webm" });
+
+    if (upload.error) throw upload.error;
 
     const transcript = await transcribeAudio(bytes, file.type || "audio/webm");
     if (!transcript) {
@@ -47,12 +52,12 @@ export async function POST(req: Request) {
     const { data: wearer } = await sb
       .from("wearer")
       .select("name")
-      .eq("family_id", FAMILY_ID)
+      .eq("family_id", familyId)
       .single();
     const { data: existingNodes } = await sb
       .from("graph_nodes")
       .select("*")
-      .eq("family_id", FAMILY_ID);
+      .eq("family_id", familyId);
 
     const extraction = await extractMemory({
       text: transcript,
@@ -68,7 +73,7 @@ export async function POST(req: Request) {
     const { data: memory, error: memErr } = await sb
       .from("memories")
       .insert({
-        family_id: FAMILY_ID,
+        family_id: familyId,
         contributor_id: contributorId,
         kind: "story",
         media_path: path,
@@ -81,7 +86,7 @@ export async function POST(req: Request) {
     if (memErr) throw memErr;
 
     const applied = await applyExtraction(sb, {
-      familyId: FAMILY_ID,
+      familyId: familyId,
       contributorId,
       memoryId: memory.id,
       extraction,

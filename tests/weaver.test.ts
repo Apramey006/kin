@@ -110,3 +110,10 @@ describe("weaver on the seeded graph", () => {
     expect(findGaps(withFace)).toContainEqual({ type: "unrelated_person", nodeId: "sam" });
   });
 });
+
+describe("outstanding questions", () => {
+  it("does not ask another relative about the same open gap", () => {
+    const next = pickTopGap(seeded, [{ type: "missing_origin", nodeId: "cake" }]);
+    expect(next?.nodeId).not.toBe("cake");
+  });
+});
