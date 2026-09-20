@@ -1,9 +1,9 @@
-import { getServiceClient, FAMILY_ID } from "@/lib/supabase";
 import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
 import { z } from "zod";
 import { enrollFace } from "@/lib/enroll";
 import { CONFIG } from "@/lib/config";
+import { requireFamily, requireContributor } from "@/lib/auth/server";
 import { captionImage, embedText } from "@/lib/providers/ai";
 import { extractMemory, applyExtraction } from "@/lib/extract";
 import type { GraphNodeRow } from "@/lib/types";
@@ -19,12 +19,11 @@ const labelsSchema = z.array(z.object({
 
 export async function POST(req: Request) {
   try {
-    const sb = getServiceClient();
-    const familyId = FAMILY_ID;
+    const { sb, familyId, relativeId } = await requireFamily({ contributor: true });
     const form = await req.formData();
     const file = form.get("file") as File | null;
     const contributorId = form.get("contributor_id") as string;
-
+    requireContributor(relativeId, contributorId);
     const userCaption = (form.get("caption") as string) ?? "";
     if (form.get("consent") !== "true") return NextResponse.json({ error: "Photo permission is required" }, { status: 400 });
     const parsedLabels = labelsSchema.safeParse(JSON.parse(String(form.get("labels") ?? "[]")));

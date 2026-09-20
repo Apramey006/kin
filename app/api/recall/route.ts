@@ -1,8 +1,9 @@
-import { getServiceClient, FAMILY_ID } from "@/lib/supabase";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { jsonError } from "@/lib/api";
 import { CONFIG } from "@/lib/config";
+import { getServiceClient } from "@/lib/supabase";
+import { requireFamily } from "@/lib/auth/server";
 import { synthesizeSpeech } from "@/lib/providers/elevenlabs";
 import { runKeepers } from "@/lib/keepers";
 import { evaluateGate, type GateInfo } from "@/lib/gate";
@@ -17,8 +18,7 @@ export async function POST(req: Request) {
   const started = Date.now();
   let eventId: string | null = null;
   try {
-    const sb = getServiceClient();
-    const familyId = FAMILY_ID;
+    const { sb, familyId } = await requireFamily();
     let snapshot: Buffer | null = null;
     let snapshotPath: string | null = null;
     let descriptors: number[][];
@@ -137,8 +137,7 @@ export async function POST(req: Request) {
 export async function GET() {
   try {
     // Preserve the known-face demo even after the stranger/silence test.
-    const sb = getServiceClient();
-    const familyId = FAMILY_ID;
+    const { sb, familyId } = await requireFamily();
     const { data, error } = await sb.from("recall_events").select("id")
       .eq("family_id", familyId).eq("status", "speak").order("created_at", { ascending: false }).limit(1);
     if (error) throw error;

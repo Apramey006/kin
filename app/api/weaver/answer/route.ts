@@ -1,7 +1,7 @@
-import { getServiceClient, FAMILY_ID } from "@/lib/supabase";
 import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
 import { CONFIG } from "@/lib/config";
+import { requireFamily, requireContributor } from "@/lib/auth/server";
 import { transcribeAudio } from "@/lib/providers/deepgram";
 import { embedText } from "@/lib/providers/ai";
 import { extractMemory, applyExtraction } from "@/lib/extract";
@@ -12,12 +12,11 @@ export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
-    const sb = getServiceClient();
-    const familyId = FAMILY_ID;
+    const { sb, familyId, relativeId } = await requireFamily({ contributor: true });
     const form = await req.formData();
     const file = form.get("file") as File | null;
     const contributorId = form.get("contributor_id") as string;
-
+    requireContributor(relativeId, contributorId);
     const questionId = form.get("question_id") as string;
     if (!file || !contributorId || !questionId) {
       return NextResponse.json(
