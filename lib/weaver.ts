@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { chatJSON } from "./providers/openai";
+import { chatJSON } from "./providers/ai";
 import { neighborIds } from "./graph";
 import { z } from "zod";
 import type {

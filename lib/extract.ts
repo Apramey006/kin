@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { chatJSON } from "./providers/openai";
+import { chatJSON } from "./providers/ai";
 import { CONFIG } from "./config";
 import { findNodeByLabel, isAllowedRel, normLabel, ALLOWED_RELS } from "./graph";
 import type { GraphNodeRow, NodeType } from "./types";

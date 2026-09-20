@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { embedText } from "./providers/openai";
+import { embedText } from "./providers/ai";
 import { CONFIG } from "./config";
 import { zeroVector } from "./util";
 

@@ -1,6 +1,5 @@
 import OpenAI from "openai";
-import { z } from "zod";
-import type { ZodType } from "zod";
+import type { ChatJSONOptions } from "./types";
 import { withTimeout } from "../util";
 import { CONFIG } from "../config";
 
@@ -9,7 +8,8 @@ let client: OpenAI | null = null;
 function getClient(): OpenAI {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error("OPENAI_API_KEY not configured");
-  if (!client) client = new OpenAI({ apiKey });
+  // Bound ingestion latency; chatJSON already owns the one application retry.
+  if (!client) client = new OpenAI({ apiKey, timeout: 10000, maxRetries: 0 });
   return client;
 }
 
@@ -23,16 +23,6 @@ export async function embedText(text: string): Promise<number[]> {
     input: text,
   });
   return res.data[0].embedding;
-}
-
-interface ChatJSONOptions<T> {
-  name: string;
-  jsonSchema: Record<string, unknown>;
-  zodSchema: ZodType<T>;
-  system: string;
-  user: string;
-  timeoutMs?: number;
-  imageBase64?: { data: string; mimeType: string };
 }
 
 /**
@@ -82,44 +72,4 @@ export async function chatJSON<T>(opts: ChatJSONOptions<T>): Promise<T> {
     }
   }
   throw lastError instanceof Error ? lastError : new Error(String(lastError));
-}
-
-const captionSchema = {
-  type: "object",
-  additionalProperties: false,
-  required: ["caption", "objects", "setting"],
-  properties: {
-    caption: { type: "string" },
-    objects: { type: "array", items: { type: "string" } },
-    setting: { type: "string" },
-  },
-} as const;
-
-export interface SceneCaption {
-  caption: string;
-  objects: string[];
-  setting: string;
-}
-
-const captionZodSchema = z.object({
-  caption: z.string(),
-  objects: z.array(z.string()),
-  setting: z.string(),
-});
-
-/** Describe a photo. Never identifies people. */
-export async function captionImage(
-  image: Buffer,
-  mimeType = "image/jpeg"
-): Promise<SceneCaption> {
-  return chatJSON<SceneCaption>({
-    name: "scene_caption",
-    jsonSchema: captionSchema,
-    zodSchema: captionZodSchema,
-    system:
-      "You describe photos for a family memory app. Describe only what is visible: clothing, objects, setting, actions. Never identify or name people. Never guess who someone is.",
-    user: "Describe this photo in one caption sentence, list visible objects, and name the setting.",
-    timeoutMs: CONFIG.timeouts.visionMs,
-    imageBase64: { data: image.toString("base64"), mimeType },
-  });
 }

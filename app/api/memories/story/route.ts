@@ -3,7 +3,7 @@ import { jsonError } from "@/lib/api";
 import { CONFIG } from "@/lib/config";
 import { getServiceClient, FAMILY_ID } from "@/lib/supabase";
 import { transcribeAudio } from "@/lib/providers/deepgram";
-import { embedText } from "@/lib/providers/openai";
+import { embedText } from "@/lib/providers/ai";
 import { extractMemory, applyExtraction } from "@/lib/extract";
 import type { GraphNodeRow } from "@/lib/types";
 

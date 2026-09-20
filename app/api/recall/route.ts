@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
 import { getServiceClient, FAMILY_ID } from "@/lib/supabase";
-import { captionImage, embedText, chatJSON } from "@/lib/providers/openai";
+import { captionImage, embedText, chatJSON } from "@/lib/providers/ai";
 import { synthesizeSpeech } from "@/lib/providers/elevenlabs";
 import { runKeepers } from "@/lib/keepers";
 import { evaluateGate, type GateInfo } from "@/lib/gate";

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
 import { CONFIG } from "@/lib/config";
 import { getServiceClient, FAMILY_ID } from "@/lib/supabase";
-import { captionImage, embedText } from "@/lib/providers/openai";
+import { captionImage, embedText } from "@/lib/providers/ai";
 import { extractMemory, applyExtraction } from "@/lib/extract";
 import type { GraphNodeRow } from "@/lib/types";
 
