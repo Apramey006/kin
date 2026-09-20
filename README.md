@@ -93,6 +93,13 @@ its own pinned native dependencies/deployment; root npm ci does not install them
 - `/stage`: live dashboard showing keeper scores, gate signals, and the family
   graph in real time.
 
+### Pull-apart stories
+
+On `/family` and `/stage`, "Unfold the story" opens an interactive memory
+scene: pull or tap the photograph to separate a shared tradition into each
+relative's perspective, read the source memory or play its recording, and see
+which Weaver gap is still open.
+
 ## Setup
 
 1. **Supabase**: the existing HackMIT project already has migration 001.

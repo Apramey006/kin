@@ -5,10 +5,13 @@ import { getAnonClient } from "@/lib/supabase";
 import { AuthBoundary, useKinAuth, authenticatedFetch, responseJSON, contributionKey, SignOutButton } from "@/lib/client-auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ImagePlus, Mic, BookHeart } from "lucide-react";
+import { MemorySceneEntry } from "@/components/MemoryScene";
 import { Recorder } from "@/components/Recorder";
 import { PhotoUploader } from "@/components/PhotoUploader";
 import { WeaverInbox } from "@/components/WeaverInbox";
-import type { GraphNodeRow, MemoryRow, Relative } from "@/lib/types";
+import { CONFIG } from "@/lib/config";
+import type { SceneData } from "@/lib/memory-scene";
+import type { GraphEdgeRow, GraphNodeRow, MemoryRow, ProvenanceRow, Relative, WeaverQuestionRow } from "@/lib/types";
 
 interface Chip {
   label: string;
@@ -19,7 +22,7 @@ interface Chip {
 export default function FamilyPage() { return <AuthBoundary contributorOnly><FamilyContent /></AuthBoundary>; }
 
 function FamilyContent() {
-  const { familyId, contributorId } = useKinAuth();
+  const { familyId, contributorId, role } = useKinAuth();
   const [relatives, setRelatives] = useState<Relative[]>([]);
   const [personNodes, setPersonNodes] = useState<GraphNodeRow[]>([]);
   const [me, setMe] = useState<Relative | null>(null);
@@ -31,6 +34,40 @@ function FamilyContent() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notConfigured, setNotConfigured] = useState(false);
+  const [sceneData, setSceneData] = useState<SceneData | null>(null);
+
+  const loadScene = useCallback(async () => {
+    const sb = getAnonClient();
+    if (!sb) return;
+    const [rels, mems, ns, es, ps, qs] = await Promise.all([
+      sb.from("relatives").select("*").eq("family_id", familyId),
+      sb.from("memories").select("id,family_id,contributor_id,kind,media_path,transcript,caption,summary,source_question_id,created_at").eq("family_id", familyId),
+      sb.from("graph_nodes").select("*").eq("family_id", familyId),
+      sb.from("graph_edges").select("*").eq("family_id", familyId),
+      sb.from("provenance").select("*"),
+      sb.from("weaver_questions").select("*").eq("family_id", familyId),
+    ]);
+    if (rels.error || mems.error || ns.error || es.error || ps.error || qs.error) return;
+    const memories = (mems.data ?? []) as MemoryRow[];
+    const paths = memories.map((m) => m.media_path).filter((p): p is string => !!p);
+    const urls = new Map<string, string>();
+    if (paths.length) {
+      const { data: signed } = await sb.storage.from(CONFIG.storageBucket).createSignedUrls(paths, 3600);
+      signed?.forEach((entry, i) => {
+        if (entry?.signedUrl) urls.set(paths[i], entry.signedUrl);
+      });
+    }
+    setSceneData({
+      relatives: (rels.data ?? []) as Relative[],
+      memories: memories.map((m) => ({ ...m, mediaUrl: m.media_path ? (urls.get(m.media_path) ?? null) : null })),
+      nodes: (ns.data ?? []) as GraphNodeRow[],
+      edges: (es.data ?? []) as GraphEdgeRow[],
+      provenance: (ps.data ?? []) as ProvenanceRow[],
+      questions: (qs.data ?? []) as WeaverQuestionRow[],
+      relativeId: contributorId,
+      role,
+    });
+  }, [familyId, contributorId, role]);
 
   const loadPersonNodes = useCallback(async () => {
     const sb = getAnonClient();
@@ -64,6 +101,7 @@ function FamilyContent() {
       if (!sorted.some((relative) => relative.id === contributorId)) setError("Your family membership is not available. Ask the demo owner to run the seed.");
     })();
     loadPersonNodes();
+    loadScene();
     const channel = sb
       .channel("family-graph-nodes")
       .on(
@@ -75,7 +113,7 @@ function FamilyContent() {
     return () => {
       sb.removeChannel(channel);
     };
-  }, [loadPersonNodes, familyId, contributorId]);
+  }, [loadPersonNodes, loadScene, familyId, contributorId]);
 
   const loadMyMemories = useCallback(async (id: string) => {
     const sb = getAnonClient();
@@ -94,6 +132,14 @@ function FamilyContent() {
     if (me) loadMyMemories(me.id);
   }, [me, loadMyMemories]);
 
+  const refresh = useCallback(async () => {
+    await Promise.all([
+      loadScene(),
+      loadPersonNodes(),
+      me ? loadMyMemories(me.id) : Promise.resolve(),
+    ]);
+  }, [loadScene, loadPersonNodes, loadMyMemories, me]);
+
   const submitStory = async (blob: Blob, mime: string) => {
     if (!me) return;
     setBusy(true);
@@ -110,6 +156,7 @@ function FamilyContent() {
       setStoryResult({ transcript: json.transcript, entities: json.entities });
       loadMyMemories(me.id);
       loadPersonNodes();
+      loadScene();
     } catch (e) {
       setError(e instanceof Error ? e.message : "story failed");
     } finally {
@@ -164,7 +211,8 @@ function FamilyContent() {
         </div>
       </header>
       <div className="mx-auto max-w-2xl space-y-5 px-4 py-6">
-        <WeaverInbox me={me} relatives={relatives} onAnswered={() => { loadMyMemories(me.id); loadPersonNodes(); }} />
+        <WeaverInbox me={me} relatives={relatives} onAnswered={() => { loadMyMemories(me.id); loadPersonNodes(); loadScene(); }} />
+        {sceneData && <MemorySceneEntry data={sceneData} refresh={refresh} />}
 
         <Card>
           <CardHeader>
@@ -183,6 +231,7 @@ function FamilyContent() {
               onDone={() => {
                 loadMyMemories(me.id);
                 loadPersonNodes();
+                loadScene();
               }}
             />
           </CardContent>
