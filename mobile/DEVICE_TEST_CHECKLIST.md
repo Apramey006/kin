@@ -12,14 +12,12 @@ This checklist is for verifying the core functionality of the Kin mobile app on 
 
 ## Family Mode Tests
 
-### Relative Selection
+### Mode Selection and Identity
 - [ ] App launches successfully on device
-- [ ] Landing screen shows both Family and Companion mode options
-- [ ] Tapping "Family" navigates to relative picker
-- [ ] Relative picker displays available family members
-- [ ] Selecting a relative navigates to the main Family screen
-- [ ] Selected relative's name and relationship are displayed
-- [ ] "Not [Name]?" button returns to relative picker
+- [ ] Landing screen shows both "I'm family" and "Kin for your loved one" options
+- [ ] Tapping a mode navigates to its screen
+- [ ] Bottom nav switches between Memories and Recognize
+- [ ] "Sharing as" chips show all relatives; the selected chip is highlighted
 - [ ] Screen reader announces relative names and relationships correctly
 
 ### Photo Upload
@@ -79,13 +77,11 @@ This checklist is for verifying the core functionality of the Kin mobile app on 
 ## Companion Mode Tests
 
 ### Camera Setup
-- [ ] Tapping "Companion" navigates to companion screen
-- [ ] Camera permission is requested if not granted
-- [ ] Camera preview displays correctly
+- [ ] Recognize screen shows the camera intro (orb, "Open camera")
+- [ ] Tapping "Open camera" requests permission if not granted
+- [ ] Camera preview displays correctly inside the rounded view
 - [ ] Camera uses rear-facing camera by default
-- [ ] Camera permission error shows helpful message
-- [ ] "Grant Permission" button works when permission denied
-- [ ] "Back" button returns to landing screen
+- [ ] Camera permission denial shows a clear message with a retry button
 
 ### Main Interaction
 - [ ] "Who is this?" button is large and accessible
@@ -97,24 +93,20 @@ This checklist is for verifying the core functionality of the Kin mobile app on 
 - [ ] Camera errors are handled gracefully
 
 ### Successful Recognition (SPEAK)
-- [ ] When recognition succeeds, cue text appears
-- [ ] Cue display is positioned at bottom of screen
+- [ ] With a face in frame, tapping speaks a cue and shows the cue card
+- [ ] Cue card is positioned at the bottom of the camera view
 - [ ] Cue text is large and readable
-- [ ] Audio playback begins if available
-- [ ] TTS fallback works if audio fails
-- [ ] Button shows "Listening…" during audio playback
-- [ ] Cue auto-dismisses after 8 seconds
-- [ ] Audio stops when cue dismisses
+- [ ] Native TTS speaks the cue (or backend audio when API is configured)
+- [ ] Cue stays visible until the next tap
 - [ ] Screen reader announces cue text
-- [ ] Return to idle state after cue dismisses
 
-### Silent Response (SILENT)
-- [ ] When recognition fails, no cue appears
-- [ ] No audio plays for silent response
+### Quiet Response (SILENT)
+- [ ] With no face in frame, tapping shows "No familiar face this time"
+- [ ] Long-pressing "Who is this?" previews the quiet response (fixture mode)
+- [ ] No audio plays and no cue card appears for a quiet response
 - [ ] Button returns to "Who is this?" state
-- [ ] Camera remains active for next attempt
-- [ ] No error message shown for silent response
-- [ ] Smooth transition back to idle state
+- [ ] Camera remains active for the next attempt
+- [ ] No error message is shown for a quiet response
 
 ### Background Handling
 - [ ] App handles backgrounding during recording

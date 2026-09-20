@@ -7,6 +7,7 @@ export interface Relative {
   name: string;
   relation_to_wearer: string;
   color: string;
+  is_self?: boolean;
 }
 
 export interface Wearer {
@@ -30,6 +31,8 @@ export interface MemoryRow {
   contributor_id: string;
   kind: MemoryKind;
   media_path: string | null;
+  // Resolved, displayable media: a URI string or a bundled asset (require()).
+  mediaUrl?: string | number | null;
   transcript: string | null;
   caption: string | null;
   summary: string;
@@ -53,8 +56,9 @@ export interface WeaverQuestionRow {
 export interface RecallResponse {
   decision: "speak" | "silent";
   cueText?: string;
-  audio?: string;
+  audio?: string | null;
   reason?: string;
+  reasonCode?: string;
   eventId?: string;
   latencyMs?: number;
 }

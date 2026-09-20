@@ -5,21 +5,25 @@ The mobile companion for the Kin family memory system. This Expo/React Native ap
 - **Family Mode**: Relatives contribute photos, stories, and answer Weaver questions
 - **Companion Mode**: The wearer taps "Who is this?" to get memory cues through audio
 
+The app replicates the web app's design and flows for iPhone demo use.
+
 ## Features
 
-### Family Mode
-- Relative selection and authentication
-- Photo upload with face labeling and consent
-- Story recording with transcription
-- Memory list and management
-- Weaver question inbox with answer recording
+### Family Mode (Memories)
+- "Sharing as" chips to contribute as a relative
+- Photo upload (library or camera) with simulated face labeling and consent
+- Voice memory recording with listen-back preview before saving
+- Memory grid with photos, transcripts, filters, and delete for your own
+- Weaver "Question for you" cards with recorded answers
 
-### Companion Mode
-- Single-action "Who is this?" button
-- Camera-based face capture
-- Memory cue playback (TTS or audio)
-- Silent response for insufficient evidence
-- Background and error handling
+### Companion Mode (Recognize)
+- Camera intro with permission request
+- Single-action "Who is this?" button over a live camera view
+- On-device face check on the captured frame (expo-face-detector)
+- Cue card overlay + spoken cue (backend audio when configured, native TTS otherwise)
+- Quiet "No familiar face this time" response when no face is in frame
+- Long-press the button in fixture mode to preview the quiet response
+- Resets to idle and silences audio when the app backgrounds
 
 ### Accessibility
 - Screen reader support
@@ -45,12 +49,13 @@ mobile/
 │   ├── api/
 │   │   └── client.ts           # Backend API client
 │   ├── components/
-│   │   └── family/             # Family mode components
-│   │       ├── RelativePicker.tsx
-│   │       ├── PhotoUploader.tsx
-│   │       ├── StoryRecorder.tsx
-│   │       ├── MemoryList.tsx
-│   │       └── WeaverInbox.tsx
+│   │   ├── ui.tsx             # Button, Sheet, Segmented, Notice, Pill, Avatar
+│   │   ├── Brand.tsx          # Kin wordmark (react-native-svg)
+│   │   ├── AppShell.tsx       # Header + floating bottom tab nav
+│   │   ├── MemoryCard.tsx     # Memory card (photo/story/answer)
+│   │   ├── PhotoUploader.tsx  # Photo pick, face label, consent
+│   │   ├── Recorder.tsx       # Voice recording with preview
+│   │   └── WeaverInbox.tsx    # Question prompt cards + answer sheet
 │   ├── fixtures/
 │   │   └── data.ts            # Fixture data for development
 │   ├── types.ts                # TypeScript type definitions
@@ -82,8 +87,10 @@ cd mobile
 
 2. Install dependencies:
 ```bash
-npm install
+npm install --legacy-peer-deps
 ```
+
+(`npm ci` can fail on an optional `react-dom` peer in the lockfile; `--legacy-peer-deps` resolves it.)
 
 3. Configure environment variables:
 ```bash
@@ -145,7 +152,19 @@ The app communicates with the Next.js backend through the API client (`src/api/c
 
 ### Fixture Data
 
-For development without a backend, the app uses fixture data (`src/fixtures/data.ts`). To enable/disable fixtures, modify the `useFixtures(true)` call in screens.
+When `EXPO_PUBLIC_API_URL` is unset (or still the placeholder), the app runs in
+fixture mode using `src/fixtures/data.ts` — the same seeded demo family as the
+web app. Photos and voice recordings added in fixture mode persist in-app and
+play back locally.
+
+In fixture Companion mode, `expo-face-detector` checks the captured frame for a
+face: face present → a rotating grounded cue is spoken; no face → the quiet
+response. If the detector module isn't bundled in the runtime (e.g. some Expo
+Go builds), taps fall back to speaking a cue, and a long-press on "Who is
+this?" previews the quiet response.
+
+With `EXPO_PUBLIC_API_URL` set, Companion posts the snapshot to the real
+`/api/recall` pipeline and honors the backend's speak/silent decision.
 
 ## Development
 
@@ -260,7 +279,7 @@ The app properly handles background/foreground transitions:
 
 ## Future Enhancements
 
-- Face detection integration (currently placeholder)
+- Server-side face matching via `/api/recall` for fixture mode too
 - Object recognition for memories
 - Offline mode support
 - Push notifications for Weaver questions

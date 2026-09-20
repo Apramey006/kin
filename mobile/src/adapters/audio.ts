@@ -1,223 +1,213 @@
-import { 
-  useAudioRecorder, 
-  RecordingPresets, 
-  AudioModule,
+import {
+  useAudioRecorder,
+  useAudioRecorderState,
+  RecordingPresets,
+  requestRecordingPermissionsAsync,
   setAudioModeAsync,
-  useAudioRecorderState
+  setIsAudioActiveAsync,
+  createAudioPlayer,
+  type AudioPlayer,
+  type AudioStatus,
 } from 'expo-audio';
-import { useState, useEffect, useRef } from 'react';
-import * as FileSystem from 'expo-file-system';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Speech from 'expo-speech';
 
 export interface RecordingResult {
   uri: string;
-  duration: number;
+  duration: number; // seconds
   size: number;
 }
 
 export function useAudioRecorderAdapter() {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
-  
-  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
-  const recorderState = useAudioRecorderState(audioRecorder);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const status = await AudioModule.requestRecordingPermissionsAsync();
-        setHasPermission(status.granted);
-        
-        if (!status.granted) {
-          setError('Microphone permission was denied');
-        }
-        
-        await setAudioModeAsync({
-          playsInSilentMode: true,
-          allowsRecording: true,
-          interruptionMode: 'doNotMix',
-        });
-      } catch (err) {
-        setError('Failed to request microphone permission');
-        console.error('Audio permission error:', err);
+  const audioRecorder = useAudioRecorder({
+    ...RecordingPresets.HIGH_QUALITY,
+    isMeteringEnabled: true,
+  });
+  const recorderState = useAudioRecorderState(audioRecorder, 200);
+
+  const ensurePermission = useCallback(async (): Promise<boolean> => {
+    try {
+      const status = await requestRecordingPermissionsAsync();
+      setHasPermission(status.granted);
+      if (!status.granted) {
+        setError('Microphone access is turned off. Allow it in Settings, then try again.');
       }
-    })();
-  }, []);
-
-  const startRecording = async (): Promise<boolean> => {
-    if (!hasPermission) {
-      setError('No microphone permission');
+      return status.granted;
+    } catch (err) {
+      setError('Failed to request microphone permission');
       return false;
     }
+  }, []);
 
+  const startRecording = useCallback(async (): Promise<boolean> => {
+    const granted = hasPermission ?? (await ensurePermission());
+    if (!granted) return false;
     try {
       setError(null);
+      await setAudioModeAsync({
+        playsInSilentMode: true,
+        allowsRecording: true,
+        interruptionMode: 'doNotMix',
+      });
       await audioRecorder.prepareToRecordAsync();
       audioRecorder.record();
       return true;
     } catch (err) {
-      setError('Failed to start recording');
-      console.error('Recording start error:', err);
+      setError('Could not start recording.');
       return false;
     }
-  };
+  }, [audioRecorder, hasPermission, ensurePermission]);
 
-  const stopRecording = async (): Promise<RecordingResult | null> => {
+  const stopRecording = useCallback(async (): Promise<RecordingResult | null> => {
     try {
+      const duration = (recorderState.durationMillis ?? 0) / 1000;
       await audioRecorder.stop();
-      
+      await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: false });
       if (!audioRecorder.uri) {
-        setError('Recording failed - no file created');
+        setError('Nothing was recorded. Give it another try.');
         return null;
       }
-
       const fileInfo = await FileSystem.getInfoAsync(audioRecorder.uri);
-      
       return {
         uri: audioRecorder.uri,
-        duration: 0, // Placeholder - actual duration would come from recording metadata
-        size: fileInfo.exists ? (fileInfo.size || 0) : 0,
+        duration,
+        size: fileInfo.exists ? (fileInfo.size ?? 0) : 0,
       };
     } catch (err) {
       setError('Failed to stop recording');
-      console.error('Recording stop error:', err);
       return null;
     }
-  };
+  }, [audioRecorder, recorderState.durationMillis]);
 
-  const cancelRecording = async (): Promise<void> => {
+  const cancelRecording = useCallback(async (): Promise<void> => {
     try {
       await audioRecorder.stop();
       if (audioRecorder.uri) {
         await FileSystem.deleteAsync(audioRecorder.uri, { idempotent: true });
       }
     } catch (err) {
-      console.error('Recording cancel error:', err);
+      // Recorder may already be stopped.
     }
-  };
+  }, [audioRecorder]);
 
   return {
     audioRecorder,
     recorderState,
     hasPermission,
     error,
+    setError,
+    ensurePermission,
     startRecording,
     stopRecording,
     cancelRecording,
   };
 }
 
+// Plays a local file or remote URI once, reporting state for the UI.
 export function useAudioPlayerAdapter() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const playerRef = useRef<any>(null);
+  const playerRef = useRef<AudioPlayer | null>(null);
+  const subRef = useRef<{ remove: () => void } | null>(null);
 
-  useEffect(() => {
-    (async () => {
+  const release = useCallback(() => {
+    subRef.current?.remove();
+    subRef.current = null;
+    if (playerRef.current) {
       try {
+        playerRef.current.remove();
+      } catch {}
+      playerRef.current = null;
+    }
+    setIsPlaying(false);
+  }, []);
+
+  useEffect(() => release, [release]);
+
+  const playUri = useCallback(
+    async (uri: string): Promise<boolean> => {
+      try {
+        setError(null);
+        release();
         await setAudioModeAsync({
           playsInSilentMode: true,
           shouldPlayInBackground: false,
           interruptionMode: 'doNotMix',
         });
+        await setIsAudioActiveAsync(true);
+        const player = createAudioPlayer({ uri });
+        playerRef.current = player;
+        subRef.current = player.addListener(
+          'playbackStatusUpdate',
+          (status: AudioStatus) => {
+            setIsPlaying(status.playing);
+            if (status.didJustFinish) release();
+          },
+        );
+        player.play();
+        setIsPlaying(true);
+        return true;
       } catch (err) {
-        console.error('Audio mode setup error:', err);
+        setError('Failed to play audio');
+        return false;
       }
-    })();
-  }, []);
+    },
+    [release],
+  );
 
-  const playAudio = async (uri: string): Promise<boolean> => {
-    try {
-      setError(null);
-      
-      // For now, use TTS as fallback since expo-av has compatibility issues
-      // In production, you would use expo-av or a proper audio library
-      const { speak } = await import('expo-speech');
-      await speak('Audio playback placeholder');
-      
-      return true;
-    } catch (err) {
-      setError('Failed to play audio');
-      console.error('Audio playback error:', err);
-      return false;
-    }
-  };
-
-  const stopAudio = async (): Promise<void> => {
-    try {
-      if (playerRef.current) {
-        // Placeholder for actual audio stopping
-        playerRef.current = null;
+  // Decode a base64 audio payload to a cache file, then play it.
+  const playBase64Audio = useCallback(
+    async (base64Audio: string, extension: string = 'mp3'): Promise<boolean> => {
+      try {
+        const path = `${FileSystem.cacheDirectory}kin-cue-${Date.now()}.${extension}`;
+        await FileSystem.writeAsStringAsync(path, base64Audio, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+        return await playUri(path);
+      } catch (err) {
+        setError('Failed to play audio');
+        return false;
       }
-      setIsPlaying(false);
-    } catch (err) {
-      console.error('Audio stop error:', err);
-    }
-  };
+    },
+    [playUri],
+  );
 
-  const playBase64Audio = async (base64Audio: string): Promise<boolean> => {
-    try {
-      setError(null);
-      
-      // For now, use TTS as fallback
-      const { speak } = await import('expo-speech');
-      await speak('Base64 audio playback placeholder');
-      
-      return true;
-    } catch (err) {
-      setError('Failed to play base64 audio');
-      console.error('Base64 audio playback error:', err);
-      return false;
-    }
-  };
-
-  return {
-    isPlaying,
-    error,
-    playAudio,
-    stopAudio,
-    playBase64Audio,
-  };
+  return { isPlaying, error, playUri, playBase64Audio, stopAudio: release };
 }
 
 export function useTextToSpeech() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const speak = async (text: string): Promise<boolean> => {
+  const speak = useCallback(async (text: string): Promise<boolean> => {
     try {
       setError(null);
       setIsSpeaking(true);
-      
-      const { speak } = await import('expo-speech');
-      await speak(text, {
-        rate: 0.9,
+      Speech.speak(text, {
+        rate: 0.92,
         pitch: 1.0,
+        onDone: () => setIsSpeaking(false),
+        onStopped: () => setIsSpeaking(false),
+        onError: () => setIsSpeaking(false),
       });
-      
-      setIsSpeaking(false);
       return true;
     } catch (err) {
       setError('Failed to speak text');
-      console.error('TTS error:', err);
       setIsSpeaking(false);
       return false;
     }
-  };
+  }, []);
 
-  const stop = async (): Promise<void> => {
+  const stop = useCallback(async (): Promise<void> => {
     try {
-      const { stop } = await import('expo-speech');
-      await stop();
+      Speech.stop();
       setIsSpeaking(false);
-    } catch (err) {
-      console.error('TTS stop error:', err);
-    }
-  };
+    } catch {}
+  }, []);
 
-  return {
-    isSpeaking,
-    error,
-    speak,
-    stop,
-  };
+  return { isSpeaking, error, speak, stop };
 }

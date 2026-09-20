@@ -1,33 +1,40 @@
-// Mobile app theme matching web UI design
+// Theme matching the web app's design tokens (app/globals.css :root).
 export const COLORS = {
-  // Web UI colors
-  paper: '#FBF8F3',
-  ink: '#1F1B16',
-  primary: '#2F5D50',
-  stage: '#0E1116',
+  paper: '#F5F5F7',
+  surface: '#FFFFFF',
+  ink: '#1D1D1F',
+  muted: '#68686D',
+  line: '#E5E5E7',
+  accent: '#0071E3',
+  accentHover: '#0066CC',
+  accentSoft: '#E8F2FF',
+  success: '#257A3E',
+  danger: '#D32F28',
+
+  // Component surfaces
+  segmented: '#EDEDF0',
+  card: '#F5F5F7',
+  fieldBg: '#FFFFFF',
+  avatarBg: '#E7E7EB',
+  avatarInk: '#525258',
+  recordRed: '#DF332B',
+  cameraDark: '#151518',
+  sheetScrim: 'rgba(0,0,0,0.28)',
+
+  // Notices
+  noticeBg: '#F0F5FC',
+  noticeInk: '#325478',
+  noticeErrorBg: '#FFF1F0',
+  noticeErrorInk: '#A52420',
+  noticeSuccessBg: '#EDF6EF',
+  noticeSuccessInk: '#276B3B',
+
+  // Aliases kept for older helpers
   white: '#FFFFFF',
-  
-  // Derived colors
-  inkLight: `${'#1F1B16'}99`, // 60% opacity
-  inkLighter: `${'#1F1B16'}66`, // 40% opacity
-  inkLightest: `${'#1F1B16'}1A`, // 10% opacity
-  primaryLight: `${'#2F5D50'}E6`, // 90% opacity
-  primaryLighter: `${'#2F5D50'}99`, // 60% opacity
-  primaryLightest: `${'#2F5D50'}1A`, // 10% opacity
-  stageLight: `${'#0E1116'}99`, // 60% opacity
-  stageLighter: `${'#0E1116'}66`, // 40% opacity
-  stageLightest: `${'#0E1116'}1A`, // 10% opacity
-  
-  // Status colors
-  success: '#34D399',
-  warning: '#FBBF24',
-  error: '#F87171',
-  info: '#60A5FA',
-  
-  // Utility colors
-  divider: `${'#1F1B16'}1A`,
-  overlay: `${'#0E1116'}80`,
-  background: '#FAFAFA',
+  divider: 'rgba(29,29,31,0.10)',
+  inkLight: 'rgba(29,29,31,0.66)',
+  inkLighter: 'rgba(29,29,31,0.4)',
+  inkLightest: 'rgba(29,29,31,0.08)',
 };
 
 export const SPACING = {
@@ -46,6 +53,7 @@ export const BORDER_RADIUS = {
   lg: 16,
   xl: 20,
   xxl: 24,
+  pill: 999,
 };
 
 export const FONT_SIZES = {
@@ -56,36 +64,29 @@ export const FONT_SIZES = {
   xl: 20,
   xxl: 24,
   xxxl: 32,
-  xxxxl: 48,
-};
-
-export const FONT_WEIGHTS = {
-  normal: '400' as const,
-  medium: '500' as const,
-  semibold: '600' as const,
-  bold: '700' as const,
+  xxxxl: 44,
 };
 
 export const SHADOWS = {
   sm: {
-    shadowColor: COLORS.ink,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.06,
     shadowRadius: 3,
-    elevation: 2,
+    elevation: 1,
   },
   md: {
-    shadowColor: COLORS.ink,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
   },
   lg: {
-    shadowColor: COLORS.ink,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.14,
+    shadowRadius: 30,
+    elevation: 10,
   },
 };
