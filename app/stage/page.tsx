@@ -148,39 +148,54 @@ export default function StagePage() {
   );
 
   return (
-    <main className="h-screen w-screen bg-stage text-white flex flex-col overflow-hidden">
-      <header className="flex items-center justify-between px-6 py-3 border-b border-white/10">
-        <div className="text-2xl font-bold tracking-wide">
-          Kin <span className="text-white/40 font-normal">· family memory</span>
+    <main className="on-stage flex h-screen w-screen flex-col overflow-hidden bg-stage text-white">
+      <header className="flex items-center justify-between border-b border-white/10 bg-white/[0.02] px-6 py-3">
+        <div className="flex items-baseline gap-3">
+          <span className="text-2xl font-bold tracking-[-0.01em]">Kin</span>
+          <span className="text-sm uppercase tracking-[0.22em] text-white/35">
+            family memory
+          </span>
         </div>
-        <div className="text-white/40">demo family · {FAMILY_ID}</div>
+        <div className="flex items-center gap-2 text-xs text-white/35">
+          <span
+            className={`h-2 w-2 rounded-full ${
+              event?.status === "running" ? "kin-pulse bg-emerald-400" : "bg-white/25"
+            }`}
+            aria-hidden
+          />
+          <span className="font-mono">demo family · {FAMILY_ID}</span>
+        </div>
       </header>
 
       {offline ? (
-        <div className="flex-1 flex items-center justify-center text-white/60 text-xl">
+        <div className="flex flex-1 items-center justify-center px-6 text-center text-xl text-white/55">
           Supabase is not configured. Fill .env.local and restart.
         </div>
       ) : (
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 p-4 min-h-0 overflow-y-auto lg:overflow-visible">
-          <section className="rounded-2xl bg-white/5 p-5 overflow-y-auto min-h-[320px]">
-            <h2 className="text-xl uppercase tracking-widest text-white/50 mb-5">
-              Keepers
-            </h2>
-            {relatives.map((r) => (
-              <KeeperBar
-                key={r.id}
-                name={r.name}
-                color={r.color}
-                result={keeperById.get(r.id)}
-                busy={event?.status === "running"}
-              />
-            ))}
-            {!relatives.length && (
-              <p className="text-white/40">Seed the demo to create Keepers.</p>
-            )}
+        <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-y-auto p-4 lg:grid-cols-3 lg:overflow-visible">
+          <section className="stage-panel flex min-h-[320px] flex-col overflow-hidden">
+            <div className="px-5 pb-3 pt-4">
+              <h2 className="panel-label">Keepers</h2>
+            </div>
+            <div className="flex-1 overflow-y-auto px-5 pb-5">
+              {relatives.map((r) => (
+                <KeeperBar
+                  key={r.id}
+                  name={r.name}
+                  color={r.color}
+                  result={keeperById.get(r.id)}
+                  busy={event?.status === "running"}
+                />
+              ))}
+              {!relatives.length && (
+                <p className="rounded-xl border border-dashed border-white/15 px-4 py-8 text-center text-white/35">
+                  Seed the demo to create Keepers.
+                </p>
+              )}
+            </div>
           </section>
 
-          <section className="rounded-2xl bg-white/5 p-5 overflow-y-auto min-h-[320px]">
+          <section className="stage-panel min-h-[320px] overflow-y-auto p-5">
             <GateMeter
               gate={event?.gate ?? null}
               running={event?.status === "running"}
@@ -190,20 +205,18 @@ export default function StagePage() {
             />
           </section>
 
-          <section className="rounded-2xl bg-white/5 overflow-hidden flex flex-col min-h-[320px]">
-            <div className="flex items-center justify-between px-5 pt-4 pb-2">
-              <h2 className="text-xl uppercase tracking-widest text-white/50">
-                Family graph
-              </h2>
+          <section className="stage-panel flex min-h-[320px] flex-col overflow-hidden">
+            <div className="flex items-center justify-between gap-3 px-5 pb-3 pt-4">
+              <h2 className="panel-label">Family graph</h2>
               <button
                 onClick={runWeaver}
                 disabled={busy !== null}
-                className="rounded-lg bg-amber-500/20 border border-amber-500/50 text-amber-300 px-4 py-2 text-lg hover:bg-amber-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="rounded-xl border border-accent/50 bg-accent/15 px-4 py-2 text-sm font-medium text-amber-200 transition hover:bg-accent/25 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {busy === "weaver" ? "Weaving…" : "Run Weaver"}
               </button>
             </div>
-            <div className="flex-1 min-h-0">
+            <div className="min-h-0 flex-1">
               <FamilyGraph
                 nodes={nodes}
                 edges={edges}
@@ -217,24 +230,38 @@ export default function StagePage() {
         </div>
       )}
 
-      {actionError && (
-        <p role="alert" className="px-6 py-2 text-sm text-amber-300">{actionError}</p>
-      )}
-      {actionStatus && (
-        <p role="status" className="px-6 py-2 text-sm text-white/70">{actionStatus}</p>
+      {(actionError || actionStatus) && (
+        <div className="px-6 pb-1">
+          {actionError && (
+            <p
+              role="alert"
+              className="animate-fade-up inline-flex items-center gap-2 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-1.5 text-sm text-amber-200"
+            >
+              {actionError}
+            </p>
+          )}
+          {actionStatus && (
+            <p
+              role="status"
+              className="animate-fade-up inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white/65"
+            >
+              {actionStatus}
+            </p>
+          )}
+        </div>
       )}
 
-      <footer className="flex items-center gap-3 px-6 py-3 border-t border-white/10 text-sm">
-        <button onClick={seed} disabled={busy !== null} className="rounded-lg bg-white/10 px-4 py-2 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed">
+      <footer className="flex flex-wrap items-center gap-2 border-t border-white/10 bg-white/[0.02] px-6 py-3 text-sm">
+        <button onClick={seed} disabled={busy !== null} className="stage-button">
           {busy === "seed" ? "Seeding…" : "Seed"}
         </button>
-        <button onClick={reset} disabled={busy !== null} className="rounded-lg bg-white/10 px-4 py-2 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed">
+        <button onClick={reset} disabled={busy !== null} className="stage-button">
           {busy === "reset" ? "Resetting…" : "Reset"}
         </button>
-        <button onClick={replay} disabled={busy !== null} className="rounded-lg bg-white/10 px-4 py-2 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed">
+        <button onClick={replay} disabled={busy !== null} className="stage-button">
           {busy === "replay" ? "Replaying…" : "Replay last recall"}
         </button>
-        <div className="ml-auto text-white/35 font-mono text-xs">
+        <div className="ml-auto font-mono text-[11px] leading-relaxed text-white/30">
           gate: {CONFIG.gate.wV}V {CONFIG.gate.wR}R {CONFIG.gate.wA}A{" "}
           {CONFIG.gate.wS}S -{CONFIG.gate.wX}X | threshold{" "}
           {CONFIG.gate.threshold} | face v=({CONFIG.face.vZeroDistance}-d)/

@@ -15,10 +15,39 @@ body {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter,
-    sans-serif;
   background: var(--paper);
   color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgba(47, 93, 80, 0.18);
+}
+
+/* One visible focus treatment everywhere, keyboard only. */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 0.5rem;
+}
+.on-stage :focus-visible,
+.bg-stage :focus-visible {
+  outline-color: rgba(255, 255, 255, 0.8);
+}
+
+@layer components {
+  /* Muted, uppercase section label used across the stage panels. */
+  .panel-label {
+    @apply text-xs font-semibold uppercase tracking-[0.18em] text-white/45;
+  }
+  .stage-panel {
+    @apply rounded-2xl border border-white/10 bg-white/[0.04] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)];
+  }
+  .stage-button {
+    @apply rounded-xl border border-white/15 bg-white/10 px-4 py-2 font-medium text-white/90 transition
+      hover:bg-white/20 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40;
+  }
 }
 
 /* Wearer surface: gentle 1.5s pulse while thinking, nothing faster. */
@@ -63,4 +92,14 @@ body {
 }
 .gap-pulse {
   animation: gap-pulse 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

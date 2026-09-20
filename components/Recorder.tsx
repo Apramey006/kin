@@ -70,11 +70,21 @@ export function Recorder({
     }, 1000);
   };
 
+  const pct = Math.max(0, Math.min(1, remaining / maxSeconds));
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex flex-wrap items-center gap-4">
       {recording ? (
-        <Button onClick={stop} size="lg" variant="outline" className="border-primary text-primary">
-          <Square className="h-5 w-5" /> Stop ({remaining}s)
+        <Button
+          onClick={stop}
+          size="lg"
+          variant="outline"
+          className="border-primary/40 text-primary"
+        >
+          <span className="relative flex h-3 w-3 items-center justify-center" aria-hidden>
+            <span className="kin-pulse absolute h-3 w-3 rounded-full bg-red-500/40" />
+            <Square className="h-3 w-3 fill-current" />
+          </span>
+          Stop ({remaining}s)
         </Button>
       ) : (
         <Button onClick={start} size="lg" disabled={disabled}>
@@ -82,7 +92,15 @@ export function Recorder({
         </Button>
       )}
       {recording && (
-        <span className="text-ink/60 text-sm">up to {maxSeconds}s</span>
+        <div className="flex min-w-[8rem] flex-1 items-center gap-2">
+          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-ink/10">
+            <div
+              className="h-full rounded-full bg-primary transition-[width] duration-1000 ease-linear"
+              style={{ width: `${pct * 100}%` }}
+            />
+          </div>
+          <span className="text-sm tabular-nums text-ink/50">up to {maxSeconds}s</span>
+        </div>
       )}
     </div>
   );

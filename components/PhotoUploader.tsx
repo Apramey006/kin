@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ImagePlus } from "lucide-react";
 import { detectFaces, type DetectedFace } from "@/lib/faces";
 import type { GraphNodeRow } from "@/lib/types";
 
@@ -118,40 +119,59 @@ export function PhotoUploader({
 
   return (
     <div className="space-y-4">
-      <label className="block">
-        <span className="sr-only">Choose a photo</span>
+      <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-ink/15 bg-paper-deep px-6 py-8 text-center transition-colors hover:border-primary/40 hover:bg-primary-soft">
+        <ImagePlus className="h-7 w-7 text-primary" aria-hidden />
+        <span className="font-medium text-ink/80">
+          {file ? "Choose a different photo" : "Choose a photo"}
+        </span>
+        <span className="text-sm text-ink/45">
+          {file ? file.name : "Kin will look for faces to label"}
+        </span>
         <input
           type="file"
           accept="image/*"
-          className="block w-full text-base file:mr-4 file:rounded-xl file:border-0 file:bg-primary file:px-4 file:py-2 file:text-white"
+          className="sr-only"
           onChange={(e) => e.target.files?.[0] && pick(e.target.files[0])}
         />
       </label>
 
       {preview && (
-        <div className="relative inline-block">
+        <div className="relative inline-block overflow-hidden rounded-2xl border border-ink/10 shadow-soft">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={preview} alt="preview" className="max-h-64 rounded-xl" />
+          <img src={preview} alt="preview" className="block max-h-64" />
           {faces.map((f, i) => (
             <div
               key={i}
-              className="absolute border-2 border-primary rounded"
+              className="absolute rounded-md border-2 border-primary shadow-[0_0_0_2px_rgba(255,255,255,0.35)]"
               style={{
                 left: `${(f.box.x / (imgRef.current?.naturalWidth || 1)) * 100}%`,
                 top: `${(f.box.y / (imgRef.current?.naturalHeight || 1)) * 100}%`,
                 width: `${(f.box.width / (imgRef.current?.naturalWidth || 1)) * 100}%`,
                 height: `${(f.box.height / (imgRef.current?.naturalHeight || 1)) * 100}%`,
               }}
-            />
+            >
+              <span className="absolute -top-2 left-0 rounded bg-primary px-1.5 text-[10px] font-semibold leading-4 text-white">
+                {i + 1}
+              </span>
+            </div>
           ))}
         </div>
       )}
 
       {faces.map((_, i) => (
-        <div key={i} className="rounded-xl border border-ink/10 p-3 space-y-2">
-          <div className="text-sm font-medium">Face {i + 1}: who is this?</div>
+        <div
+          key={i}
+          className="space-y-2 rounded-xl border border-ink/[0.08] bg-paper-deep p-3.5"
+        >
+          <div className="flex items-center gap-2 text-sm font-medium text-ink/75">
+            <span className="flex h-5 w-5 items-center justify-center rounded bg-primary text-[10px] font-semibold text-white">
+              {i + 1}
+            </span>
+            Who is this?
+          </div>
           <select
-            className="h-11 w-full rounded-xl border border-ink/15 bg-white px-3"
+            aria-label={`Who is face ${i + 1}?`}
+            className="h-11 w-full rounded-xl border border-ink/15 bg-white px-3 text-base transition-colors hover:border-ink/25 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
             value={labels[i].mode === "existing" ? labels[i].person_node_id : "__new__"}
             onChange={(e) => {
               const v = e.target.value;
@@ -177,7 +197,7 @@ export function PhotoUploader({
             <option value="__new__">Someone new…</option>
           </select>
           {labels[i].mode === "new" && (
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <Input
                 placeholder="Name"
                 value={labels[i].newName}
@@ -204,7 +224,9 @@ export function PhotoUploader({
       ))}
 
       {preview && faces.length === 0 && (
-        <p className="text-sm text-ink/60">No faces detected. You can still share it.</p>
+        <p className="rounded-xl bg-paper-deep px-3.5 py-2.5 text-sm text-ink/55">
+          No faces detected. You can still share it.
+        </p>
       )}
 
       {preview && (
@@ -214,22 +236,26 @@ export function PhotoUploader({
             value={caption}
             onChange={(e) => setCaption(e.target.value)}
           />
-          <label className="flex items-start gap-3 text-base">
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-paper-deep p-3.5 text-[15px] leading-snug text-ink/80">
             <input
               type="checkbox"
-              className="mt-1 h-5 w-5 accent-primary"
+              className="mt-0.5 h-5 w-5 shrink-0 accent-primary"
               checked={consent}
               onChange={(e) => setConsent(e.target.checked)}
             />
             I have permission to add this person&apos;s photo to our family
             memory.
           </label>
-          <Button onClick={submit} disabled={!consent || busy} size="lg">
+          <Button onClick={submit} disabled={!consent || busy} size="lg" className="w-full sm:w-auto">
             {busy ? "Sharing…" : "Share this memory"}
           </Button>
         </>
       )}
-      {error && <p className="text-sm text-amber-700">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm font-medium text-amber-700">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

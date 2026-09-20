@@ -14,15 +14,28 @@ export function KeeperBar({
   busy: boolean;
 }) {
   const score = result ? Math.max(result.v, result.r) : 0;
+  const searching = busy && !result;
   return (
-    <div className="mb-5">
-      <div className="flex items-baseline justify-between mb-1">
-        <span className="text-2xl font-semibold" style={{ color }}>
-          {name}
+    <div className="mb-4 rounded-xl border border-white/[0.06] bg-white/[0.03] px-3.5 py-3">
+      <div className="mb-2 flex items-baseline justify-between gap-3">
+        <span
+          className="flex min-w-0 items-center gap-2 text-lg font-semibold"
+          style={{ color }}
+        >
+          <span
+            className="h-2 w-2 shrink-0 rounded-full"
+            style={{ background: color }}
+            aria-hidden
+          />
+          <span className="truncate">{name}</span>
         </span>
-        <span className="text-lg text-white/70">
-          {busy && !result
-            ? "searching..."
+        <span
+          className={`shrink-0 text-right text-sm ${
+            searching ? "kin-pulse text-white/50" : "text-white/65"
+          }`}
+        >
+          {searching
+            ? "searching…"
             : result
               ? result.claim
                 ? result.claim.label
@@ -30,26 +43,33 @@ export function KeeperBar({
               : "waiting"}
         </span>
       </div>
-      <div className="h-4 rounded-full bg-white/10 overflow-hidden">
+
+      <div className="h-2.5 overflow-hidden rounded-full bg-white/10">
         <div
-          className="h-full rounded-full transition-all duration-500"
+          className="h-full rounded-full transition-all duration-500 ease-out"
           style={{ width: `${Math.round(score * 100)}%`, background: color }}
         />
       </div>
+
       {result && (
-        <div className="mt-1 text-sm text-white/50 flex justify-between">
-          <span>
-            v {result.v.toFixed(2)} · r {result.r.toFixed(2)} · {result.reason}
+        <div className="mt-2 flex items-baseline justify-between gap-3 text-xs text-white/45">
+          <span className="min-w-0 truncate">
+            <span className="font-mono tabular-nums">v {result.v.toFixed(2)}</span>
+            {" · "}
+            <span className="font-mono tabular-nums">r {result.r.toFixed(2)}</span>
+            {" · "}
+            {result.reason}
           </span>
-          <span>{result.memoryIds.length} memories</span>
+          <span className="shrink-0">{result.memoryIds.length} memories</span>
         </div>
       )}
+
       {result && result.memoryIds.length > 0 && (
-        <div className="mt-1 flex flex-wrap gap-1">
+        <div className="mt-2 flex flex-wrap gap-1">
           {result.memoryIds.slice(0, 4).map((id) => (
             <span
               key={id}
-              className="rounded bg-white/10 px-1.5 py-0.5 text-xs font-mono"
+              className="rounded bg-white/[0.08] px-1.5 py-0.5 font-mono text-[10px] text-white/55"
               style={{ borderLeft: `2px solid ${color}` }}
             >
               {id.slice(0, 6)}
