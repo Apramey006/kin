@@ -14,11 +14,24 @@ export async function transcribeAudio(
 export async function transcribeTimedAudio(
   audio: Buffer,
   mimeType: string,
+  familyNames: string[] = [],
 ): Promise<{ transcript: string; segments: AudioSegment[] }> {
   const apiKey = process.env.DEEPGRAM_API_KEY;
   if (!apiKey) throw new Error("DEEPGRAM_API_KEY not configured");
   if (!audio.length) throw new Error("Empty audio");
-  const res = await fetch(LISTEN_URL, {
+  const url = new URL(LISTEN_URL);
+  // Give speech recognition family context before extraction creates people.
+  // Hints do not rewrite the returned transcript or merge similar names.
+  const names = [...new Set(familyNames.map(name => name.trim()).filter(Boolean))];
+  let remaining = 400; // Conservative UTF-8 byte budget, below the 500-token limit.
+  for (const name of names.slice(0, 50)) {
+    const bytes = Buffer.byteLength(name, "utf8");
+    if (bytes > remaining) continue;
+    url.searchParams.append("keyterm", name);
+    remaining -= bytes;
+  }
+  if (url.searchParams.has("keyterm")) url.searchParams.set("model", "nova-3");
+  const res = await fetch(url.toString(), {
     method: "POST",
     headers: {
       Authorization: `Token ${apiKey}`,

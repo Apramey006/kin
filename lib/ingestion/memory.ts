@@ -89,7 +89,10 @@ export async function ingestMemory(req: Request, kind: MemoryKind) {
     if (kind === "photo") {
       visionCaption = (await captionImage(media.bytes, media.mime)).caption;
     } else {
-      ({ transcript, segments } = await transcribeTimedAudio(media.bytes, media.mime));
+      const familyNames = [wearerResult.data?.name, identity.contributor.name,
+        ...nodes.filter(node => node.type === "person").flatMap(node => [node.label, ...(node.aliases ?? [])])]
+        .filter((name): name is string => Boolean(name));
+      ({ transcript, segments } = await transcribeTimedAudio(media.bytes, media.mime, familyNames));
       if (!transcript.trim()) throw new IngestionError(422, "No speech detected");
     }
     const source = kind === "photo"

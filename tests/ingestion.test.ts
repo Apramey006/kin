@@ -179,7 +179,7 @@ describe("mobile memory routes", () => {
   it("accepts a mobile M4A container", async () => {
     const audio = Buffer.from([0, 0, 0, 20, 102, 116, 121, 112, 77, 52, 65, 32]);
     expect((await story(request("story", {}, audio, "audio/mp4"))).status).toBe(200);
-    expect(mocks.transcribeAudio).toHaveBeenCalledWith(audio, "audio/mp4");
+    expect(mocks.transcribeAudio).toHaveBeenCalledWith(audio, "audio/mp4", ["Rosa", "David", "Nora"]);
   });
   it("retries return the original memory without calling providers again", async () => {
     const first = await (await story(request("story"))).json();

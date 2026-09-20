@@ -22,3 +22,25 @@ it("keeps the full transcript when provider timings cannot be verified", async (
   } }))));
   expect(await transcribeTimedAudio(Buffer.from("audio"), "audio/webm")).toEqual({ transcript: "Lemon cake.", segments: [] });
 });
+
+it("hints family names without rewriting similar names in the provider transcript", async () => {
+  vi.stubEnv("DEEPGRAM_API_KEY", "test-key");
+  const fetch = vi.fn().mockResolvedValue(Response.json({ results: {
+    channels: [{ alternatives: [{ transcript: "Eleanor went to church." }] }],
+  } }));
+  vi.stubGlobal("fetch", fetch);
+  const result = await transcribeTimedAudio(Buffer.from("audio"), "audio/webm", [" Elena ", "Elena", "", "Maya", "李娜", "A&B"]);
+  const url = new URL(fetch.mock.calls[0][0]);
+  expect(url.searchParams.get("model")).toBe("nova-3");
+  expect(url.searchParams.getAll("keyterm")).toEqual(["Elena", "Maya", "李娜", "A&B"]);
+  expect(result.transcript).toBe("Eleanor went to church.");
+});
+it("bounds transcription hints for large family graphs", async () => {
+  vi.stubEnv("DEEPGRAM_API_KEY", "test-key");
+  const fetch = vi.fn().mockResolvedValue(Response.json({ results: { channels: [] } }));
+  vi.stubGlobal("fetch", fetch);
+  await transcribeTimedAudio(Buffer.from("audio"), "audio/webm", Array.from({length: 200}, (_, i) => `Relative ${i}`));
+  const names = new URL(fetch.mock.calls[0][0]).searchParams.getAll("keyterm");
+  expect(names.length).toBeLessThanOrEqual(50);
+  expect(names.reduce((sum, name) => sum + Buffer.byteLength(name), 0)).toBeLessThanOrEqual(400);
+});

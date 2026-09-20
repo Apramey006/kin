@@ -42,7 +42,8 @@ address when testing on a physical phone.
 Required configuration is listed in `.env.example`: Supabase URL, browser
 publishable/anon key, server secret/service-role key, OpenAI, Deepgram, and
 ElevenLabs (including a voice ID). OpenAI supplies extraction, descriptive
-captions and semantic embeddings; Deepgram transcribes recordings; ElevenLabs
+captions and semantic embeddings; Deepgram transcribes recordings with family-name
+hints (Nova-3 keyterm prompting when names are available); ElevenLabs
 voices cues, with browser speech as the client fallback. The active backend
 uses OpenAI; the earlier feature branch's Anthropic-only mode is not active.
 
