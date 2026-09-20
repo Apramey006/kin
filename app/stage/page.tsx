@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { getAnonClient, FAMILY_ID } from "@/lib/supabase";
 import { KeeperBar } from "@/components/KeeperBar";
 import { GateMeter } from "@/components/GateMeter";
@@ -156,14 +157,19 @@ export default function StagePage() {
             family memory
           </span>
         </div>
-        <div className="flex items-center gap-2 text-xs text-white/35">
-          <span
-            className={`h-2 w-2 rounded-full ${
-              event?.status === "running" ? "kin-pulse bg-emerald-400" : "bg-white/25"
-            }`}
-            aria-hidden
-          />
-          <span className="font-mono">demo family · {FAMILY_ID}</span>
+        <div className="flex items-center gap-4">
+          <Link href="/graph" className="rounded-lg border border-emerald-200/20 bg-emerald-200/5 px-4 py-2 text-sm text-emerald-100 hover:bg-emerald-200/10">
+            Explore Memory Atlas ↗
+          </Link>
+          <div className="hidden items-center gap-2 text-xs text-white/35 sm:flex">
+            <span
+              className={`h-2 w-2 rounded-full ${
+                event?.status === "running" ? "kin-pulse bg-emerald-400" : "bg-white/25"
+              }`}
+              aria-hidden
+            />
+            <span className="font-mono">demo family · {FAMILY_ID}</span>
+          </div>
         </div>
       </header>
 
