@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { getAnonClient, FAMILY_ID } from "@/lib/supabase";
 import { Recorder } from "@/components/Recorder";
+import { Sparkles } from "lucide-react";
 import type { Relative, WeaverQuestionRow } from "@/lib/types";
 
 export function WeaverInbox({
@@ -74,37 +75,53 @@ export function WeaverInbox({
   };
 
   return (
-    <section className="rounded-2xl border-2 border-primary/40 bg-primary/5 p-5">
-      <h2 className="text-xl font-semibold mb-3">Kin is asking you</h2>
-      {questions.map((q) => (
-        <div key={q.id} className="rounded-xl bg-white p-4 mb-3 shadow-sm">
-          <p className="text-lg mb-2">{q.question_text}</p>
-          {q.evidence?.length > 0 && (
-            <ul className="text-sm text-ink/60 mb-3 space-y-1">
-              {q.evidence.map((e) => (
-                <li key={e.memory_id}>
-                  <span className="font-medium">{nameOf(e.contributor_id)}</span>
-                  : {e.summary}
-                </li>
-              ))}
-            </ul>
-          )}
-          {answered[q.id] ? (
-            <p className="text-primary">Thank you. Kin added: {answered[q.id]}</p>
-          ) : (
-            <>
-              <Recorder
-                label="Record answer"
-                disabled={submittingId === q.id}
-                onRecorded={(b, m) => answer(q, b, m)}
-              />
-              {submittingId === q.id && (
-                <p className="text-ink/60 mt-2">Adding your answer...</p>
-              )}
-            </>
-          )}
-        </div>
-      ))}
+    <section className="animate-fade-up rounded-2xl border border-primary/25 bg-primary-soft p-5">
+      <div className="mb-3 flex items-center gap-2">
+        <Sparkles className="h-[18px] w-[18px] text-primary" aria-hidden />
+        <h2 className="text-lg font-semibold text-primary-deep">Kin is asking you</h2>
+        <span className="ml-auto rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+          {questions.length}
+        </span>
+      </div>
+      <div className="space-y-3">
+        {questions.map((q) => (
+          <div
+            key={q.id}
+            className="rounded-xl border border-ink/[0.06] bg-paper-card p-4 shadow-soft"
+          >
+            <p className="mb-2 text-lg leading-snug">{q.question_text}</p>
+            {q.evidence?.length > 0 && (
+              <ul className="mb-3 space-y-1 border-l-2 border-ink/10 pl-3 text-sm text-ink/55">
+                {q.evidence.map((e) => (
+                  <li key={e.memory_id}>
+                    <span className="font-medium text-ink/75">
+                      {nameOf(e.contributor_id)}
+                    </span>
+                    : {e.summary}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {answered[q.id] ? (
+              <p className="text-primary">Thank you. Kin added: {answered[q.id]}</p>
+            ) : (
+              <>
+                <Recorder
+                  label="Record answer"
+                  disabled={submittingId === q.id}
+                  onRecorded={(b, m) => answer(q, b, m)}
+                />
+                {submittingId === q.id && (
+                  <p className="mt-2 flex items-center gap-2 text-ink/55">
+                    <span className="kin-pulse h-2 w-2 rounded-full bg-primary" />
+                    Adding your answer…
+                  </p>
+                )}
+              </>
+            )}
+          </div>
+        ))}
+      </div>
     </section>
   );
 }

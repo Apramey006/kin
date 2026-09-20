@@ -1,0 +1,1025 @@
+{
+  "cases": [
+    {
+      "name": "face-distance-0.2",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "faceMatches": [
+            {
+              "person_node_id": "nora",
+              "contributor_id": "maya",
+              "memory_id": "m1",
+              "distance": 0.2
+            }
+          ],
+          "nodeLabels": {
+            "nora": "Nora",
+            "cabin": "the cabin",
+            "sam": "Sam"
+          },
+          "nodeTypes": {
+            "nora": "person",
+            "cabin": "object",
+            "sunday": "tradition",
+            "sam": "person"
+          },
+          "memoryOwners": {
+            "m1": "maya"
+          },
+          "memories": [],
+          "memoryNodeLinks": {},
+          "personLinkedMemories": [
+            {
+              "id": "m2",
+              "summary": "sunday baking",
+              "similarity": 0
+            }
+          ]
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": {
+          "subjectNodeId": "nora",
+          "label": "Nora"
+        },
+        "memoryIds": [
+          "m1"
+        ],
+        "v": 1,
+        "r": 0,
+        "reason": "face match (d=0.20)"
+      }
+    },
+    {
+      "name": "face-distance-0.35",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "faceMatches": [
+            {
+              "person_node_id": "nora",
+              "contributor_id": "maya",
+              "memory_id": "m1",
+              "distance": 0.35
+            }
+          ],
+          "nodeLabels": {
+            "nora": "Nora",
+            "cabin": "the cabin",
+            "sam": "Sam"
+          },
+          "nodeTypes": {
+            "nora": "person",
+            "cabin": "object",
+            "sunday": "tradition",
+            "sam": "person"
+          },
+          "memoryOwners": {
+            "m1": "maya"
+          },
+          "memories": [],
+          "memoryNodeLinks": {},
+          "personLinkedMemories": [
+            {
+              "id": "m2",
+              "summary": "sunday baking",
+              "similarity": 0
+            }
+          ]
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": {
+          "subjectNodeId": "nora",
+          "label": "Nora"
+        },
+        "memoryIds": [
+          "m1"
+        ],
+        "v": 1,
+        "r": 0,
+        "reason": "face match (d=0.35)"
+      }
+    },
+    {
+      "name": "face-distance-0.45",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "faceMatches": [
+            {
+              "person_node_id": "nora",
+              "contributor_id": "maya",
+              "memory_id": "m1",
+              "distance": 0.45
+            }
+          ],
+          "nodeLabels": {
+            "nora": "Nora",
+            "cabin": "the cabin",
+            "sam": "Sam"
+          },
+          "nodeTypes": {
+            "nora": "person",
+            "cabin": "object",
+            "sunday": "tradition",
+            "sam": "person"
+          },
+          "memoryOwners": {
+            "m1": "maya"
+          },
+          "memories": [],
+          "memoryNodeLinks": {},
+          "personLinkedMemories": [
+            {
+              "id": "m2",
+              "summary": "sunday baking",
+              "similarity": 0
+            }
+          ]
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": {
+          "subjectNodeId": "nora",
+          "label": "Nora"
+        },
+        "memoryIds": [
+          "m1"
+        ],
+        "v": 0.5999999999999999,
+        "r": 0,
+        "reason": "face match (d=0.45)"
+      }
+    },
+    {
+      "name": "face-distance-0.55",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "faceMatches": [
+            {
+              "person_node_id": "nora",
+              "contributor_id": "maya",
+              "memory_id": "m1",
+              "distance": 0.55
+            }
+          ],
+          "nodeLabels": {
+            "nora": "Nora",
+            "cabin": "the cabin",
+            "sam": "Sam"
+          },
+          "nodeTypes": {
+            "nora": "person",
+            "cabin": "object",
+            "sunday": "tradition",
+            "sam": "person"
+          },
+          "memoryOwners": {
+            "m1": "maya"
+          },
+          "memories": [],
+          "memoryNodeLinks": {},
+          "personLinkedMemories": [
+            {
+              "id": "m2",
+              "summary": "sunday baking",
+              "similarity": 0
+            }
+          ]
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": {
+          "subjectNodeId": "nora",
+          "label": "Nora"
+        },
+        "memoryIds": [
+          "m1"
+        ],
+        "v": 0.19999999999999973,
+        "r": 0,
+        "reason": "face match (d=0.55)"
+      }
+    },
+    {
+      "name": "face-distance-0.6",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "faceMatches": [
+            {
+              "person_node_id": "nora",
+              "contributor_id": "maya",
+              "memory_id": "m1",
+              "distance": 0.6
+            }
+          ],
+          "nodeLabels": {
+            "nora": "Nora",
+            "cabin": "the cabin",
+            "sam": "Sam"
+          },
+          "nodeTypes": {
+            "nora": "person",
+            "cabin": "object",
+            "sunday": "tradition",
+            "sam": "person"
+          },
+          "memoryOwners": {
+            "m1": "maya"
+          },
+          "memories": [],
+          "memoryNodeLinks": {},
+          "personLinkedMemories": [
+            {
+              "id": "m2",
+              "summary": "sunday baking",
+              "similarity": 0
+            }
+          ]
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": null,
+        "memoryIds": [
+          "m1"
+        ],
+        "v": 0,
+        "r": 0,
+        "reason": "weak face match (d=0.60)"
+      }
+    },
+    {
+      "name": "face-distance-0.7",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "faceMatches": [
+            {
+              "person_node_id": "nora",
+              "contributor_id": "maya",
+              "memory_id": "m1",
+              "distance": 0.7
+            }
+          ],
+          "nodeLabels": {
+            "nora": "Nora",
+            "cabin": "the cabin",
+            "sam": "Sam"
+          },
+          "nodeTypes": {
+            "nora": "person",
+            "cabin": "object",
+            "sunday": "tradition",
+            "sam": "person"
+          },
+          "memoryOwners": {
+            "m1": "maya"
+          },
+          "memories": [],
+          "memoryNodeLinks": {},
+          "personLinkedMemories": [
+            {
+              "id": "m2",
+              "summary": "sunday baking",
+              "similarity": 0
+            }
+          ]
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": null,
+        "memoryIds": [
+          "m1"
+        ],
+        "v": 0,
+        "r": 0,
+        "reason": "weak face match (d=0.70)"
+      }
+    },
+    {
+      "name": "face-match-belongs-to-another-keeper",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "faceMatches": [
+            {
+              "person_node_id": "nora",
+              "contributor_id": "david",
+              "memory_id": "m9",
+              "distance": 0.2
+            }
+          ],
+          "nodeLabels": {
+            "nora": "Nora",
+            "cabin": "the cabin",
+            "sam": "Sam"
+          },
+          "nodeTypes": {
+            "nora": "person",
+            "cabin": "object",
+            "sunday": "tradition",
+            "sam": "person"
+          },
+          "memoryOwners": {
+            "m9": "david"
+          },
+          "memories": [],
+          "memoryNodeLinks": {},
+          "personLinkedMemories": []
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": null,
+        "memoryIds": [],
+        "v": 0,
+        "r": 0,
+        "reason": "no reliable memory"
+      }
+    },
+    {
+      "name": "picks-closest-own-face-over-foreign",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "faceMatches": [
+            {
+              "person_node_id": "sam",
+              "contributor_id": "david",
+              "memory_id": "m9",
+              "distance": 0.1
+            },
+            {
+              "person_node_id": "nora",
+              "contributor_id": "maya",
+              "memory_id": "m1",
+              "distance": 0.5
+            },
+            {
+              "person_node_id": "sam",
+              "contributor_id": "maya",
+              "memory_id": "m4",
+              "distance": 0.3
+            }
+          ],
+          "nodeLabels": {
+            "nora": "Nora",
+            "cabin": "the cabin",
+            "sam": "Sam"
+          },
+          "nodeTypes": {
+            "nora": "person",
+            "cabin": "object",
+            "sunday": "tradition",
+            "sam": "person"
+          },
+          "memoryOwners": {
+            "m1": "maya",
+            "m4": "maya",
+            "m9": "david"
+          },
+          "memories": [],
+          "memoryNodeLinks": {},
+          "personLinkedMemories": []
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": {
+          "subjectNodeId": "sam",
+          "label": "Sam"
+        },
+        "memoryIds": [
+          "m4"
+        ],
+        "v": 1,
+        "r": 0,
+        "reason": "face match (d=0.30)"
+      }
+    },
+    {
+      "name": "memory-similarity-0.2",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "faceMatches": [],
+          "nodeLabels": {
+            "nora": "Nora",
+            "cabin": "the cabin",
+            "sam": "Sam"
+          },
+          "nodeTypes": {
+            "nora": "person",
+            "cabin": "object",
+            "sunday": "tradition",
+            "sam": "person"
+          },
+          "memoryOwners": {
+            "m1": "maya"
+          },
+          "memories": [
+            {
+              "id": "m1",
+              "summary": "nora bakes",
+              "similarity": 0.2
+            }
+          ],
+          "memoryNodeLinks": {
+            "m1": [
+              "nora"
+            ]
+          },
+          "personLinkedMemories": []
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": null,
+        "memoryIds": [],
+        "v": 0,
+        "r": 0,
+        "reason": "no reliable memory"
+      }
+    },
+    {
+      "name": "memory-similarity-0.4",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "faceMatches": [],
+          "nodeLabels": {
+            "nora": "Nora",
+            "cabin": "the cabin",
+            "sam": "Sam"
+          },
+          "nodeTypes": {
+            "nora": "person",
+            "cabin": "object",
+            "sunday": "tradition",
+            "sam": "person"
+          },
+          "memoryOwners": {
+            "m1": "maya"
+          },
+          "memories": [
+            {
+              "id": "m1",
+              "summary": "nora bakes",
+              "similarity": 0.4
+            }
+          ],
+          "memoryNodeLinks": {
+            "m1": [
+              "nora"
+            ]
+          },
+          "personLinkedMemories": []
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": {
+          "subjectNodeId": "nora",
+          "label": "Nora"
+        },
+        "memoryIds": [
+          "m1"
+        ],
+        "v": 0,
+        "r": 0.5,
+        "reason": "memory match (sim=0.40)"
+      }
+    },
+    {
+      "name": "memory-similarity-0.5",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "faceMatches": [],
+          "nodeLabels": {
+            "nora": "Nora",
+            "cabin": "the cabin",
+            "sam": "Sam"
+          },
+          "nodeTypes": {
+            "nora": "person",
+            "cabin": "object",
+            "sunday": "tradition",
+            "sam": "person"
+          },
+          "memoryOwners": {
+            "m1": "maya"
+          },
+          "memories": [
+            {
+              "id": "m1",
+              "summary": "nora bakes",
+              "similarity": 0.5
+            }
+          ],
+          "memoryNodeLinks": {
+            "m1": [
+              "nora"
+            ]
+          },
+          "personLinkedMemories": []
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": {
+          "subjectNodeId": "nora",
+          "label": "Nora"
+        },
+        "memoryIds": [
+          "m1"
+        ],
+        "v": 0,
+        "r": 0.7499999999999999,
+        "reason": "memory match (sim=0.50)"
+      }
+    },
+    {
+      "name": "memory-similarity-0.6",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "faceMatches": [],
+          "nodeLabels": {
+            "nora": "Nora",
+            "cabin": "the cabin",
+            "sam": "Sam"
+          },
+          "nodeTypes": {
+            "nora": "person",
+            "cabin": "object",
+            "sunday": "tradition",
+            "sam": "person"
+          },
+          "memoryOwners": {
+            "m1": "maya"
+          },
+          "memories": [
+            {
+              "id": "m1",
+              "summary": "nora bakes",
+              "similarity": 0.6
+            }
+          ],
+          "memoryNodeLinks": {
+            "m1": [
+              "nora"
+            ]
+          },
+          "personLinkedMemories": []
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": {
+          "subjectNodeId": "nora",
+          "label": "Nora"
+        },
+        "memoryIds": [
+          "m1"
+        ],
+        "v": 0,
+        "r": 0.9999999999999999,
+        "reason": "memory match (sim=0.60)"
+      }
+    },
+    {
+      "name": "memory-similarity-0.8",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "faceMatches": [],
+          "nodeLabels": {
+            "nora": "Nora",
+            "cabin": "the cabin",
+            "sam": "Sam"
+          },
+          "nodeTypes": {
+            "nora": "person",
+            "cabin": "object",
+            "sunday": "tradition",
+            "sam": "person"
+          },
+          "memoryOwners": {
+            "m1": "maya"
+          },
+          "memories": [
+            {
+              "id": "m1",
+              "summary": "nora bakes",
+              "similarity": 0.8
+            }
+          ],
+          "memoryNodeLinks": {
+            "m1": [
+              "nora"
+            ]
+          },
+          "personLinkedMemories": []
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": {
+          "subjectNodeId": "nora",
+          "label": "Nora"
+        },
+        "memoryIds": [
+          "m1"
+        ],
+        "v": 0,
+        "r": 1,
+        "reason": "memory match (sim=0.80)"
+      }
+    },
+    {
+      "name": "memory-similarity-1",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "faceMatches": [],
+          "nodeLabels": {
+            "nora": "Nora",
+            "cabin": "the cabin",
+            "sam": "Sam"
+          },
+          "nodeTypes": {
+            "nora": "person",
+            "cabin": "object",
+            "sunday": "tradition",
+            "sam": "person"
+          },
+          "memoryOwners": {
+            "m1": "maya"
+          },
+          "memories": [
+            {
+              "id": "m1",
+              "summary": "nora bakes",
+              "similarity": 1
+            }
+          ],
+          "memoryNodeLinks": {
+            "m1": [
+              "nora"
+            ]
+          },
+          "personLinkedMemories": []
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": {
+          "subjectNodeId": "nora",
+          "label": "Nora"
+        },
+        "memoryIds": [
+          "m1"
+        ],
+        "v": 0,
+        "r": 1,
+        "reason": "memory match (sim=1.00)"
+      }
+    },
+    {
+      "name": "memory-linked-only-to-tradition",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "faceMatches": [],
+          "nodeLabels": {
+            "nora": "Nora",
+            "cabin": "the cabin",
+            "sam": "Sam"
+          },
+          "nodeTypes": {
+            "nora": "person",
+            "cabin": "object",
+            "sunday": "tradition",
+            "sam": "person"
+          },
+          "memoryOwners": {
+            "m1": "maya"
+          },
+          "memories": [
+            {
+              "id": "m1",
+              "summary": "every sunday",
+              "similarity": 0.9
+            }
+          ],
+          "memoryNodeLinks": {
+            "m1": [
+              "sunday"
+            ]
+          },
+          "personLinkedMemories": []
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": null,
+        "memoryIds": [],
+        "v": 0,
+        "r": 1,
+        "reason": "memory match but no linked subject"
+      }
+    },
+    {
+      "name": "memory-linked-to-object",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "faceMatches": [],
+          "nodeLabels": {
+            "nora": "Nora",
+            "cabin": "the cabin",
+            "sam": "Sam"
+          },
+          "nodeTypes": {
+            "nora": "person",
+            "cabin": "object",
+            "sunday": "tradition",
+            "sam": "person"
+          },
+          "memoryOwners": {
+            "m1": "maya"
+          },
+          "memories": [
+            {
+              "id": "m1",
+              "summary": "the cabin",
+              "similarity": 0.9
+            }
+          ],
+          "memoryNodeLinks": {
+            "m1": [
+              "cabin"
+            ]
+          },
+          "personLinkedMemories": []
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": {
+          "subjectNodeId": "cabin",
+          "label": "the cabin"
+        },
+        "memoryIds": [
+          "m1"
+        ],
+        "v": 0,
+        "r": 1,
+        "reason": "memory match (sim=0.90)"
+      }
+    },
+    {
+      "name": "memory-not-owned-by-keeper",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "faceMatches": [],
+          "nodeLabels": {
+            "nora": "Nora",
+            "cabin": "the cabin",
+            "sam": "Sam"
+          },
+          "nodeTypes": {
+            "nora": "person",
+            "cabin": "object",
+            "sunday": "tradition",
+            "sam": "person"
+          },
+          "memoryOwners": {
+            "m9": "david"
+          },
+          "memories": [
+            {
+              "id": "m9",
+              "summary": "someone else's",
+              "similarity": 0.95
+            }
+          ],
+          "memoryNodeLinks": {
+            "m9": [
+              "nora"
+            ]
+          },
+          "personLinkedMemories": []
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": null,
+        "memoryIds": [],
+        "v": 0,
+        "r": 0,
+        "reason": "no reliable memory"
+      }
+    },
+    {
+      "name": "citation-cap-with-many-person-linked",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "faceMatches": [
+            {
+              "person_node_id": "nora",
+              "contributor_id": "maya",
+              "memory_id": "m1",
+              "distance": 0.2
+            }
+          ],
+          "nodeLabels": {
+            "nora": "Nora",
+            "cabin": "the cabin",
+            "sam": "Sam"
+          },
+          "nodeTypes": {
+            "nora": "person",
+            "cabin": "object",
+            "sunday": "tradition",
+            "sam": "person"
+          },
+          "memoryOwners": {
+            "m1": "maya",
+            "m2": "maya",
+            "m3": "maya",
+            "m4": "maya",
+            "m5": "maya",
+            "m6": "david"
+          },
+          "memories": [],
+          "memoryNodeLinks": {},
+          "personLinkedMemories": [
+            {
+              "id": "m2",
+              "summary": "a",
+              "similarity": 0
+            },
+            {
+              "id": "m3",
+              "summary": "b",
+              "similarity": 0
+            },
+            {
+              "id": "m4",
+              "summary": "c",
+              "similarity": 0
+            },
+            {
+              "id": "m5",
+              "summary": "d",
+              "similarity": 0
+            },
+            {
+              "id": "m6",
+              "summary": "not mine",
+              "similarity": 0
+            }
+          ]
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": {
+          "subjectNodeId": "nora",
+          "label": "Nora"
+        },
+        "memoryIds": [
+          "m1",
+          "m2",
+          "m3",
+          "m4"
+        ],
+        "v": 1,
+        "r": 0,
+        "reason": "face match (d=0.20)"
+      }
+    },
+    {
+      "name": "no-evidence",
+      "input": {
+        "keeper": {
+          "relativeId": "maya",
+          "name": "Maya",
+          "color": "#f00"
+        },
+        "input": {
+          "faceMatches": [],
+          "nodeLabels": {
+            "nora": "Nora",
+            "cabin": "the cabin",
+            "sam": "Sam"
+          },
+          "nodeTypes": {
+            "nora": "person",
+            "cabin": "object",
+            "sunday": "tradition",
+            "sam": "person"
+          },
+          "memoryOwners": {},
+          "memories": [],
+          "memoryNodeLinks": {},
+          "personLinkedMemories": []
+        }
+      },
+      "expected": {
+        "keeperId": "maya",
+        "claim": null,
+        "memoryIds": [],
+        "v": 0,
+        "r": 0,
+        "reason": "no reliable memory"
+      }
+    }
+  ]
+}
