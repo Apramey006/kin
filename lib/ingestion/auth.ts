@@ -8,6 +8,8 @@ export interface IngestionIdentity {
   contributorId: string;
   contributor: Relative;
   isAdmin: boolean;
+  /** The wearer contributing about their own life. */
+  isSelf: boolean;
 }
 
 export async function authenticateFamily(req: Request, sb: SupabaseClient) {
@@ -22,7 +24,17 @@ export async function authenticateFamily(req: Request, sb: SupabaseClient) {
       .eq("user_id", data.user.id).eq("family_id", family.data).maybeSingle();
     if (membership.error) throw membership.error;
     if (!membership.data) throw new IngestionError(403, "Wearer membership required");
-    return { userId: data.user.id, familyId: family.data, contributorId: null, contributor: null, isAdmin: false };
+    // The wearer contributes through the family's `is_self` Keeper when one is
+    // provisioned. Recall is unaffected either way; without it they stay
+    // read-only exactly as before.
+    // Before migration 006 the column does not exist. That is not an outage:
+    // the wearer stays read-only exactly as they were, and recall must keep
+    // working. Only an unexpected failure is escalated.
+    const self = await sb.from("relatives").select("*")
+      .eq("family_id", family.data).eq("is_self", true).maybeSingle();
+    if (self.error && !["42703", "PGRST204", "PGRST205"].includes(self.error.code)) throw self.error;
+    return { userId: data.user.id, familyId: family.data, isAdmin: false, isSelf: true,
+      contributorId: (self.data?.id as string | undefined) ?? null, contributor: (self.data as Relative | null) ?? null };
   }
   const contributor = idSchema.safeParse(data.user.app_metadata.kin_contributor_id);
   if (!family.success || !contributor.success) {
@@ -33,7 +45,7 @@ export async function authenticateFamily(req: Request, sb: SupabaseClient) {
   if (result.error) throw result.error;
   if (!result.data) throw new IngestionError(403, "Family membership required");
   return { userId: data.user.id, familyId: family.data, contributorId: contributor.data, contributor: result.data,
-    isAdmin: data.user.app_metadata.kin_admin === true };
+    isAdmin: data.user.app_metadata.kin_admin === true, isSelf: result.data.is_self === true };
 }
 
 export async function authenticateIngestion(req: Request, sb: SupabaseClient): Promise<IngestionIdentity> {

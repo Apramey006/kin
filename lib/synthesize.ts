@@ -9,7 +9,7 @@ export interface CueResult { text: string; grounded: boolean; factIds: string[] 
  * IDs alone are not grounding: every word must be an exact selected human fact.
  * Quotation marks preserve the contributor's perspective ("I", "we", "you"). */
 export function renderFacts(facts: VerifiedFact[]): string {
-  return facts.map(f => "A relative said: “" + f.text.trim() + "”").join(" ");
+  return facts.map(f => (f.speaker ?? "A relative") + " said: “" + f.text.trim() + "”").join(" ");
 }
 
 export function validateGrounding(draft: CueDraft, facts: VerifiedFact[]): boolean {

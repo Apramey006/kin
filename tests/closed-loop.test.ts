@@ -32,7 +32,7 @@ describe("P0 engine closed loop with explicitly mocked recognition and semantic 
     const transcript = "It was actually their mother's recipe. She brought it from Italy.";
     const extraction: Extraction = { summary: "Their mother's recipe came from Italy.", nodes: [], edges: [] };
     const subjects = anchorOriginAnswer(extraction, transcript, { gap_type: gap.type, gap_node_id: gap.nodeId }, seed.nodes, seed.edges);
-    const graph = prepareGraph({ familyId: "670f5075-c286-4b29-8074-86401c18d0c0", contributorId: seed.ids.david, userId: "mock-user", isAdmin: false,
+    const graph = prepareGraph({ familyId: "670f5075-c286-4b29-8074-86401c18d0c0", contributorId: seed.ids.david, userId: "mock-user", isAdmin: false, isSelf: false,
       contributor: seed.relatives.find(r => r.id === seed.ids.david)! }, "answer-memory", extraction, seed.nodes, seed.edges);
     expect(findGaps({ ...context, nodes: [...seed.nodes, ...graph.nodes], edges: [...seed.edges, ...graph.edges] })).not.toContainEqual(gap);
     const facts: VerifiedFact[] = subjects.map(subject => ({ id: "answer-fact-" + subject.id, subjectNodeId: subject.id, memoryId: "answer-memory",

@@ -50,6 +50,20 @@ async function main() {
     if (account.role === "wearer") {
       const membership = await sb.from("wearer_accounts").upsert({ user_id: user.id, family_id: DEMO_FAMILY_ID });
       if (membership.error) throw membership.error;
+      // The wearer's own Keeper. Without it they authenticate but cannot
+      // contribute; recall is unaffected either way.
+      const wearerName = await sb.from("wearer").select("name").eq("family_id", DEMO_FAMILY_ID).maybeSingle();
+      if (wearerName.error) throw wearerName.error;
+      const existingSelf = await sb.from("relatives").select("id")
+        .eq("family_id", DEMO_FAMILY_ID).eq("is_self", true).maybeSingle();
+      if (existingSelf.error) throw existingSelf.error;
+      if (!existingSelf.data) {
+        const created = await sb.from("relatives").insert({
+          family_id: DEMO_FAMILY_ID, name: wearerName.data?.name ?? account.name,
+          relation_to_wearer: "self", color: "#8a7fd1", is_self: true,
+        });
+        if (created.error) throw created.error;
+      }
     }
     const updated = await sb.auth.admin.updateUserById(user.id, { app_metadata: {
       ...user.app_metadata, kin_family_id: DEMO_FAMILY_ID, kin_contributor_id: account.contributorId,
