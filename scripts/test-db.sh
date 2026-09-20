@@ -28,7 +28,7 @@ CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS
 GRANT USAGE ON SCHEMA public, auth TO anon, authenticated, service_role;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon, authenticated;
 SQL
-for sql in supabase/migrations/001_init.sql supabase/migrations/002_demo_reliability.sql supabase/migrations/003_accounts.sql supabase/migrations/004_loved_one_invites.sql tests/sql/face-retrieval.sql tests/sql/accounts.sql tests/sql/loved-one.sql; do
+for sql in supabase/migrations/001_init.sql supabase/migrations/002_demo_reliability.sql supabase/migrations/003_accounts.sql supabase/migrations/004_loved_one_invites.sql supabase/migrations/005_living_stories.sql tests/sql/face-retrieval.sql tests/sql/accounts.sql tests/sql/loved-one.sql; do
   docker exec -i "$db_container" psql -p 15432 -U postgres -d kin_test -v ON_ERROR_STOP=1 < "$sql"
 done
 

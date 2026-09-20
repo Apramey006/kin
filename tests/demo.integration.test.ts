@@ -13,7 +13,7 @@ vi.mock("../lib/auth/server", () => ({
   requireContributor: () => {},
   AccessError: class extends Error { constructor(message: string, public status: number) { super(message); } },
 }));
-vi.mock("../lib/providers/deepgram", () => ({ transcribeAudio: async (bytes: Buffer) => bytes.toString() }));
+vi.mock("../lib/providers/deepgram", () => ({ transcribeTimedAudio: async (bytes: Buffer) => ({ transcript: bytes.toString(), segments: [] }) }));
 vi.mock("../lib/providers/elevenlabs", () => ({ synthesizeSpeech: async () => Buffer.from("test-audio") }));
 vi.mock("../lib/providers/ai", () => ({
   embedText: async () => Array.from({ length: 1536 }, (_, i) => i === 0 ? 1 : 0),

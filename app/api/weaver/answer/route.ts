@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
 import { CONFIG } from "@/lib/config";
 import { requireFamily, requireContributor } from "@/lib/auth/server";
-import { transcribeAudio } from "@/lib/providers/deepgram";
+import { transcribeTimedAudio } from "@/lib/providers/deepgram";
+import { insertTimedMemory } from "@/lib/audio-segments";
 import { embedText } from "@/lib/providers/ai";
 import { extractMemory, applyExtraction } from "@/lib/extract";
 import type { GraphNodeRow } from "@/lib/types";
@@ -50,7 +51,7 @@ export async function POST(req: Request) {
 
     if (upload.error) throw upload.error;
 
-    const transcript = await transcribeAudio(bytes, file.type || "audio/webm");
+    const { transcript, segments } = await transcribeTimedAudio(bytes, file.type || "audio/webm");
     if (!transcript) {
       return NextResponse.json({ error: "no speech detected" }, { status: 422 });
     }
@@ -85,9 +86,7 @@ export async function POST(req: Request) {
     const embedding = await embedText(extraction.summary).catch(
       () => new Array(1536).fill(0)
     );
-    const { data: memory, error: memErr } = await sb
-      .from("memories")
-      .insert({
+    const { data: memory, error: memErr } = await insertTimedMemory(sb, {
         family_id: familyId,
         contributor_id: contributorId,
         kind: "answer",
@@ -96,9 +95,7 @@ export async function POST(req: Request) {
         summary: extraction.summary,
         source_question_id: questionId,
         embedding,
-      })
-      .select()
-      .single();
+      }, segments);
     if (memErr) throw memErr;
 
     const applied = await applyExtraction(sb, {
