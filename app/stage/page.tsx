@@ -1,211 +1,402 @@
 "use client";
-
-import { useCallback, useEffect, useState } from "react";
-import { getAnonClient, FAMILY_ID } from "@/lib/supabase";
-import { KeeperBar } from "@/components/KeeperBar";
-import { GateMeter } from "@/components/GateMeter";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import {
+  ArrowUpRight,
+  Volume2,
+  VolumeX,
+  ScanFace,
+  Info,
+  MessageCircle,
+  Check,
+} from "lucide-react";
+import { AppShell, LoadingView } from "@/components/AppShell";
+import { Button } from "@/components/ui/button";
+import { Sheet } from "@/components/Sheet";
 import { FamilyGraph } from "@/components/FamilyGraph";
-import { CONFIG } from "@/lib/config";
-import type {
-  GraphEdgeRow,
-  GraphNodeRow,
-  ProvenanceRow,
-  RecallEventRow,
-  Relative,
-} from "@/lib/types";
-
-export default function StagePage() {
-  const [relatives, setRelatives] = useState<Relative[]>([]);
-  const [event, setEvent] = useState<RecallEventRow | null>(null);
-  const [nodes, setNodes] = useState<GraphNodeRow[]>([]);
-  const [edges, setEdges] = useState<GraphEdgeRow[]>([]);
-  const [provenance, setProvenance] = useState<ProvenanceRow[]>([]);
-  const [gapNodeId, setGapNodeId] = useState<string | null>(null);
-  const [wearerNodeId, setWearerNodeId] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
-  const [offline, setOffline] = useState(false);
-
-  const loadGraph = useCallback(async () => {
-    const sb = getAnonClient();
-    if (!sb) return;
-    const [{ data: n }, { data: e }, { data: p }] = await Promise.all([
-      sb.from("graph_nodes").select("*").eq("family_id", FAMILY_ID),
-      sb.from("graph_edges").select("*").eq("family_id", FAMILY_ID),
-      sb.from("provenance").select("*"),
-    ]);
-    setNodes((n ?? []) as GraphNodeRow[]);
-    setEdges((e ?? []) as GraphEdgeRow[]);
-    setProvenance((p ?? []) as ProvenanceRow[]);
-    setWearerNodeId(
-      (n ?? []).find((x: GraphNodeRow) => x.relation_to_wearer === "self")?.id ?? null
-    );
-  }, []);
-
-  const loadLatestEvent = useCallback(async () => {
-    const sb = getAnonClient();
-    if (!sb) return;
-    const { data } = await sb
-      .from("recall_events")
-      .select("*")
-      .eq("family_id", FAMILY_ID)
-      .order("created_at", { ascending: false })
-      .limit(1);
-    if (data?.[0]) setEvent(data[0] as RecallEventRow);
-  }, []);
-
-  const loadGaps = useCallback(async () => {
-    const sb = getAnonClient();
-    if (!sb) return;
-    const { data } = await sb
-      .from("weaver_questions")
-      .select("gap_node_id")
-      .eq("family_id", FAMILY_ID)
-      .eq("status", "open")
-      .order("created_at", { ascending: false })
-      .limit(1);
-    setGapNodeId(data?.[0]?.gap_node_id ?? null);
-  }, []);
-
+import { useFamilyData, initials, relativeTime } from "@/lib/family-data";
+import { SILENT_AUDIO, unlockAudio, playCue } from "@/lib/audio";
+export default function Stage() {
+  const { data, error, loading, live, refresh } = useFamilyData();
+  const [busy, setBusy] = useState<"replay" | "weaver" | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [details, setDetails] = useState(false);
+  const audio = useRef<HTMLAudioElement | null>(null);
   useEffect(() => {
-    const sb = getAnonClient();
-    if (!sb) {
-      setOffline(true);
-      return;
-    }
-    sb.from("relatives")
-      .select("*")
-      .eq("family_id", FAMILY_ID)
-      .then(({ data }) => setRelatives((data ?? []) as Relative[]));
-    loadGraph();
-    loadLatestEvent();
-    loadGaps();
-
-    const channel = sb
-      .channel("stage")
-      .on("postgres_changes", { event: "*", schema: "public", table: "recall_events", filter: `family_id=eq.${FAMILY_ID}` }, loadLatestEvent)
-      .on("postgres_changes", { event: "*", schema: "public", table: "graph_nodes", filter: `family_id=eq.${FAMILY_ID}` }, loadGraph)
-      .on("postgres_changes", { event: "*", schema: "public", table: "graph_edges", filter: `family_id=eq.${FAMILY_ID}` }, loadGraph)
-      .on("postgres_changes", { event: "*", schema: "public", table: "weaver_questions", filter: `family_id=eq.${FAMILY_ID}` }, loadGaps)
-      .subscribe();
+    audio.current = new Audio(SILENT_AUDIO);
     return () => {
-      sb.removeChannel(channel);
+      audio.current?.pause();
+      if (typeof speechSynthesis !== "undefined") speechSynthesis.cancel();
     };
-  }, [loadGraph, loadLatestEvent, loadGaps]);
-
-  const call = async (label: string, fn: () => Promise<Response>) => {
-    setBusy(label);
+  }, []);
+  const event = data?.events[0];
+  const subject = data?.nodes.find((n) => n.id === event?.gate?.subjectNodeId);
+  const hasKnown = data?.events.some((e) => e.status === "speak");
+  const source = event?.cue_source;
+  const question = data?.questions.find((q) => q.status === "open");
+  const target = data?.relatives.find(
+    (r) => r.id === question?.target_relative_id,
+  );
+  const replay = async () => {
+    unlockAudio(audio.current);
+    setBusy("replay");
+    setActionError(null);
     try {
-      await fn();
+      const p = await fetch("/api/recall").then((r) => r.json());
+      if (!p.lastEventId)
+        throw new Error("Recognize someone first to listen again.");
+      const r = await fetch("/api/recall", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ replayEventId: p.lastEventId }),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error);
+      if (j.decision === "speak") playCue(audio.current, j);
+      else setNotice("No clear match. Kin stayed quiet.");
+      await refresh();
+    } catch (e) {
+      setActionError(
+        e instanceof Error ? e.message : "Could not replay. Try again.",
+      );
     } finally {
       setBusy(null);
     }
   };
-
-  const seed = () => call("seed", () => fetch("/api/admin/seed", { method: "POST" }));
-  const reset = () => call("reset", () => fetch("/api/admin/reset", { method: "POST" }));
-  const runWeaver = () => call("weaver", () => fetch("/api/weaver/run", { method: "POST" }));
-  const replay = () =>
-    call("replay", async () => {
-      const r = await fetch("/api/recall");
-      const { lastEventId } = await r.json();
-      if (!lastEventId) return new Response();
-      return fetch("/api/recall", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ replayEventId: lastEventId }),
-      });
-    });
-
-  const keeperById = new Map(
-    (event?.keeper_results ?? []).map((r) => [r.keeperId, r])
-  );
-
+  const ask = async () => {
+    setBusy("weaver");
+    setActionError(null);
+    setNotice(null);
+    try {
+      const r = await fetch("/api/weaver/run", { method: "POST" });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error);
+      setNotice(
+        j.question
+          ? "A question is ready for your relative in Memories."
+          : "No new questions. Add more memories to find new connections.",
+      );
+      await refresh();
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Please try again.");
+    } finally {
+      setBusy(null);
+    }
+  };
   return (
-    <main className="h-screen w-screen bg-stage text-white flex flex-col overflow-hidden">
-      <header className="flex items-center justify-between px-6 py-3 border-b border-white/10">
-        <div className="text-2xl font-bold tracking-wide">
-          Kin <span className="text-white/40 font-normal">· family memory</span>
-        </div>
-        <div className="text-white/40">demo family · {FAMILY_ID}</div>
-      </header>
-
-      {offline ? (
-        <div className="flex-1 flex items-center justify-center text-white/60 text-xl">
-          Supabase is not configured. Fill .env.local and restart.
+    <AppShell data={data} className="connections-main">
+      {loading ? (
+        <LoadingView />
+      ) : !data ? (
+        <div className="empty-state">
+          <h1>Connections</h1>
+          <p role="alert">{error}</p>
+          <Button onClick={refresh}>Try again</Button>
         </div>
       ) : (
-        <div className="flex-1 grid grid-cols-3 gap-4 p-4 min-h-0">
-          <section className="rounded-2xl bg-white/5 p-5 overflow-y-auto">
-            <h2 className="text-xl uppercase tracking-widest text-white/50 mb-5">
-              Keepers
-            </h2>
-            {relatives.map((r) => (
-              <KeeperBar
-                key={r.id}
-                name={r.name}
-                color={r.color}
-                result={keeperById.get(r.id)}
-                busy={event?.status === "running"}
-              />
-            ))}
-            {!relatives.length && (
-              <p className="text-white/40">Seed the demo to create Keepers.</p>
-            )}
-          </section>
-
-          <section className="rounded-2xl bg-white/5 p-5 overflow-y-auto">
-            <GateMeter
-              gate={event?.gate ?? null}
-              running={event?.status === "running"}
-              cueText={event?.cue_text}
-              latencyMs={event?.latency_ms}
-              silenceReason={event?.silence_reason}
-            />
-          </section>
-
-          <section className="rounded-2xl bg-white/5 overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between px-5 pt-4 pb-2">
-              <h2 className="text-xl uppercase tracking-widest text-white/50">
-                Family graph
-              </h2>
+        <>
+          <header className="page-header">
+            <div>
+              <h1>Connections</h1>
+              <p className="muted">
+                The people, places, and stories in {data.wearer.name}’s life.
+              </p>
+            </div>
+            <div className="page-actions">
+              <span className={`live-indicator ${live ? "connected" : ""}`}>
+                {live ? "Live" : "Updating"}
+              </span>
               <button
-                onClick={runWeaver}
-                className="rounded-lg bg-amber-500/20 border border-amber-500/50 text-amber-300 px-4 py-2 text-lg hover:bg-amber-500/30"
+                className="icon-button"
+                onClick={() => setDetails(true)}
+                aria-label="Recognition details"
               >
-                {busy === "weaver" ? "Weaving…" : "Run Weaver"}
+                <Info aria-hidden="true" />
               </button>
             </div>
-            <div className="flex-1 min-h-0">
+          </header>
+          {(error || actionError) && (
+            <p role="alert" className="notice notice-error">
+              {actionError || error}
+            </p>
+          )}
+          {notice && (
+            <p role="status" className="notice">
+              {notice}
+            </p>
+          )}
+          <div className="connection-workspace">
+            <div className="connection-canvas">
               <FamilyGraph
-                nodes={nodes}
-                edges={edges}
-                provenance={provenance}
-                relatives={relatives}
-                gapNodeId={gapNodeId}
-                wearerNodeId={wearerNodeId}
+                nodes={data.nodes}
+                edges={data.edges}
+                provenance={data.provenance}
+                relatives={data.relatives}
+                wearerNodeId={
+                  data.nodes.find((n) => n.relation_to_wearer === "self")?.id
+                }
+                subjectId={event?.gate?.subjectNodeId}
               />
+              <div className="canvas-caption">
+                <span>
+                  {data.nodes.length}{" "}
+                  {data.nodes.length === 1 ? "person" : "people and memories"} ·{" "}
+                  {data.edges.length} connections
+                </span>
+                <Link href="/family" className="text-link">
+                  Add memories
+                  <ArrowUpRight size={14} aria-hidden="true" />
+                </Link>
+              </div>
             </div>
+            <aside className="connection-inspector">
+              <section className="current-moment" aria-live="polite">
+                <p className="section-label">Latest recognition</p>
+                {!event ? (
+                  <>
+                    <div className="recognition-symbol">
+                      <ScanFace aria-hidden="true" />
+                    </div>
+                    <h2>Ready to recognize.</h2>
+                    <p>
+                      Point Kin at a familiar face to see which memories
+                      connect.
+                    </p>
+                    <Link
+                      href={data.faces.length ? "/wearer" : "/family"}
+                      className="button button-primary"
+                    >
+                      {data.faces.length ? "Open camera" : "Add a photo"}
+                    </Link>
+                    <p className="caption">
+                      Recognition needs labeled photos from two family members.
+                    </p>
+                  </>
+                ) : event.status === "running" ? (
+                  <>
+                    <div className="recognition-symbol">
+                      <span className="spinner" aria-hidden="true" />
+                    </div>
+                    <h2>Looking for a match</h2>
+                    <p>Checking your family’s photos and memories.</p>
+                  </>
+                ) : event.status === "silent" ? (
+                  <>
+                    <div className="recognition-symbol quiet">
+                      <VolumeX aria-hidden="true" />
+                    </div>
+                    <h2>No clear match</h2>
+                    <p>
+                      Kin stayed quiet. A memory is spoken only when your
+                      family’s photos agree.
+                    </p>
+                    {hasKnown && (
+                      <Button
+                        variant="outline"
+                        onClick={replay}
+                        disabled={!!busy}
+                      >
+                        <Volume2 aria-hidden="true" />
+                        Replay known person
+                      </Button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div className="recognized-person">
+                      <span className="person-monogram">
+                        {initials(subject?.label ?? "Kin")}
+                      </span>
+                      <span className="match-badge">
+                        <Check size={12} aria-hidden="true" />
+                        Recognized
+                      </span>
+                    </div>
+                    <h2>{subject?.label ?? "A familiar face"}</h2>
+                    <p className="person-relation">
+                      {subject?.relation_to_wearer &&
+                      subject.relation_to_wearer !== "self"
+                        ? `${data.wearer.name}’s ${subject.relation_to_wearer}`
+                        : "Family"}
+                    </p>
+                    <blockquote>
+                      {source ? `“${source.quote}”` : event.cue_text}
+                    </blockquote>
+                    <p className="caption">
+                      {source
+                        ? `Shared by ${source.contributorName}`
+                        : "From your family"}
+                    </p>
+                    <Button
+                      variant="outline"
+                      onClick={replay}
+                      disabled={!!busy}
+                    >
+                      {busy === "replay" ? (
+                        <span className="spinner" aria-hidden="true" />
+                      ) : (
+                        <Volume2 aria-hidden="true" />
+                      )}
+                      {busy === "replay" ? "Loading…" : "Listen again"}
+                    </Button>
+                  </>
+                )}
+              </section>
+              {event && (
+                <section className="recognition-sources">
+                  <h3>Family sources</h3>
+                  {data.relatives.map((r) => {
+                    const k = event.keeper_results?.find(
+                      (k) => k.keeperId === r.id,
+                    );
+                    return (
+                      <details className="source-detail" key={r.id}>
+                        <summary>
+                          <span className="avatar">{initials(r.name)}</span>
+                          <span>
+                            {r.name}
+                            <small>
+                              {k?.claim
+                                ? `Recognized ${k.claim.label}`
+                                : event.status === "running"
+                                  ? "Checking…"
+                                  : "No match"}
+                            </small>
+                          </span>
+                          {k?.claim && (
+                            <Check
+                              className="source-check"
+                              aria-hidden="true"
+                            />
+                          )}
+                        </summary>
+                        {k?.evidence?.length ? (
+                          k.evidence.map((m) => (
+                            <p className="source-evidence" key={m.id}>
+                              {m.summary}
+                            </p>
+                          ))
+                        ) : (
+                          <p className="caption">
+                            No supporting memory for this recognition.
+                          </p>
+                        )}
+                      </details>
+                    );
+                  })}
+                </section>
+              )}
+            </aside>
+          </div>
+          <section className="question-strip">
+            <span className="question-icon">
+              <MessageCircle aria-hidden="true" />
+            </span>
+            <div>
+              <h2>
+                {question
+                  ? `A question for ${target?.name ?? "your family"}`
+                  : "Complete the story"}
+              </h2>
+              <p>
+                {question?.question_text ??
+                  "Find a missing detail your family might remember."}
+              </p>
+            </div>
+            {question ? (
+              target?.id === data.relativeId ? (
+                <Link href="/family" className="button button-secondary">
+                  Record an answer
+                </Link>
+              ) : (
+                <span className="caption">Waiting for an answer</span>
+              )
+            ) : (
+              <Button
+                variant="outline"
+                disabled={!!busy || !data.memories.length}
+                onClick={ask}
+              >
+                {busy === "weaver" ? "Looking…" : "Find a question"}
+              </Button>
+            )}
           </section>
-        </div>
+          {!!data.events.length && (
+            <section className="recent-recognition">
+              <h2>Recent activity</h2>
+              <div>
+                {data.events.slice(0, 3).map((e) => (
+                  <p key={e.id}>
+                    <span>
+                      {e.status === "speak" ? (
+                        <Volume2 aria-hidden="true" />
+                      ) : (
+                        <VolumeX aria-hidden="true" />
+                      )}
+                      {e.status === "speak"
+                        ? `${data.nodes.find((n) => n.id === e.gate?.subjectNodeId)?.label ?? "Someone familiar"} recognized`
+                        : e.status === "running"
+                          ? "Finding a match"
+                          : "No clear match"}
+                    </span>
+                    <time dateTime={e.created_at}>
+                      {relativeTime(e.created_at)}
+                    </time>
+                  </p>
+                ))}
+              </div>
+            </section>
+          )}
+          <Sheet
+            open={details}
+            onClose={() => setDetails(false)}
+            title="Recognition details"
+          >
+            <p className="sheet-intro">
+              Kin needs matching photos from two relatives before speaking.
+              These signals describe the match; they are not a probability of
+              correctness.
+            </p>
+            {event ? (
+              <>
+                <dl className="signal-list">
+                  {(
+                    [
+                      ["V", "Visual match"],
+                      ["R", "Memory retrieval"],
+                      ["A", "Family agreement"],
+                      ["S", "Sources"],
+                      ["X", "Disagreement"],
+                    ] as const
+                  ).map(([key, label]) => (
+                    <div key={key}>
+                      <dt>{label}</dt>
+                      <dd>{event.gate?.[key]?.toFixed(2) ?? "—"}</dd>
+                    </div>
+                  ))}
+                  <div>
+                    <dt>Score / threshold</dt>
+                    <dd>
+                      {event.gate?.C?.toFixed(3) ?? "—"} /{" "}
+                      {event.gate?.threshold ?? 0.8}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Server time</dt>
+                    <dd>{event.latency_ms ?? "—"} ms</dd>
+                  </div>
+                </dl>
+                <p className="caption">
+                  {event.silence_reason || event.gate?.reason}
+                </p>
+              </>
+            ) : (
+              <p>No recognition yet.</p>
+            )}
+          </Sheet>
+        </>
       )}
-
-      <footer className="flex items-center gap-3 px-6 py-3 border-t border-white/10 text-sm">
-        <button onClick={seed} className="rounded-lg bg-white/10 px-4 py-2 hover:bg-white/20">
-          {busy === "seed" ? "Seeding…" : "Seed"}
-        </button>
-        <button onClick={reset} className="rounded-lg bg-white/10 px-4 py-2 hover:bg-white/20">
-          {busy === "reset" ? "Resetting…" : "Reset"}
-        </button>
-        <button onClick={replay} className="rounded-lg bg-white/10 px-4 py-2 hover:bg-white/20">
-          {busy === "replay" ? "Replaying…" : "Replay last recall"}
-        </button>
-        <div className="ml-auto text-white/35 font-mono text-xs">
-          gate: {CONFIG.gate.wV}V {CONFIG.gate.wR}R {CONFIG.gate.wA}A{" "}
-          {CONFIG.gate.wS}S -{CONFIG.gate.wX}X | threshold{" "}
-          {CONFIG.gate.threshold} | face v=({CONFIG.face.vZeroDistance}-d)/
-          {CONFIG.face.vWindow} | sim floor {CONFIG.retrieval.simFloor}
-        </div>
-      </footer>
-    </main>
+    </AppShell>
   );
 }

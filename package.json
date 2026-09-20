@@ -25,7 +25,6 @@
     "openai": "^7.20.0",
     "react": "^18",
     "react-dom": "^18",
-    "reactflow": "^11.11.4",
     "tailwind-merge": "^3.7.0",
     "zod": "^4.6.5"
   },

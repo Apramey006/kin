@@ -1,95 +1,107 @@
 "use client";
-
-import { useEffect, useState } from "react";
-import { getAnonClient, FAMILY_ID } from "@/lib/supabase";
-import { Recorder } from "@/components/Recorder";
+import { useState } from "react";
+import { MessageCircle, ArrowRight } from "lucide-react";
+import { Recorder } from "./Recorder";
+import { Sheet } from "./Sheet";
+import { Button } from "./ui/button";
 import type { Relative, WeaverQuestionRow } from "@/lib/types";
-
 export function WeaverInbox({
   me,
   relatives,
+  questions,
+  onAnswered,
 }: {
   me: Relative;
   relatives: Relative[];
+  questions: WeaverQuestionRow[];
+  onAnswered: () => void;
 }) {
-  const [questions, setQuestions] = useState<WeaverQuestionRow[]>([]);
-  const [answered, setAnswered] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    const sb = getAnonClient();
-    if (!sb) return;
-    let cancelled = false;
-    const load = async () => {
-      const { data } = await sb
-        .from("weaver_questions")
-        .select("*")
-        .eq("family_id", FAMILY_ID)
-        .eq("target_relative_id", me.id)
-        .eq("status", "open")
-        .order("created_at", { ascending: false });
-      if (!cancelled) setQuestions((data ?? []) as WeaverQuestionRow[]);
-    };
-    load();
-    const channel = sb
-      .channel("weaver-inbox")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "weaver_questions",
-          filter: `family_id=eq.${FAMILY_ID}`,
-        },
-        () => load()
-      )
-      .subscribe();
-    return () => {
-      cancelled = true;
-      sb.removeChannel(channel);
-    };
-  }, [me.id]);
-
-  if (!questions.length) return null;
-
-  const nameOf = (id: string) =>
-    relatives.find((r) => r.id === id)?.name ?? "Someone";
-
-  const answer = async (q: WeaverQuestionRow, blob: Blob, mime: string) => {
-    const fd = new FormData();
-    fd.append("file", new File([blob], "answer." + (mime.includes("mp4") ? "m4a" : "webm"), { type: mime }));
-    fd.append("contributor_id", me.id);
-    fd.append("question_id", q.id);
-    const res = await fetch("/api/weaver/answer", { method: "POST", body: fd });
-    const json = await res.json();
-    if (res.ok) {
-      setAnswered((a) => ({ ...a, [q.id]: json.summary }));
-      setQuestions((qs) => qs.filter((x) => x.id !== q.id));
+  const [selected, setSelected] = useState<WeaverQuestionRow | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const own = questions.filter(
+    (q) => q.target_relative_id === me.id && q.status === "open",
+  );
+  const answer = async (blob: Blob, mime: string) => {
+    if (!selected) return;
+    setBusy(true);
+    try {
+      const fd = new FormData();
+      fd.append(
+        "file",
+        new File([blob], `answer.${mime.includes("mp4") ? "m4a" : "webm"}`, {
+          type: mime,
+        }),
+      );
+      fd.append("contributor_id", me.id);
+      fd.append("question_id", selected.id);
+      const r = await fetch("/api/weaver/answer", { method: "POST", body: fd });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error ?? "Your answer couldn’t be saved.");
+      setSelected(null);
+      setSuccess(true);
+      onAnswered();
+      return true;
+    } finally {
+      setBusy(false);
     }
   };
-
   return (
-    <section className="rounded-2xl border-2 border-primary/40 bg-primary/5 p-5">
-      <h2 className="text-xl font-semibold mb-3">Kin is asking you</h2>
-      {questions.map((q) => (
-        <div key={q.id} className="rounded-xl bg-white p-4 mb-3 shadow-sm">
-          <p className="text-lg mb-2">{q.question_text}</p>
-          {q.evidence?.length > 0 && (
-            <ul className="text-sm text-ink/60 mb-3 space-y-1">
-              {q.evidence.map((e) => (
-                <li key={e.memory_id}>
-                  <span className="font-medium">{nameOf(e.contributor_id)}</span>
-                  : {e.summary}
-                </li>
-              ))}
-            </ul>
-          )}
-          {answered[q.id] ? (
-            <p className="text-primary">Thank you. Kin added: {answered[q.id]}</p>
-          ) : (
-            <Recorder label="Record answer" onRecorded={(b, m) => answer(q, b, m)} />
-          )}
-        </div>
+    <>
+      {success && (
+        <p
+          className="notice notice-success"
+          role="status"
+          style={{ marginBottom: 20 }}
+        >
+          Your answer is saved.
+        </p>
+      )}
+      {own.map((q) => (
+        <section className="prompt-card" key={q.id}>
+          <div className="eyebrow">
+            <MessageCircle aria-hidden="true" />
+            Question for you
+          </div>
+          <h2>Do you remember?</h2>
+          <p>{q.question_text}</p>
+          <Button onClick={() => setSelected(q)}>
+            Share what you remember
+            <ArrowRight aria-hidden="true" />
+          </Button>
+        </section>
       ))}
-    </section>
+      <Sheet
+        open={!!selected}
+        onClose={() => setSelected(null)}
+        title="Record an answer"
+        busy={busy}
+      >
+        {selected && (
+          <>
+            <p className="sheet-intro">{selected.question_text}</p>
+            <Recorder
+              onRecorded={answer}
+              disabled={busy}
+              label="Record your answer"
+            />
+            {selected.evidence?.length > 0 && (
+              <details style={{ marginTop: 20 }}>
+                <summary>What your family has shared</summary>
+                {selected.evidence.map((e) => (
+                  <p className="source-evidence small" key={e.memory_id}>
+                    <strong>
+                      {relatives.find((r) => r.id === e.contributor_id)?.name ??
+                        "A relative"}
+                    </strong>
+                    : {e.summary}
+                  </p>
+                ))}
+              </details>
+            )}
+          </>
+        )}
+      </Sheet>
+    </>
   );
 }
