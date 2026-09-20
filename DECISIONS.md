@@ -1,61 +1,64 @@
-# DECISIONS
+# Design decisions
 
-Ambiguities resolved while building Kin. Each picks the simplest option that
-satisfies the spec's acceptance criteria.
+## Accounts and data ownership
 
-- **Weaver routing exclusion.** The scoring formula alone tends to route a
-  question to the relative who already described the gap. Relatives whose
-  memories already provide provenance for the gap node are excluded from
-  routing, so the Weaver asks someone whose contributions sit next to the gap
-  but who has not described it. Ties go to the relative who uploaded a related
-  photo. This makes routing on the seeded sample graph deterministic and
-  unit-tested.
+- Supabase Auth identifies each account. Server APIs verify the session and
+  derive family membership and contributor identity; client-supplied IDs are
+  never sufficient authorization. RLS limits browser reads to the same family.
+- Contributors each have one Keeper. A loved-one membership has no relative or
+  Keeper, opens recognition directly, and cannot contribute or issue invitations.
+- Only the family owner creates invitations. Contributor links are reusable;
+  loved-one links are single-use, with at most one loved-one account per family.
+- Media is private. The server issues short-lived signed URLs after checking
+  membership. Families start empty; fixture seeding is a separate developer CLI.
 
-- **One seeded sample memory has `kind='photo'`** (text stand-in, no media
-  file), so the routing tie-break "uploaded a related photo" works with the
-  sample data.
+## Recognition and cues
 
-- **`recall_events.face_descriptors` (jsonb) column added** beyond the printed
-  schema to support "Replay last recall" as specified in Section 9.5/10.7.
+- Person identity requires enrolled photos from at least two distinct relatives.
+  `match_keeper_faces` scopes retrieval by family and contributor before finding
+  the nearest distinct people. Unknown, ambiguous, and conflicting matches abstain.
+- Recall uses exact identity-to-memory provenance, not semantic similarity or
+  vision descriptions, to identify a person. The weighted gate is a heuristic.
+- Cue context is an attributed, verbatim transcript excerpt with a stored source.
+  Relevant Weaver answers take priority; no model rewrites the spoken quote.
+  If no excerpt fits the word budget, the cue contains only grounded identity.
+- Replay reuses the latest successful observation, even after a silent attempt,
+  and evaluates it against current family memories.
+- A failing Keeper abstains. A failed recall remains silent and cannot reuse an
+  earlier spoken cue. The interface gives quiet status feedback.
 
-- **RLS enabled with permissive `select using (true)` policies** on all tables.
-  The prototype has no auth; anon clients only read (Realtime + initial fetch). All
-  writes go through the service role on the server, which bypasses RLS.
+## Weaver and graph
 
-- **Storage bucket `media` is created inside the migration** (`insert into
-  storage.buckets ... on conflict do nothing`) so setup is one step.
+- Graph relationships follow a constrained vocabulary. Existing node labels
+  resolve identity; they are not evidence for new claims.
+- Weaver excludes relatives who already supplied provenance for a gap and uses
+  related photos as a routing tie-break. The prompt names the actual recipient.
+- One open question per gap is enforced in SQL. Answers retain a link to the
+  question's subject, including short answers that refer to it implicitly.
+- Deleting a contribution removes its media, enrollment, unsupported graph facts,
+  and cached questions/cues while preserving facts supported by other memories.
+  Storage/database cleanup spans multiple operations; see RUST_HANDOFF.md.
 
-- **React Flow v11 (`reactflow` package)** rather than the v12 `@xyflow/react`
-  rename; both are "React Flow". v11 chosen for the stable, well-known API.
+## Providers
 
-- **shadcn/ui**: implemented as local `components/ui/*` primitives in the
-  shadcn style (cva + radix-slot) instead of running the shadcn CLI, which is
-  interactive. Dropdowns use native `<select>` for mobile reliability.
+- `AI_PROVIDER=auto` prefers Anthropic when configured; otherwise it uses OpenAI.
+  Explicit selection never silently falls back to another paid provider.
+- Both providers return schema-validated extraction and descriptive photo captions.
+  Captions never identify people. Deepgram transcribes; ElevenLabs voices cues,
+  with browser speech as the client fallback.
+- Anthropic mode makes no OpenAI calls. Legacy embedding columns receive zero
+  placeholders, which are never interpreted as semantic vectors. OpenAI mode
+  can still generate embeddings during ingestion.
 
-- **Single-claimant agreement**: `A = 0.75` only when exactly one Keeper claims
-  and none disagree (per spec). With one claimant and one dissenter the gate
-  exits earlier on `X > 0` anyway.
+## Interface
 
-- **S signal**: `1.0` requires every agreeing Keeper to cite at least one memory
-  it owns *and* the subject node to have provenance; drops to `0.5` when the
-  evidence is text-only (no face match and no photo-kind memory cited); `0`
-  otherwise.
-
-- **Silence on the wearer screen**: on SILENT the client literally does nothing
-  (no audio, no message). A camera-not-ready message is the only error the
-  wearer can ever see.
-
-- **Cue fallback template** is `You two {node label}.` per spec; labels that
-  read as verb phrases (e.g. "bake a favorite cake on Sundays") make it natural.
-
-- **`match_memories`/`match_faces` take vector params as JSON strings** from the
-  JS client (`JSON.stringify(descriptor)`), which pgvector accepts for
-  `vector` casts via the RPC parameter binding.
-
-- **Seed writes the graph literally** (no LLM extraction at seed time) so the
-  Weaver outcome in Section 11 is deterministic and unit-testable.
-
-- **Keeper error containment**: a failing keeper resolves to an abstain result
-  so one bad query cannot kill a recall.
-
-- **No em dashes in UI copy.**
+- System typography, neutral surfaces, blue actions, desktop navigation, and
+  mobile tabs implement the supplied Apple design guidance.
+- Sheets use interruptible position/velocity springs, pointer capture, projected
+  momentum, and reduced-motion alternatives. Native dialogs manage modality.
+- Recordings require stop, preview, then explicit save. Camera/microphone access
+  starts from a user action. Recognition keeps one prominent primary action.
+- The Connections map is an SVG view with an accessible list and detail inspector.
+  Technical recognition signals sit in an optional information sheet.
+- Larger text, reduced motion/transparency, high contrast, and keyboard access
+  are supported. Automated checks complement physical-device testing.
