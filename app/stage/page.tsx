@@ -140,7 +140,6 @@ export default function Stage() {
             </p>
           )}
           <MemorySceneEntry data={data} refresh={refresh} onOpen={() => { pendingReplay.current?.abort(); stopCue(audio.current); }} />
-          <div className="section-heading"><Link href="/graph" className="text-link">Explore the Memory Atlas →</Link></div>
           <div className="connection-workspace">
             <div className="connection-canvas">
               <FamilyGraph
