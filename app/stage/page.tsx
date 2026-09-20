@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { AppShell, LoadingView } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
+import { MemorySceneEntry } from "@/components/MemoryScene";
 import { Sheet } from "@/components/Sheet";
 import { FamilyGraph } from "@/components/FamilyGraph";
 import { useFamilyData, initials, relativeTime } from "@/lib/family-data";
@@ -126,6 +127,7 @@ export default function Stage() {
               {notice}
             </p>
           )}
+          <MemorySceneEntry data={data} refresh={refresh} onOpen={() => audio.current?.pause()} />
           <div className="connection-workspace">
             <div className="connection-canvas">
               <FamilyGraph

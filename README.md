@@ -138,6 +138,21 @@ Relevant Weaver answers take priority, making the new detail audible on replay.
 Stage's “Replay known person” reuses the last successful recognition, even after
 an unknown-face attempt, and plays the new cue on the presenting device.
 
+## Unfolding a family story
+
+In **Memories** or **Connections**, choose **Unfold the story**. Pull the photograph
+up, or tap it, to separate a shared tradition into family perspectives. Open a
+perspective to read its complete source or play its original recording. On phones,
+scroll down through the recollections to the unfinished connection.
+
+The scene uses existing memory and graph provenance. It prefers a tradition with
+an open origin question, then one with the most contributors. The invited relative
+can record and preview an answer inside the missing-piece panel. Other relatives
+see the saved answer through the existing live refresh. A connection completes
+only when a source-backed origin, started-by, or taught-by relationship exists;
+an uncertain answer stays visible without closing the gap. No generated narration
+or automatic audio playback is added. Empty libraries do not show a scene.
+
 ## Rust handoff
 
 See [RUST_HANDOFF.md](RUST_HANDOFF.md) for module boundaries, HTTP contracts,

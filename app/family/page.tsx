@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { AppShell, LoadingView, PrivacyNote } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
+import { MemorySceneEntry } from "@/components/MemoryScene";
 import { Sheet } from "@/components/Sheet";
 import { PhotoUploader } from "@/components/PhotoUploader";
 import { Recorder } from "@/components/Recorder";
@@ -133,6 +134,7 @@ export default function FamilyPage() {
               {error}
             </p>
           )}
+          <MemorySceneEntry data={data} refresh={refresh} />
           <div className="family-layout">
             <div className="family-primary">
               <WeaverInbox
