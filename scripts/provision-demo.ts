@@ -3,6 +3,8 @@ import { createClient } from "@supabase/supabase-js";
 import { existsSync, readFileSync } from "node:fs";
 import { DEMO_ACCOUNTS, DEMO_FAMILY_ID } from "../lib/demo";
 
+import { provisionDemoAccounts } from "../lib/demo-provision";
+
 let stage = "environment";
 async function main() {
   loadEnvConfig(process.cwd());
@@ -15,69 +17,33 @@ async function main() {
   if (!url || !key || !publicKey) throw new Error("Supabase configuration required");
   const options = { auth: { persistSession: false, autoRefreshToken: false } };
   const sb = createClient(url, key, options);
-  stage = "verify migrations 002 through 005";
+  stage = "verify migrations 002 through 007";
   for (const [table, columns] of [["memories", "id,source,verified_facts"], ["ingestion_receipts", "id"],
-    ["recall_events", "id,face_outcome,evidence,reason_code"], ["wearer_accounts", "user_id,family_id"]]) {
+    ["recall_events", "id,face_outcome,evidence,reason_code"], ["wearer_accounts", "user_id,family_id"],
+    ["relatives", "id,is_self,self_capture_open"], ["pending_contributions", "id,payload,state"]]) {
     const result = await sb.from(table).select(columns).limit(1);
     if (result.error) throw result.error;
   }
   const legacy = await sb.from("wearer").select("family_id").eq("family_id", "demo").maybeSingle();
   if (legacy.error || legacy.data) throw new Error("Apply consolidation migration 005 first");
-  const relatives = await sb.from("relatives").select("id,name").eq("family_id", DEMO_FAMILY_ID);
-  if (relatives.error) throw relatives.error;
-  for (const account of DEMO_ACCOUNTS) if (account.contributorId && !relatives.data.some(r => r.id === account.contributorId && r.name === account.name)) throw new Error("Canonical contributor mapping missing");
-  stage = "inspect existing accounts";
-  const users = [];
-  for (let page = 1; ; page++) {
-    const result = await sb.auth.admin.listUsers({ page, perPage: 100 });
-    if (result.error) throw result.error;
-    users.push(...result.data.users);
-    if (result.data.users.length < 100) break;
+  // These deliberately invalid arguments fail before any write. Tables alone
+  // are insufficient if an earlier version of the self migration was applied.
+  for (const [name, args] of [
+    ["capture_self_contribution", { payload: {}, preview: "" }],
+    ["review_self_contribution", { family: DEMO_FAMILY_ID, reviewer: null, contribution: null, decision: "invalid" }],
+  ] as const) {
+    const probe = await sb.rpc(name, args);
+    if (probe.error?.code !== "22023") throw new Error("Apply the complete self-contribution migration 007 first");
   }
-  // This project already has the four accounts. Never create replacements.
-  for (const account of DEMO_ACCOUNTS) {
-    const user = users.find(u => u.email?.toLowerCase() === account.email);
-    if (!user) throw new Error("Expected canonical account missing");
-    if (user.app_metadata.kin_family_id && ![DEMO_FAMILY_ID, "demo"].includes(user.app_metadata.kin_family_id)) throw new Error("Account belongs to another family");
-  }
-  if (users.some(u => [DEMO_FAMILY_ID, "demo"].includes(u.app_metadata.kin_family_id) &&
-    DEMO_ACCOUNTS.some(a => u.email?.split("@")[0] === a.name.toLowerCase() && u.email !== a.email))) {
-    throw new Error("Conflicting demo account aliases require explicit reconciliation before provisioning");
-  }
-  for (const account of DEMO_ACCOUNTS) {
-    const user = users.find(u => u.email?.toLowerCase() === account.email)!;
-    stage = "update " + account.name;
-    if (account.role === "wearer") {
-      const membership = await sb.from("wearer_accounts").upsert({ user_id: user.id, family_id: DEMO_FAMILY_ID });
-      if (membership.error) throw membership.error;
-      // The wearer's own Keeper. Without it they authenticate but cannot
-      // contribute; recall is unaffected either way.
-      const wearerName = await sb.from("wearer").select("name").eq("family_id", DEMO_FAMILY_ID).maybeSingle();
-      if (wearerName.error) throw wearerName.error;
-      const existingSelf = await sb.from("relatives").select("id")
-        .eq("family_id", DEMO_FAMILY_ID).eq("is_self", true).maybeSingle();
-      if (existingSelf.error) throw existingSelf.error;
-      if (!existingSelf.data) {
-        const created = await sb.from("relatives").insert({
-          family_id: DEMO_FAMILY_ID, name: wearerName.data?.name ?? account.name,
-          relation_to_wearer: "self", color: "#8a7fd1", is_self: true,
-        });
-        if (created.error) throw created.error;
-      }
-    }
-    const updated = await sb.auth.admin.updateUserById(user.id, { app_metadata: {
-      ...user.app_metadata, kin_family_id: DEMO_FAMILY_ID, kin_contributor_id: account.contributorId,
-      kin_role: account.role, kin_admin: account.role === "organizer",
-    } });
-    if (updated.error) throw updated.error;
-  }
+  stage = "provision canonical accounts and self Keeper";
+  await provisionDemoAccounts(sb, password);
   for (const account of DEMO_ACCOUNTS) {
     stage = "verify " + account.name;
     const client = createClient(url, publicKey, options);
     const login = await client.auth.signInWithPassword({ email: account.email, password });
     if (login.error) throw login.error;
     const claims = login.data.user?.app_metadata;
-    if (claims?.kin_family_id !== DEMO_FAMILY_ID || claims.kin_contributor_id !== account.contributorId || claims.kin_role !== account.role) throw new Error("Claims mismatch");
+    if (claims?.kin_family_id !== DEMO_FAMILY_ID || (claims.kin_contributor_id ?? null) !== account.contributorId || claims.kin_role !== account.role) throw new Error("Claims mismatch");
     const own = await client.from("wearer").select("family_id");
     if (own.error || own.data.length !== 1 || own.data[0].family_id !== DEMO_FAMILY_ID) throw new Error("Family membership RLS failed");
     const foreign = await client.from("graph_nodes").select("id").neq("family_id", DEMO_FAMILY_ID);

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getServiceClient } from "@/lib/supabase";
 import { authenticateIngestion } from "@/lib/ingestion/auth";
 import { idSchema, ingestionError, IngestionError } from "@/lib/ingestion/http";
-import { commitIngestion } from "@/lib/ingestion/persist";
+import { selfRpc } from "@/lib/ingestion/self";
 
 export const runtime = "nodejs";
 
@@ -41,28 +41,9 @@ export async function POST(req: Request) {
     if (identity.isSelf) throw new IngestionError(403, "Contributors review these stories");
     const { id, action } = decisionSchema.parse(await req.json());
 
-    const row = await sb.from("pending_contributions").select("*")
-      .eq("id", id).eq("family_id", identity.familyId).maybeSingle();
-    if (row.error) throw row.error;
-    if (!row.data) throw new IngestionError(404, "Contribution not found");
-    if (row.data.state !== "pending") throw new IngestionError(409, "Contribution already reviewed");
-
-    if (action === "reject") {
-      const rejected = await sb.from("pending_contributions")
-        .update({ state: "rejected", reviewed_by: identity.contributorId, reviewed_at: new Date().toISOString() })
-        .eq("id", id).eq("family_id", identity.familyId).eq("state", "pending").select("id").single();
-      if (rejected.error) throw rejected.error;
-      return NextResponse.json({ id, state: "rejected" });
-    }
-
-    const result = await commitIngestion(sb, row.data.payload as Record<string, unknown>);
-    // commit_ingestion is idempotent by receipt, so a retry after a failed
-    // state write re-commits harmlessly rather than duplicating the memory.
-    const approved = await sb.from("pending_contributions")
-      .update({ state: "approved", reviewed_by: identity.contributorId, reviewed_at: new Date().toISOString() })
-      .eq("id", id).eq("family_id", identity.familyId).select("id").single();
-    if (approved.error) throw approved.error;
-    return NextResponse.json({ id, state: "approved", result });
+    return NextResponse.json(await selfRpc(sb, "review_self_contribution", {
+      family: identity.familyId, reviewer: identity.contributorId, contribution: id, decision: action,
+    }));
   } catch (error) {
     return ingestionError(error);
   }

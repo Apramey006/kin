@@ -42,9 +42,12 @@ function database() {
     auth: { getUser: async (token: string) => ({ data: { user: state.authError || token !== "session" ? null : { id: "user", app_metadata: { kin_family_id: "670f5075-c286-4b29-8074-86401c18d0c0", kin_contributor_id: MAYA } } }, error: null }) },
     from(table: string) {
       let operation = "read";
+      let columns = "*";
       let payload: Record<string, unknown> = {};
       const filters: Record<string, unknown> = {};
       const resolve = () => {
+        // Model a project that has only migrations 001–006 applied.
+        if (table === "relatives" && columns.split(",").includes("is_self")) return { data: null, error: { code: "42703" } };
         if (table === state.errorTable) return { data: null, error: { code: "DB_ERROR" } };
         if (table === "relatives") return { data: [{ id: MAYA, family_id: "670f5075-c286-4b29-8074-86401c18d0c0", name: "Maya", color: "gold" }, { id: ELENA, family_id: "670f5075-c286-4b29-8074-86401c18d0c0", name: "Elena", color: "pink" }], error: null };
         if (table === "memories") return { data: state.memories, error: null };
@@ -62,6 +65,7 @@ function database() {
       };
       const b: Record<string, unknown> = {};
       for (const method of ["select", "in", "order", "limit"]) b[method] = () => b;
+      b.select = (selected = "*") => { columns = selected; return b; };
       b.eq = (name: string, value: unknown) => { filters[name] = value; return b; };
       b.insert = (row: Record<string, unknown>) => { operation = "insert"; payload = row; return b; };
       b.update = (row: Record<string, unknown>) => { operation = "update"; payload = row; return b; };

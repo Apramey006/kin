@@ -20,7 +20,7 @@ describe("Rosa's separate wearer membership", () => {
     await expect(authenticateIngestion(request(), database())).rejects.toMatchObject({ status: 403 });
     await expect(authenticateAdmin(request(), database())).rejects.toMatchObject({ status: 403 });
   });
-  it("survives a database that predates migration 006", async () => {
+  it("survives a database that predates migration 007", async () => {
     // The is_self lookup must not turn a missing column into a wearer outage.
     const preMigration = { auth: { getUser: async () => ({ data: { user: { id: "rosa", app_metadata: {
       kin_role: "wearer", kin_family_id: DEMO_FAMILY_ID, kin_contributor_id: null, kin_admin: true,

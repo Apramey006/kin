@@ -12,16 +12,19 @@ function database() {
     tables[table] ??= [];
     const filters: [string, unknown][] = [];
     let deleting = false;
+    let update: Row | undefined;
     const matches = (row: Row) => filters.every(([key, value]) => row[key] === value);
     const q = { select: () => q, eq: (key: string, value: unknown) => { filters.push([key, value]); return q; },
       maybeSingle: async () => ({ data: tables[table].find(matches) ?? null, error: null }),
       delete: () => { deleting = true; return q; },
+      update: (values: Row) => { update = values; return q; },
       upsert: async (rows: Row[], options: { ignoreDuplicates?: boolean }) => {
         expect(options.ignoreDuplicates).toBe(true);
         for (const row of rows) if (!tables[table].some(r => (r.id ?? r.family_id) === (row.id ?? row.family_id))) tables[table].push(row);
         return { error: null };
       },
       then: (resolve: (value: unknown) => unknown) => {
+        if (update) tables[table].filter(matches).forEach(row => Object.assign(row, update));
         if (deleting) {
           const removed = tables[table].filter(matches);
           tables[table] = tables[table].filter(r => !matches(r));
@@ -51,11 +54,15 @@ describe("one canonical judging baseline", () => {
     expect(tables.memories).toHaveLength(original.memories.length + 1);
     expect(tables.graph_edges).toEqual(original.graph_edges);
     tables.wearer_accounts = [{ user_id: "existing-rosa", family_id: DEMO_FAMILY_ID }];
+    const self = { id: "self", family_id: DEMO_FAMILY_ID, is_self: true, self_capture_open: false };
+    tables.relatives.push(self);
+    tables.pending_contributions = [{ id: "held", family_id: DEMO_FAMILY_ID, state: "pending" }];
     await resetFamily(sb, DEMO_FAMILY_ID);
     await seedDemo(sb, DEMO_FAMILY_ID);
     expect(tables.memories).toEqual(original.memories);
     expect(tables.graph_edges).toEqual(original.graph_edges);
-    expect(tables.relatives).toEqual(original.relatives);
+    expect(tables.relatives).toEqual([...original.relatives, { ...self, self_capture_open: true }]);
+    expect(tables.pending_contributions).toEqual([]);
     expect(tables.wearer_accounts).toHaveLength(1);
   });
   it("refuses legacy or parallel demo seed targets", async () => {

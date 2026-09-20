@@ -17,7 +17,11 @@ async function main() {
   const options = { auth: { persistSession: false, autoRefreshToken: false } };
   const service = createClient(url,key,options);
   const expected = demoDataset(DEMO_FAMILY_ID);
-  const expectedTables = { relatives: expected.relatives, memories: expected.memories, graph_nodes: expected.nodes, graph_edges: expected.edges, provenance: expected.provenance };
+  stage = 'self Keeper';
+  const self = await service.from('relatives').select('*').eq('family_id',DEMO_FAMILY_ID).eq('is_self',true).single();
+  assert.equal(self.error,null);
+  assert.equal(self.data.name,'Rosa');
+  const expectedTables = { relatives: [...expected.relatives,self.data], memories: expected.memories, graph_nodes: expected.nodes, graph_edges: expected.edges, provenance: expected.provenance };
   stage = 'canonical content';
   for (const [table, rows] of Object.entries(expectedTables)) {
     const result = await service.from(table).select('*');
@@ -48,10 +52,18 @@ async function main() {
     const req=new Request('http://localhost/verification',{headers:{authorization:'Bearer '+login.data.session!.access_token}});
     const identity=await authenticateFamily(req,service);
     assert.equal(identity.familyId,DEMO_FAMILY_ID);
-    assert.equal(identity.contributorId,account.contributorId);
+    assert.equal(login.data.user!.app_metadata.kin_contributor_id ?? null,account.contributorId);
+    assert.equal(identity.contributorId,account.role==='wearer' ? self.data.id : account.contributorId);
     if(account.role==='organizer') assert.equal((await authenticateAdmin(req,service)).isAdmin,true);
     else await assert.rejects(()=>authenticateAdmin(req,service),(e:unknown)=>(e as {status:number}).status===403);
-    if(account.role==='wearer') await assert.rejects(()=>authenticateIngestion(req,service),(e:unknown)=>(e as {status:number}).status===403);
+    if(account.role==='wearer') assert.equal((await authenticateIngestion(req,service)).isSelf,true);
+    const pending = await client.from('pending_contributions').select('id');
+    assert.equal(pending.error,null);
+    if(account.role==='wearer') assert.equal(pending.data!.length,0);
+    for (const [name,args] of [
+      ['capture_self_contribution',{payload:{},preview:''}],
+      ['review_self_contribution',{family:DEMO_FAMILY_ID,reviewer:self.data.id,contribution:self.data.id,decision:'approve'}],
+    ] as const) assert.equal((await client.rpc(name,args)).error?.code,'42501');
     for(const [table,rows] of Object.entries(expectedTables)) {
       const visible=await client.from(table).select('id');assert.equal(visible.error,null);assert.equal(visible.data!.length,rows.length);
       if(table!=='provenance') {const foreign=await client.from(table).select('id').neq('family_id',DEMO_FAMILY_ID);assert.equal(foreign.error,null);assert.equal(foreign.data!.length,0);}

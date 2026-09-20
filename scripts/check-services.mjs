@@ -20,8 +20,8 @@ async function main() {
   console.log(JSON.stringify({ auth: auth.error ? "FAIL" : "PASS", demoUsers: auth.data?.users?.filter(u => u.app_metadata.kin_family_id).length ?? 0 }));
   let schemaReady = true;
   let initialSchemaReady = false;
-  for (const table of ["relatives", "memories", "graph_nodes", "graph_edges", "provenance", "face_embeddings", "recall_events", "weaver_questions", "ingestion_receipts", "wearer_accounts"]) {
-    const result = await service.from(table).select(table === "wearer_accounts" ? "user_id,family_id" : table === "memories" ? "id,source,verified_facts" : table === "recall_events" ? "id,face_outcome,evidence,reason_code" : "id", { count: "exact" }).limit(1);
+  for (const table of ["relatives", "memories", "graph_nodes", "graph_edges", "provenance", "face_embeddings", "recall_events", "weaver_questions", "ingestion_receipts", "wearer_accounts", "pending_contributions"]) {
+    const result = await service.from(table).select(table === "relatives" ? "id,is_self,self_capture_open" : table === "wearer_accounts" ? "user_id,family_id" : table === "memories" ? "id,source,verified_facts" : table === "recall_events" ? "id,face_outcome,evidence,reason_code" : "id", { count: "exact" }).limit(1);
     schemaReady &&= !result.error && Array.isArray(result.data);
     if (table === "relatives") initialSchemaReady = !result.error && Array.isArray(result.data);
     console.log(JSON.stringify({ table, status: result.status, code: result.error?.code, count: result.count }));
@@ -52,7 +52,7 @@ async function main() {
       await client.auth.signOut();
     }
   }
-  if (!schemaReady) console.log(JSON.stringify({ schema: "BLOCKED", action: initialSchemaReady ? "Initial schema exists. Apply migrations 002, 003, 004, 005 in order; preserve existing family data." : "Apply migrations 001 through 005 in order, then seed." }));
+  if (!schemaReady) console.log(JSON.stringify({ schema: "BLOCKED", action: initialSchemaReady ? "Initial schema exists. Apply any missing migrations through 007 in order; 006 is explicit_api_grants and 007 is self_contribution. Preserve existing family data." : "Apply migrations 001 through 007 in order, then provision and seed." }));
   if (process.env.KIN_FACE_SERVICE_URL && process.env.KIN_FACE_SERVICE_TOKEN) {
     const res = await fetch(process.env.KIN_FACE_SERVICE_URL, { method: "POST", headers: {
       authorization: "Bearer " + process.env.KIN_FACE_SERVICE_TOKEN, "content-type": "image/jpeg",
@@ -60,4 +60,8 @@ async function main() {
     console.log(JSON.stringify({ faceAuthenticatedBoundary: res.status === 422 ? "PASS" : "FAIL", status: res.status, actualInference: "NOT_TESTED_NO_FIXTURE" }));
   }
 }
-main().catch(() => { console.error("Service check failed (no provider details logged)."); process.exitCode = 1; });
+// This is a one-shot CLI. Realtime/provider clients can retain background handles
+// after all awaited checks finish; do not leave the terminal running indefinitely.
+main().then(() => { process.exit(0); }).catch(() => {
+  console.error("Service check failed (no provider details logged)."); process.exit(1);
+});

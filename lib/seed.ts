@@ -36,6 +36,10 @@ export async function resetFamily(sb: SupabaseClient, familyId: string) {
     const result = await bucket.remove(paths.slice(i, i + 100));
     if (result.error) throw result.error;
   }
+  const pending = await sb.from("pending_contributions").delete().eq("family_id", familyId);
+  if (pending.error && !["42P01", "PGRST205"].includes(pending.error.code)) throw pending.error;
+  const window = await sb.from("relatives").update({ self_capture_open: true }).eq("family_id", familyId).eq("is_self", true);
+  if (window.error && !["42703", "PGRST204"].includes(window.error.code)) throw window.error;
   for (const table of ["weaver_questions", "recall_events", "ingestion_receipts", "face_embeddings", "memories", "graph_edges", "graph_nodes"]) {
     const result = await sb.from(table).delete().eq("family_id", familyId);
     if (result.error) throw result.error;

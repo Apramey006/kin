@@ -11,6 +11,7 @@ import { digest, stableId } from "./ids";
 import { commitIngestion, existingReceipt, prepareGraph } from "./persist";
 import { literalFacts } from "./facts";
 import { anchorOriginAnswer } from "./answer";
+import { existingSelfContribution, selfRpc } from "./self";
 
 const labelsSchema = z.array(z.object({
   person_node_id: idSchema.optional(),
@@ -36,6 +37,10 @@ export async function ingestMemory(req: Request, kind: MemoryKind) {
     const memoryId = stableId(identity.familyId, kind === "answer" ? "answer" : identity.contributorId, kind, questionId ?? key ?? requestHash);
     const prior = await existingReceipt(sb, identity, memoryId, requestHash);
     if (prior) return NextResponse.json(prior);
+    if (identity.isSelf) {
+      const held = await existingSelfContribution(sb, identity, memoryId, requestHash);
+      if (held) return NextResponse.json(held);
+    }
 
     let questionContext: string | undefined;
     let answerQuestion: { gap_node_id?: string; gap_type?: string } = {};
@@ -121,13 +126,11 @@ export async function ingestMemory(req: Request, kind: MemoryKind) {
     // committing it. The wearer's experience is unchanged; only what the system
     // does with the recording differs. Nothing enters the graph until approved,
     // so no reader anywhere has to filter unreviewed rows.
-    if (identity.isSelf && identity.contributor.self_capture_open === false) {
-      const held = await sb.from("pending_contributions").upsert({
-        id: memoryId, family_id: identity.familyId, contributor_id: identity.contributorId,
-        kind, preview: humanText.trim().slice(0, 2000), media_path: path, payload, state: "pending",
-      }, { onConflict: "id" }).select("id").single();
-      if (held.error) throw held.error;
-      return NextResponse.json({ ...response, pending_review: true });
+    if (identity.isSelf) {
+      // Recheck the capture window under a database lock, not the earlier auth snapshot.
+      return NextResponse.json(await selfRpc(sb, "capture_self_contribution", {
+        payload, preview: humanText.trim().slice(0, 2000),
+      }));
     }
     const result = await commitIngestion(sb, payload);
     return NextResponse.json(result);

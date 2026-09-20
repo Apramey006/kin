@@ -27,7 +27,7 @@ export async function authenticateFamily(req: Request, sb: SupabaseClient) {
     // The wearer contributes through the family's `is_self` Keeper when one is
     // provisioned. Recall is unaffected either way; without it they stay
     // read-only exactly as before.
-    // Before migration 006 the column does not exist. That is not an outage:
+    // Before migration 007 the column does not exist. That is not an outage:
     // the wearer stays read-only exactly as they were, and recall must keep
     // working. Only an unexpected failure is escalated.
     const self = await sb.from("relatives").select("*")

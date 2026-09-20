@@ -92,13 +92,16 @@ describe("reset storage and membership", () => {
       : prefix === "670f5075-c286-4b29-8074-86401c18d0c0/contributor" ? [{ name: "memory", id: null }] : [{ name: "image", id: "file" }] }));
     const remove = vi.fn(async () => ({ error: null }));
     const tables: string[] = [];
+    const update = vi.fn(() => ({ eq: () => ({ eq: async () => ({ error: null }) }) }));
     const sb = { storage: { from: () => ({ list, remove }) }, from: (table: string) => {
-      tables.push(table); return { delete: () => ({ eq: async () => ({ error: null }) }) };
+      tables.push(table); return { delete: () => ({ eq: async () => ({ error: null }) }), update };
     } } as unknown as SupabaseClient;
     await resetFamily(sb, "670f5075-c286-4b29-8074-86401c18d0c0");
     expect(remove).toHaveBeenCalledWith(["670f5075-c286-4b29-8074-86401c18d0c0/contributor/memory/image"]);
     expect(tables).toContain("ingestion_receipts");
-    expect(tables).not.toContain("relatives");
+    expect(tables).toContain("pending_contributions");
+    expect(tables.indexOf("pending_contributions")).toBeLessThan(tables.indexOf("memories"));
+    expect(update).toHaveBeenCalledWith({ self_capture_open: true });
   });
   it("rejects a storage error before resetting database state", async () => {
     const from = vi.fn();

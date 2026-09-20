@@ -38,7 +38,10 @@ it("bootstraps an empty project and reuses all four users on retry without chang
   const password = randomBytes(24).toString("base64url");
   await provisionDemoAccounts(db.sb, password);
   expect(db.createUser).toHaveBeenCalledTimes(4);
-  expect(db.tables.relatives).toHaveLength(3);
+  expect(db.tables.relatives).toHaveLength(4);
+  expect(db.tables.relatives.filter(r => r.is_self)).toEqual([
+    expect.objectContaining({ name: "Rosa", family_id: DEMO_FAMILY_ID, relation_to_wearer: "self" }),
+  ]);
   expect(db.tables.wearer).toEqual([{ family_id: DEMO_FAMILY_ID, name: "Rosa" }]);
   for (const account of DEMO_ACCOUNTS) {
     const user = db.users.find(u => u.email === account.email)!;
@@ -48,13 +51,25 @@ it("bootstraps an empty project and reuses all four users on retry without chang
   const rosa = db.users.find(u => u.email === DEMO_ACCOUNTS[3].email)!;
   expect(db.tables.wearer_accounts).toEqual([{ user_id: rosa.id, family_id: DEMO_FAMILY_ID }]);
   const ids = db.users.map(u => u.id);
+  const selfId = db.tables.relatives.find(r => r.is_self)!.id;
   await provisionDemoAccounts(db.sb, password);
   expect(db.createUser).toHaveBeenCalledTimes(4);
   expect(db.updateUserById).toHaveBeenCalledTimes(4);
   expect(db.users.map(u => u.id)).toEqual(ids);
-  expect(db.tables.relatives).toHaveLength(3);
+  expect(db.tables.relatives).toHaveLength(4);
+  expect(db.tables.relatives.find(r => r.is_self)!.id).toBe(selfId);
   expect(db.tables.wearer_accounts).toHaveLength(1);
   for (const [, update] of db.updateUserById.mock.calls) expect(update).not.toHaveProperty("password");
+});
+
+it("reuses an existing self Keeper and preserves its closed window", async () => {
+  const db = database();
+  db.tables.relatives = [{ id: "existing-self", family_id: DEMO_FAMILY_ID, name: "Rosa", is_self: true, self_capture_open: false }];
+  await provisionDemoAccounts(db.sb, randomBytes(24).toString("base64url"));
+  expect(db.tables.relatives.filter(r => r.is_self)).toEqual([
+    { id: "existing-self", family_id: DEMO_FAMILY_ID, name: "Rosa", is_self: true, self_capture_open: false },
+  ]);
+  expect(db.users.find(u => u.email === DEMO_ACCOUNTS[3].email)!.app_metadata.kin_contributor_id).toBeNull();
 });
 
 it("reuses a preexisting account and creates only the three missing users", async () => {

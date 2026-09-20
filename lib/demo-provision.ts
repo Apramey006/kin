@@ -1,6 +1,7 @@
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { DEMO_ACCOUNTS, DEMO_FAMILY_ID } from "./demo";
 import baseline from "../demo/shared-baseline.json";
+import { stableId } from "./ingestion/ids";
 
 /** Called only after the migration preflight. Does not seed or replace content. */
 export async function provisionDemoAccounts(sb: SupabaseClient, password: string) {
@@ -34,12 +35,21 @@ export async function provisionDemoAccounts(sb: SupabaseClient, password: string
     const result = await sb.from(table).upsert(rows, { ignoreDuplicates: true });
     if (result.error) throw result.error;
   }
-  const relatives = await sb.from("relatives").select("id,name").eq("family_id", DEMO_FAMILY_ID);
+  const relatives = await sb.from("relatives").select("*").eq("family_id", DEMO_FAMILY_ID);
   if (relatives.error) throw relatives.error;
   for (const account of DEMO_ACCOUNTS) {
     if (account.contributorId && !relatives.data.some(r => r.id === account.contributorId && r.name === account.name)) {
       throw new Error("Canonical contributor mapping missing");
     }
+  }
+  // Reuse an existing self Keeper; otherwise create one stable owner ID.
+  // Rosa's Auth claims remain wearer-only, without a contributor claim.
+  if (!relatives.data.some(r => r.is_self)) {
+    const self = await sb.from("relatives").upsert({
+      id: stableId(DEMO_FAMILY_ID, "self-keeper"), family_id: DEMO_FAMILY_ID,
+      name: "Rosa", relation_to_wearer: "self", color: "#8a7fd1", is_self: true,
+    }, { ignoreDuplicates: true });
+    if (self.error) throw self.error;
   }
   for (const account of DEMO_ACCOUNTS) {
     const existing = existingAccount(account);

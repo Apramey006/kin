@@ -102,7 +102,8 @@ export async function POST(req: Request) {
     // Scene context influences retrieval only. It is never source evidence.
     const caption = await captionImage(bytes, mime);
     const embedding = await embedText([caption.caption, ...caption.objects, caption.setting].join(" "));
-    const relatives = await sb.from("relatives").select("id,name,color,is_self").eq("family_id", familyId);
+    // SELECT * also works before the additive self-contribution migration.
+    const relatives = await sb.from("relatives").select("*").eq("family_id", familyId);
     if (relatives.error) throw new Error("Family read failed");
     keeperResults = await runKeepers(sb, familyId, (relatives.data ?? []).map(r => ({
       relativeId: r.id, name: r.name, color: r.color,

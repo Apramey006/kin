@@ -37,7 +37,7 @@ try {
     create publication supabase_realtime;
   `);
   await test('all numbered migrations apply with real pgvector', async () => {
-    for (const name of ['001_init.sql', '002_atomic_ingestion.sql', '003_family_boundary_and_weaver.sql', '004_wearer_membership.sql', '005_consolidate_hackmit_demo.sql']) {
+    for (const name of ['001_init.sql', '002_atomic_ingestion.sql', '003_family_boundary_and_weaver.sql', '004_wearer_membership.sql', '005_consolidate_hackmit_demo.sql', '006_explicit_api_grants.sql', '007_self_contribution.sql']) {
       await db.exec(await readFile(new URL(`../../supabase/migrations/${name}`, import.meta.url), 'utf8'));
     }
   });
@@ -200,12 +200,90 @@ try {
     assert.equal(await scalar('select count(*)::int as value from graph_nodes'), 0);
     await db.exec('reset role');
   });
-  await test('reset deletion order clears answers, receipts and nested graph references while retaining memberships', async () => {
-    for (const table of ['weaver_questions','recall_events','ingestion_receipts','face_embeddings','memories','graph_edges','graph_nodes']) {
+  const family = '670f5075-c286-4b29-8074-86401c18d0c0';
+  const selfId = uuid(3);
+  await db.query('insert into relatives(id,family_id,name,relation_to_wearer,color,is_self,self_capture_open) values($1,$2,$3,$4,$5,true,false)', [selfId,family,'Rosa','self','#ffffff']);
+  const selfPayload = id => {
+    const p = memoryPayload(id);
+    p.contributor_id = selfId; p.memory.contributor_id = selfId;
+    p.memory.verified_facts.forEach(f => f.contributorId = selfId);
+    p.provenance.forEach(f => f.contributor_id = selfId);
+    return p;
+  };
+  const capture = p => scalar('select capture_self_contribution($1::jsonb,$2) as value',[JSON.stringify(p),'Nora likes lemon cake.']);
+  const review = (id,decision,reviewer=uuid(1),scope=family) => scalar('select review_self_contribution($1,$2,$3,$4) as value',[scope,reviewer,uuid(id),decision]);
+  await test('closed capture is immutable, rejects changed retries and never revives a rejected story', async () => {
+    const p = selfPayload(950);
+    assert.equal((await capture(p)).pending_review,true);
+    assert.equal((await capture(p)).pending_review,true);
+    await rejectCode(()=>capture({...p,request_hash:'changed'}),'23505');
+    assert.deepEqual(await scalar('select payload as value from pending_contributions where id=$1',[p.id]),p);
+    await review(950,'reject');
+    await review(950,'reject');
+    await rejectCode(()=>capture(p),'23505');
+    await rejectCode(()=>review(950,'approve'),'23505');
+    assert.equal(await scalar('select count(*)::int as value from memories where id=$1',[p.id]),0);
+  });
+  await test('approval publishes once; a competing rejection cannot overwrite it', async () => {
+    const p=selfPayload(951); await capture(p);
+    assert.equal((await review(951,'approve')).state,'approved');
+    assert.deepEqual(await review(951,'approve'),await review(951,'approve'));
+    await rejectCode(()=>review(951,'reject'),'23505');
+    assert.equal((await capture(p)).pending_review,false);
+    assert.equal(await scalar('select count(*)::int as value from memories where id=$1',[p.id]),1);
+    assert.equal(await scalar('select count(*)::int as value from ingestion_receipts where id=$1',[p.id]),1);
+  });
+  await test('failed approval rolls back publication and preserves the pending decision', async () => {
+    const p=selfPayload(952); p.edges=[{id:uuid(953),family_id:family,from_node:uuid(10),to_node:uuid(11),rel:'friend_of'}];
+    await capture(p); await rejectCode(()=>review(952,'approve'),'P0001');
+    assert.equal(await scalar('select state as value from pending_contributions where id=$1',[p.id]),'pending');
+    assert.equal(await scalar('select count(*)::int as value from memories where id=$1',[p.id]),0);
+    assert.equal(await scalar('select count(*)::int as value from ingestion_receipts where id=$1',[p.id]),0);
+  });
+  await test('capture reads the current window and cannot bypass a queued decision after reopening', async () => {
+    const p=selfPayload(954); await capture(p);
+    await db.query('update relatives set self_capture_open=true where id=$1',[selfId]);
+    assert.equal((await capture(p)).pending_review,true);
+    const direct=selfPayload(955); assert.deepEqual(await capture(direct),direct.response);
+    await db.query('update relatives set self_capture_open=false where id=$1',[selfId]);
+    assert.deepEqual(await capture(direct),direct.response);
+    assert.equal((await capture(selfPayload(956))).pending_review,true);
+  });
+  await test('self review rejects wearer and foreign contributors; RLS hides queue from wearer and foreign family', async () => {
+    await rejectCode(()=>review(956,'approve',selfId),'42501');
+    await rejectCode(()=>review(956,'approve',uuid(2)),'42501');
+    await rejectCode(()=>review(956,'approve',uuid(2),'other'),'P0002');
+    for (const metadata of [
+      {sub:uuid(900),app_metadata:{kin_family_id:family,kin_role:'wearer'}},
+      {app_metadata:{kin_family_id:'other',kin_contributor_id:uuid(2)}},
+      {app_metadata:{kin_family_id:family,kin_contributor_id:uuid(1)}},
+    ]) {
+      await db.exec('set role authenticated');
+      await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify(metadata)]);
+      const visible=await scalar('select count(*)::int as value from pending_contributions');
+      assert.equal(visible,metadata.app_metadata.kin_contributor_id===uuid(1)?5:0);
+      await rejectCode(()=>capture(selfPayload(957)),'42501');
+      await rejectCode(()=>review(956,'approve'),'42501');
+      await db.exec('reset role');
+    }
+  });
+  await test('reapplying 007 preserves queued decisions, memories and the current window', async () => {
+    const before = await db.query('select * from pending_contributions order by id');
+    const memories = await scalar('select count(*)::int as value from memories');
+    await db.exec(await readFile(new URL('../../supabase/migrations/007_self_contribution.sql',import.meta.url),'utf8'));
+    assert.deepEqual((await db.query('select * from pending_contributions order by id')).rows,before.rows);
+    assert.equal(await scalar('select count(*)::int as value from memories'),memories);
+    assert.equal(await scalar('select self_capture_open as value from relatives where id=$1',[selfId]),false);
+  });
+  await test('reset deletion order clears answers, pending stories, receipts and graph while retaining memberships', async () => {
+    for (const table of ['pending_contributions','weaver_questions','recall_events','ingestion_receipts','face_embeddings','memories','graph_edges','graph_nodes']) {
       await db.query(`delete from ${table} where family_id = $1`, ['670f5075-c286-4b29-8074-86401c18d0c0']);
     }
     assert.equal(await scalar('select count(*)::int as value from provenance'), 0);
-    assert.equal(await scalar("select count(*)::int as value from relatives where family_id='670f5075-c286-4b29-8074-86401c18d0c0'"), 1);
+    await db.query('update relatives set self_capture_open=true where family_id=$1 and is_self',[family]);
+    assert.equal(await scalar('select count(*)::int as value from pending_contributions'),0);
+    assert.equal(await scalar('select self_capture_open as value from relatives where id=$1',[selfId]),true);
+    assert.equal(await scalar("select count(*)::int as value from relatives where family_id='670f5075-c286-4b29-8074-86401c18d0c0'"), 2);
     assert.equal(await scalar('select count(*)::int as value from ingestion_receipts'), 0);
   });
   console.log(`${count} database integration checks passed (local PostgreSQL WASM + real pgvector; not hosted Supabase).`);
