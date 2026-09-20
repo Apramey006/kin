@@ -1,6 +1,16 @@
 -- Separate the person using recognition from the people contributing memories.
 -- Existing accounts and invitations remain contributors. No memories are changed.
 begin;
+-- The original feature branch used different migrations numbered 002–004.
+-- Detect that schema before changing any account objects.
+do $$ begin
+  if to_regclass('public.wearer_accounts') is null
+    or to_regclass('public.ingestion_receipts') is null
+    or to_regclass('public.pending_contributions') is null then
+    raise exception 'The database is missing main-branch prerequisites for migration 010.'
+      using hint = 'For the original pull-apart branch database, run the entire supabase/upgrades/pull_apart_to_main.sql file instead. It preserves existing data.';
+  end if;
+end $$;
 alter table public.family_members add column if not exists role text not null default 'contributor';
 alter table public.family_members alter column relative_id drop not null;
 alter table public.family_members drop constraint if exists family_member_role;

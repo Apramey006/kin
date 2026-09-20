@@ -70,8 +70,13 @@ These add private family accounts and invitations, backfill existing provisioned
 memberships, and connect new loved-one accounts to personal recording/review.
 They do not reset memories or accounts. Their reapplication is tested locally.
 Do not blindly rerun the earlier migrations or mix in the feature branch's old,
-conflicting migration numbers. If your database was created from that older
-branch rather than main, reconcile its schema with main's 001–007 first.
+conflicting migration numbers. If your database was created from the older
+pull-apart branch (for example, 010 reports that `wearer_accounts` is missing),
+run the entire [legacy recovery SQL](supabase/upgrades/pull_apart_to_main.sql)
+in Supabase SQL Editor instead. It upgrades that schema through 010 in one
+transaction, preserves existing data, and skips demo consolidation. It is also
+safe after applying 009 and seeing 010 fail. Sign out and back in afterward.
+See [recovery details](supabase/upgrades/README.md).
 No hosted database migration or reset is performed by installing/building the app.
 
 In Supabase Auth, enable email/password and configure the app's Site URL plus
