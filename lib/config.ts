@@ -17,9 +17,9 @@ export const CONFIG = {
   },
 
   retrieval: {
-    // r = clamp((bestSim - simFloor) / simWindow, 0, 1)
-    simFloor: 0.2,
-    simWindow: 0.4,
+    // Calibrated to observed cosine similarities for relevant family memories.
+    simFloor: 0.10,
+    simWindow: 0.30,
     topK: 5,
     claimMinR: 0.5,
     maxSubjectMemories: 3,

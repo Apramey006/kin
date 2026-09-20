@@ -101,7 +101,27 @@ export async function POST(req: Request) {
     }
     // Scene context influences retrieval only. It is never source evidence.
     const caption = await captionImage(bytes, mime);
-    const embedding = await embedText([caption.caption, ...caption.objects, caption.setting].join(" "));
+    const subject = await sb
+    .from("graph_nodes")
+    .select("label")
+    .eq("id", face.subjectNodeId)
+    .eq("family_id", familyId)
+    .single();
+
+    if (subject.error || !subject.data) {
+      throw new Error("Matched subject lookup failed");
+    }
+
+    const embedding = await embedText(
+      [
+        `Family memories about ${subject.data.label}.`,
+        caption.caption,
+        ...caption.objects,
+        caption.setting,
+      ]
+        .filter(Boolean)
+        .join(" ")
+  );
     // SELECT * also works before the additive self-contribution migration.
     const relatives = await sb.from("relatives").select("*").eq("family_id", familyId);
     if (relatives.error) throw new Error("Family read failed");
@@ -115,11 +135,24 @@ export async function POST(req: Request) {
     if (cited.error) throw new Error("Grounding read failed");
     const owners = new Set(gate.agreeingKeeperIds);
     const selfContributorIds = new Set((relatives.data ?? []).filter(r => r.is_self).map(r => r.id));
+    const memoryRank = new Map(
+      gate.citedMemoryIds.map((id, index) => [id, index])
+    );
+
     const facts = ((cited.data ?? []) as MemoryRow[])
       .filter(m => owners.has(m.contributor_id))
-      // Prefer a newly answered gap while retaining two independent supporters in the gate.
-      .sort((a, b) => Number(b.kind === "answer") - Number(a.kind === "answer") || b.created_at.localeCompare(a.created_at))
-      .flatMap(m => humanFacts(m, face.status === "matched" ? face.subjectNodeId : ""))
+      // Preserve Keeper retrieval relevance instead of always prioritizing Weaver answers.
+      .sort(
+        (a, b) =>
+          (memoryRank.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
+          (memoryRank.get(b.id) ?? Number.MAX_SAFE_INTEGER)
+      )
+      .flatMap(m =>
+        humanFacts(
+          m,
+          face.status === "matched" ? face.subjectNodeId : ""
+        )
+      )
       // The wearer's own words are attributed to them, not to "a relative".
       // Hearing "You said…" locates the memory as theirs instead of presenting
       // it as external testimony.

@@ -63,6 +63,11 @@ export async function retrieveKeeper(sb: SupabaseClient, familyId: string, keepe
   ]);
   if (matched.error || subject.error || !subject.data) throw new Error("Keeper retrieval failed");
   const similarities = new Map<string, number>((matched.data ?? []).map((m: { id: string; similarity: number }) => [m.id, m.similarity]));
+  console.log("KEEPER RETRIEVAL", {
+    keeper: keeper.name,
+    subject: subject.data?.label,
+    matches: matched.data,
+  });
   if (!similarities.size) return buildKeeperResult(keeper, { face: ctx.face, subjectLabel: subject.data.label, memories: [] });
   const memories = await sb.from("memories").select("*").eq("family_id", familyId)
     .eq("contributor_id", keeper.relativeId).in("id", [...similarities.keys()]);

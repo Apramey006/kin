@@ -27,10 +27,38 @@ export function prepareGraph(identity: IngestionIdentity, memoryId: string, extr
     refs.set(node.ref, resolved.id);
     chips.push({ label: resolved.label, type: resolved.type, relation_to_wearer: resolved.relation_to_wearer });
   }
+  const resolveRef = (ref: string) => {
+    const resolved = refs.get(ref);
+    if (resolved) return resolved;
+
+    if (ref.startsWith("existing:")) {
+      const id = ref.slice(9);
+      const existingNode = existing.find((candidate) => candidate.id === id);
+
+      if (existingNode) {
+        refs.set(ref, existingNode.id);
+        return existingNode.id;
+      }
+    }
+
+    return undefined;
+  };
+
   const edges = extraction.edges.map((edge) => {
-    const from = refs.get(edge.from);
-    const to = refs.get(edge.to);
-    if (!from || !to || !isAllowedRel(edge.rel)) throw new IngestionError(502, "Invalid extracted relationship");
+    const from = resolveRef(edge.from);
+    const to = resolveRef(edge.to);
+
+    if (!from || !to || !isAllowedRel(edge.rel)) {
+      console.error("INVALID EXTRACTED RELATIONSHIP", {
+        edge,
+        from,
+        to,
+        allowedRel: isAllowedRel(edge.rel),
+        refs: Object.fromEntries(refs),
+      });
+
+      throw new IngestionError(502, "Invalid extracted relationship");
+    }
     const existingEdge = existingEdges.find((candidate) => candidate.from_node === from && candidate.to_node === to && candidate.rel === edge.rel);
     return { id: existingEdge?.id ?? stableId(identity.familyId, from, edge.rel, to), family_id: identity.familyId,
       from_node: from, rel: edge.rel, to_node: to };
