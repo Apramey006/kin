@@ -63,6 +63,7 @@ Storage + Realtime), face-api in the browser, Claude or OpenAI (vision and extra
 - `/signup`, `/signin`: email/password accounts, email confirmation and password reset.
 - `/onboarding`: create an empty family library or join an invitation.
 - `/family`: shared photos and recordings. Preview recordings before saving; delete your own contributions.
+- `/stories`: Living Stories, with original family voices, related photos, source-linked chapters, and a quiet listening view. See [Living Stories](docs/living-stories.md).
 - `/wearer`: camera permission on request, one large “Who is this?” action, readable and spoken cues.
 - `/stage`: Connections canvas, recognition result, family sources, questions, and optional diagnostics.
 - `/settings`: family invitations, larger text, reduced motion, account and sign-out.
@@ -71,7 +72,9 @@ Storage + Realtime), face-api in the browser, Claude or OpenAI (vision and extra
 
 1. Run the Supabase migrations in order in the SQL editor:
    `001_init.sql`, `002_demo_reliability.sql`, `003_accounts.sql`, then
-   `004_loved_one_invites.sql` in `supabase/migrations/`.
+   `004_loved_one_invites.sql` in `supabase/migrations/`. Apply
+   `005_living_stories.sql` to retain excerpt timings for new recordings;
+   older recordings continue to play in full.
    Existing projects run only migrations they have not applied.
 2. Copy `.env.example` to `.env.local` and supply Supabase URL, anon key, service-role
    key, OpenAI or Anthropic key, and Deepgram key. ElevenLabs is optional; browser
