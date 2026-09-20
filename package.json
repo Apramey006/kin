@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:e2e": "node scripts/test-ui.mjs",
     "seed": "tsx scripts/seed.ts",
+    "demo:audio": "tsx scripts/generate-demo-audio.ts",
     "postinstall": "node scripts/copy-face-models.mjs",
     "test:db": "npm --prefix tests/database test"
   },

@@ -61,7 +61,7 @@ export interface MemoryRow {
   summary: string;
   source_question_id: string | null;
   created_at: string;
-  source?: { type: "human"; caption?: string; [key: string]: unknown };
+  source?: { type: "human" | "synthetic"; caption?: string; [key: string]: unknown };
   verified_facts?: VerifiedFact[];
 }
 

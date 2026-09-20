@@ -26,6 +26,10 @@ describe("human-scoped keepers", () => {
     expect(humanFacts(m, "nora")).toEqual([]);
     expect(buildKeeperResult(keeper, { face, subjectLabel: "Nora", memories: [m] }).support).toBe("abstains");
   });
+  it("does not turn synthetic demo narration into human evidence", () => {
+    const m = memory(); m.source = { type: "synthetic", generated_audio: true };
+    expect(humanFacts(m, "nora")).toEqual([]);
+  });
   it("rejects altered spans, mismatched owners, and enrollment-only labels", () => {
     const m = memory(); m.verified_facts![0].sourceSpan!.start = 1;
     expect(humanFacts(m, "nora")).toEqual([]);

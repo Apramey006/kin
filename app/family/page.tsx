@@ -226,6 +226,7 @@ export default function FamilyPage() {
                           ) : (
                             <p className="memory-caption">{m.summary}</p>
                           )}
+                          {m.source?.generated_audio === true && <p className="small muted">AI-generated demo narration</p>}
                           {m.mediaUrl && m.kind !== "photo" && (
                             <audio
                               controls

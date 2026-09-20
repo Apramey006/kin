@@ -81,9 +81,10 @@ export function StoryPlayer({ memory, topic, name, autoPlay, paused, onComplete,
     callbacks.current.onComplete();
   };
   const quote = source?.transcript ?? memory.transcript;
+  const generated = memory.source?.generated_audio === true;
   return <div className={styles.player}>
     <blockquote className={styles.quote}>{excerpt?.text || quote}</blockquote>
-    <p className={styles.attribution}>{name}’s {excerpt ? "recording · excerpt" : "original recording"}</p>
+    <p className={styles.attribution}>{generated ? `Demo narration · ${name}` : `${name}’s ${excerpt ? "recording · excerpt" : "original recording"}`}</p>
     {source?.mediaUrl && <audio ref={audio} src={source.mediaUrl} preload="metadata"
       onLoadedMetadata={() => {
         const element = audio.current!;
@@ -123,9 +124,9 @@ export function StoryPlayer({ memory, topic, name, autoPlay, paused, onComplete,
     {error && <p className={styles.error} role="alert">{error} <button onClick={() => setAttempt((n) => n + 1)}><RotateCcw size={14} aria-hidden="true" /> Reload recording</button></p>}
     <button className={styles.sourceLink} onClick={() => { audio.current?.pause(); setOriginal(true); }}><FileAudio size={16} aria-hidden="true" /> Open original memory</button>
     <Sheet open={original} onClose={() => { originalAudio.current?.pause(); setOriginal(false); }} title={`Shared by ${name}`}>
-      <p className="small muted">{new Date(memory.created_at).toLocaleDateString(undefined, { dateStyle: "long" })} · Original recording</p>
+      <p className="small muted">{new Date(memory.created_at).toLocaleDateString(undefined, { dateStyle: "long" })} · {generated ? "AI-generated demo narration" : "Original recording"}</p>
       <p className={styles.sourceTranscript}>{quote}</p>
-      {original && source?.mediaUrl && <audio ref={originalAudio} controls src={source.mediaUrl} aria-label={`Full original recording from ${name}`} />}
+      {original && source?.mediaUrl && <audio ref={originalAudio} controls src={source.mediaUrl} aria-label={generated ? `Full demo narration for ${name}` : `Full original recording from ${name}`} />}
       <p className="small muted" style={{ marginTop: 16 }}>This is the complete contribution, with its surrounding context.</p>
     </Sheet>
   </div>;

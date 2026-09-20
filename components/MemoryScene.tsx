@@ -598,7 +598,7 @@ function MemoryDetail({
         <div className="scene-original">
           <span>
             <Mic size={16} aria-hidden="true" />
-            Original recording
+            {memory.source?.generated_audio === true ? "AI-generated demo narration" : "Original recording"}
           </span>
           <audio
             ref={audio}

@@ -171,3 +171,15 @@ test("asks Weaver about the current topic and exposes the recipient's question",
   await expect(page.getByRole("dialog")).toBeVisible();
   expect(await page.locator('section[aria-label="Story player"] audio').first().evaluate((audio: HTMLAudioElement) => audio.paused)).toBe(true);
 });
+
+test("demo narration is playable and labelled separately from original recordings", async ({ page }) => {
+  const data = storyFixture();
+  data.memories[0].source = { type: "synthetic", generated_audio: true };
+  await mount(page, data);
+  await expect(page.getByText("Demo narration · Maya", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Play chapter", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Pause chapter" })).toBeVisible();
+  await page.getByRole("button", { name: "Open original memory" }).click();
+  await expect(page.getByRole("dialog")).toContainText("AI-generated demo narration");
+  await expect(page.getByLabel("Full demo narration for Maya")).toBeVisible();
+});

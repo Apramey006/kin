@@ -120,3 +120,21 @@ still uses its TypeScript backend; this merge does not switch production recall
 to Rust or claim parity for every newer TypeScript behavior. The existing
 planning/handoff documents describe earlier checkpoints; current code and this
 verification record take precedence.
+
+## Demo narration
+
+To add stock ElevenLabs narration to the six existing fictional demo stories:
+
+```bash
+npm run demo:audio          # Preview eligible stories and character count
+npm run demo:audio -- --apply
+```
+
+This uses `ELEVENLABS_API_KEY` and server Supabase credentials from `.env.local`.
+Maya, David, and Elena each have a distinct stock voice. Only unchanged scripts
+from `demo/shared-baseline.json` without audio are selected; accounts, user
+recordings, photos, and face enrollments are preserved. Clips are cached under
+ignored `demo/fixtures/private/narration` and stored privately in Supabase.
+Sentence timestamps support Living Stories excerpts. Generated clips display
+“Demo narration” and are not treated as human evidence for recognition cues.
+Repeating the command skips stories that already have audio.
