@@ -43,3 +43,37 @@ impl SilenceReason {
         }
     }
 }
+
+pub struct FaceConfig {
+    pub v_full_distance: f64,
+    pub v_zero_distance: f64,
+    pub v_window: f64,
+    pub match_k: usize,
+    pub min_confidence: f64,
+    pub strong_match_v: f64,
+}
+
+pub const FACE: FaceConfig = FaceConfig {
+    v_full_distance: 0.35,
+    v_zero_distance: 0.6,
+    v_window: 0.25,
+    match_k: 5,
+    min_confidence: 0.5,
+    strong_match_v: 0.9,
+};
+
+pub struct RetrievalConfig {
+    pub sim_floor: f64,
+    pub sim_window: f64,
+    pub top_k: usize,
+    pub claim_min_r: f64,
+    pub max_subject_memories: usize,
+}
+
+pub const RETRIEVAL: RetrievalConfig = RetrievalConfig {
+    sim_floor: 0.2,
+    sim_window: 0.4,
+    top_k: 5,
+    claim_min_r: 0.5,
+    max_subject_memories: 3,
+};
